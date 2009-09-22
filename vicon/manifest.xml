@@ -1,0 +1,25 @@
+<package>
+  <description brief="vicon">
+
+     vicon
+
+  </description>
+  <author>Nathan Michael</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/vicon</url>
+
+  <depend package="roscpp"/>
+  <depend package="roslib"/>
+  <depend package="ViconVelocityEstimator"/>
+  <depend package="geometry_msgs"/>
+  <depend package="tinyxml"/>
+  <depend package="nmw"/>
+
+  <export>
+    <cpp cflags="-I${prefix}/msg/cpp" lflags="-L${prefix}/lib -lvicondriver"/>
+  </export>
+
+</package>
+
+

@@ -1,0 +1,14 @@
+<package>
+  <description brief="vicon_vsk">
+
+     vicon_vsk
+
+  </description>
+  <author>Nathan Michael</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/vicon_vsk</url>
+
+</package>
+
+

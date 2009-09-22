@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<KinematicModel MODEL="Quadrotor40" VERSION="2.3">
+
+  <Parameters>
+    <Parameter HIDDEN="1" NAME="Body_Length" PRIOR="251.183822631836" SD="0" VALUE="251.183822631836"/>
+    <Parameter HIDDEN="1" NAME="Body_Unlabeled83_y" PRIOR="102.644485473633" SD="0" VALUE="102.644485473633"/>
+    <Parameter HIDDEN="1" NAME="Body_Unlabeled83_z" PRIOR="-132.766708374023" SD="0" VALUE="-132.766708374023"/>
+    <Parameter HIDDEN="1" NAME="Body_Unlabeled97_x" PRIOR="-12.1246471405029" SD="0" VALUE="-12.1246471405029"/>
+    <Parameter HIDDEN="1" NAME="Body_Unlabeled97_y" PRIOR="-106.406295776367" SD="0" VALUE="-106.406295776367"/>
+    <Parameter HIDDEN="1" NAME="Body_Unlabeled97_z" PRIOR="-132.136840820313" SD="0" VALUE="-132.136840820313"/>
+    <Parameter HIDDEN="1" NAME="Body_Unlabeled99_x" PRIOR="-0.584663212299347" SD="0" VALUE="-0.584663212299347"/>
+    <Parameter HIDDEN="1" NAME="Body_Unlabeled99_y" PRIOR="-1.07974934577942" SD="0" VALUE="-1.07974934577942"/>
+    <Parameter HIDDEN="1" NAME="Body_Unlabeled99_z" PRIOR="-53.7544212341309" SD="0" VALUE="-53.7544212341309"/>
+    <Parameter HIDDEN="1" NAME="Body_Unlabeled87_x" PRIOR="-37.222827911377" SD="0" VALUE="-37.222827911377"/>
+    <Parameter HIDDEN="1" NAME="Body_Unlabeled87_y" PRIOR="-15.2738132476807" SD="0" VALUE="-15.2738132476807"/>
+    <Parameter HIDDEN="1" NAME="Body_Unlabeled87_z" PRIOR="-97.679801940918" SD="0" VALUE="-97.679801940918"/>
+    <Parameter HIDDEN="1" NAME="Body_Unlabeled89_x" PRIOR="-33.6035652160645" SD="0" VALUE="-33.6035652160645"/>
+    <Parameter HIDDEN="1" NAME="Body_Unlabeled89_y" PRIOR="13.9154720306396" SD="0" VALUE="13.9154720306396"/>
+    <Parameter HIDDEN="1" NAME="Body_Unlabeled89_z" PRIOR="-139.983795166016" SD="0" VALUE="-139.983795166016"/>
+    <Parameter HIDDEN="1" NAME="Body_Unlabeled82_x" PRIOR="-36.7551612854004" SD="0" VALUE="-36.7551612854004"/>
+    <Parameter HIDDEN="1" NAME="Body_Unlabeled82_y" PRIOR="-15.9861888885498" SD="0" VALUE="-15.9861888885498"/>
+    <Parameter HIDDEN="1" NAME="Body_Unlabeled82_z" PRIOR="-125.871612548828" SD="0" VALUE="-125.871612548828"/>
+    <Parameter HIDDEN="1" NAME="Body_Unlabeled84_x" PRIOR="-0.254820734262466" SD="0" VALUE="-0.254820734262466"/>
+    <Parameter HIDDEN="1" NAME="Body_Unlabeled84_y" PRIOR="-0.00763534335419536" SD="0" VALUE="-0.00763534335419536"/>
+    <Parameter HIDDEN="1" NAME="Body_Unlabeled84_z" PRIOR="-211.101455688477" SD="0" VALUE="-211.101455688477"/>
+  </Parameters>
+
+  <Skeleton>
+    <Segment BOUNDS="-25.1184 -25.1184 -'Body_Length' 25.1184 25.1184 0" CONTEXT="General" INERTIA="0 0 0" MASS="0" MASS-CENTRE="0 0 0" NAME="Body" RGB="255 164 0">
+      <JointFree BOUNDS="0 0 0 0 0 0 0 0 0 0 0 0" COVARIANCE="2.46490001678467 0 0 0 0 0  0 2.46490001678467 0 0 0 0  0 0 246.490005493164 0 0 0  0 0 0 1000000 0 0  0 0 0 0 1000000 0  0 0 0 0 0 1000000  " MEAN="0 0 0 0 0 0" NAME="World_Body" POST-ORIENTATION="0 0 0" POST-POSITION="0 0 0" PRE-ORIENTATION="0 0 0" PRE-POSITION="0 0 0" SIGNS="+ + + + + + " T="* * * * * * ">
+        <JointTemplate COVARIANCE="2.46490001678467 0 0 0 0 0  0 2.46490001678467 0 0 0 0  0 0 246.490005493164 0 0 0  0 0 0 1000000 0 0  0 0 0 0 1000000 0  0 0 0 0 0 1000000  " MEAN="0 0 0 0 0 0" POST-ORIENTATION="0 0 0" POST-POSITION="0 0 0" PRE-ORIENTATION="0 0 0" PRE-POSITION="0 0 0" TPOSE-COVARIANCE="0 0 0 0 0 0  0 0 0 0 0 0  0 0 0 0 0 0  0 0 0 0 0 0  0 0 0 0 0 0  0 0 0 0 0 0  " TPOSE-MEAN="0 0 0 0 0 0"/>
+      </JointFree>
+    </Segment>
+  </Skeleton>
+
+  <MarkerSet>
+    <Markers>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled90" POSITION="0 0 0" RADIUS="12.5" RGB="85 255 0" SEGMENT="Body" STATUS="required">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="0 0 0"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled85" POSITION="-2.22045e-016 1.27676e-015 -251.184" RADIUS="12.5" RGB="85 255 0" SEGMENT="Body" STATUS="required">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="0 0 -'Body_Length'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled83" POSITION="1.77636e-015 102.644 -132.767" RADIUS="12.5" RGB="85 255 0" SEGMENT="Body" STATUS="required">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="0 'Body_Unlabeled83_y' 'Body_Unlabeled83_z'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled97" POSITION="-12.1246 -106.406 -132.137" RADIUS="12.5" RGB="85 255 0" SEGMENT="Body" STATUS="optional">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'Body_Unlabeled97_x' 'Body_Unlabeled97_y' 'Body_Unlabeled97_z'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled99" POSITION="-0.584663 -1.07975 -53.7544" RADIUS="12.5" RGB="85 255 0" SEGMENT="Body" STATUS="optional">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'Body_Unlabeled99_x' 'Body_Unlabeled99_y' 'Body_Unlabeled99_z'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled87" POSITION="-37.2228 -15.2738 -97.6798" RADIUS="12.5" RGB="85 255 0" SEGMENT="Body" STATUS="optional">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'Body_Unlabeled87_x' 'Body_Unlabeled87_y' 'Body_Unlabeled87_z'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled89" POSITION="-33.6036 13.9155 -139.984" RADIUS="12.5" RGB="85 255 0" SEGMENT="Body" STATUS="optional">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'Body_Unlabeled89_x' 'Body_Unlabeled89_y' 'Body_Unlabeled89_z'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled82" POSITION="-36.7552 -15.9862 -125.872" RADIUS="12.5" RGB="85 255 0" SEGMENT="Body" STATUS="optional">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'Body_Unlabeled82_x' 'Body_Unlabeled82_y' 'Body_Unlabeled82_z'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled84" POSITION="-0.254821 -0.00763534 -211.101" RADIUS="12.5" RGB="85 255 0" SEGMENT="Body" STATUS="optional">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'Body_Unlabeled84_x' 'Body_Unlabeled84_y' 'Body_Unlabeled84_z'"/>
+      </Marker>
+    </Markers>
+    <Sticks>
+      <Stick MARKER1="Unlabeled90" MARKER2="Unlabeled85" RGB="85 255 0"/>
+      <Stick MARKER1="Unlabeled90" MARKER2="Unlabeled83" RGB="85 255 0"/>
+      <Stick MARKER1="Unlabeled90" MARKER2="Unlabeled97" RGB="85 255 0"/>
+      <Stick MARKER1="Unlabeled90" MARKER2="Unlabeled99" RGB="85 255 0"/>
+      <Stick MARKER1="Unlabeled90" MARKER2="Unlabeled87" RGB="85 255 0"/>
+      <Stick MARKER1="Unlabeled90" MARKER2="Unlabeled89" RGB="85 255 0"/>
+      <Stick MARKER1="Unlabeled90" MARKER2="Unlabeled82" RGB="85 255 0"/>
+      <Stick MARKER1="Unlabeled90" MARKER2="Unlabeled84" RGB="85 255 0"/>
+      <Stick MARKER1="Unlabeled85" MARKER2="Unlabeled83" RGB="85 255 0"/>
+      <Stick MARKER1="Unlabeled85" MARKER2="Unlabeled97" RGB="85 255 0"/>
+      <Stick MARKER1="Unlabeled85" MARKER2="Unlabeled99" RGB="85 255 0"/>
+      <Stick MARKER1="Unlabeled85" MARKER2="Unlabeled87" RGB="85 255 0"/>
+      <Stick MARKER1="Unlabeled85" MARKER2="Unlabeled89" RGB="85 255 0"/>
+      <Stick MARKER1="Unlabeled85" MARKER2="Unlabeled82" RGB="85 255 0"/>
+      <Stick MARKER1="Unlabeled85" MARKER2="Unlabeled84" RGB="85 255 0"/>
+      <Stick MARKER1="Unlabeled83" MARKER2="Unlabeled97" RGB="85 255 0"/>
+      <Stick MARKER1="Unlabeled83" MARKER2="Unlabeled99" RGB="85 255 0"/>
+      <Stick MARKER1="Unlabeled83" MARKER2="Unlabeled87" RGB="85 255 0"/>
+      <Stick MARKER1="Unlabeled83" MARKER2="Unlabeled89" RGB="85 255 0"/>
+      <Stick MARKER1="Unlabeled83" MARKER2="Unlabeled82" RGB="85 255 0"/>
+      <Stick MARKER1="Unlabeled83" MARKER2="Unlabeled84" RGB="85 255 0"/>
+      <Stick MARKER1="Unlabeled97" MARKER2="Unlabeled99" RGB="85 255 0"/>
+      <Stick MARKER1="Unlabeled97" MARKER2="Unlabeled87" RGB="85 255 0"/>
+      <Stick MARKER1="Unlabeled97" MARKER2="Unlabeled89" RGB="85 255 0"/>
+      <Stick MARKER1="Unlabeled97" MARKER2="Unlabeled82" RGB="85 255 0"/>
+      <Stick MARKER1="Unlabeled97" MARKER2="Unlabeled84" RGB="85 255 0"/>
+      <Stick MARKER1="Unlabeled99" MARKER2="Unlabeled87" RGB="85 255 0"/>
+      <Stick MARKER1="Unlabeled99" MARKER2="Unlabeled89" RGB="85 255 0"/>
+      <Stick MARKER1="Unlabeled99" MARKER2="Unlabeled82" RGB="85 255 0"/>
+      <Stick MARKER1="Unlabeled99" MARKER2="Unlabeled84" RGB="85 255 0"/>
+      <Stick MARKER1="Unlabeled87" MARKER2="Unlabeled89" RGB="85 255 0"/>
+      <Stick MARKER1="Unlabeled87" MARKER2="Unlabeled82" RGB="85 255 0"/>
+      <Stick MARKER1="Unlabeled87" MARKER2="Unlabeled84" RGB="85 255 0"/>
+      <Stick MARKER1="Unlabeled89" MARKER2="Unlabeled82" RGB="85 255 0"/>
+      <Stick MARKER1="Unlabeled89" MARKER2="Unlabeled84" RGB="85 255 0"/>
+      <Stick MARKER1="Unlabeled82" MARKER2="Unlabeled84" RGB="85 255 0"/>
+    </Sticks>
+  </MarkerSet>
+
+  <Alignment/>
+
+</KinematicModel>

@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<KinematicModel MODEL="Quadrotor41" VERSION="2.3">
+
+  <Parameters>
+    <Parameter HIDDEN="1" NAME="Root_Length" PRIOR="217.698059082031" SD="0" VALUE="217.698059082031"/>
+    <Parameter HIDDEN="1" NAME="Root_Unlabeled426_y" PRIOR="128.222732543945" SD="0" VALUE="128.222732543945"/>
+    <Parameter HIDDEN="1" NAME="Root_Unlabeled426_z" PRIOR="-123.745300292969" SD="0" VALUE="-123.745300292969"/>
+    <Parameter HIDDEN="1" NAME="Root_Unlabeled457_x" PRIOR="0.670912265777588" SD="0" VALUE="0.670912265777588"/>
+    <Parameter HIDDEN="1" NAME="Root_Unlabeled457_y" PRIOR="-0.646068871021271" SD="0" VALUE="-0.646068871021271"/>
+    <Parameter HIDDEN="1" NAME="Root_Unlabeled457_z" PRIOR="-50.4552955627441" SD="0" VALUE="-50.4552955627441"/>
+    <Parameter HIDDEN="1" NAME="Root_Unlabeled469_x" PRIOR="35.027473449707" SD="0" VALUE="35.027473449707"/>
+    <Parameter HIDDEN="1" NAME="Root_Unlabeled469_y" PRIOR="35.1234817504883" SD="0" VALUE="35.1234817504883"/>
+    <Parameter HIDDEN="1" NAME="Root_Unlabeled469_z" PRIOR="-89.6784820556641" SD="0" VALUE="-89.6784820556641"/>
+    <Parameter HIDDEN="1" NAME="Root_Unlabeled451_x" PRIOR="34.7868576049805" SD="0" VALUE="34.7868576049805"/>
+    <Parameter HIDDEN="1" NAME="Root_Unlabeled451_y" PRIOR="12.6561794281006" SD="0" VALUE="12.6561794281006"/>
+    <Parameter HIDDEN="1" NAME="Root_Unlabeled451_z" PRIOR="-109.623718261719" SD="0" VALUE="-109.623718261719"/>
+    <Parameter HIDDEN="1" NAME="Root_Unlabeled129_x" PRIOR="34.0379791259766" SD="0" VALUE="34.0379791259766"/>
+    <Parameter HIDDEN="1" NAME="Root_Unlabeled129_y" PRIOR="6.7992115020752" SD="0" VALUE="6.7992115020752"/>
+    <Parameter HIDDEN="1" NAME="Root_Unlabeled129_z" PRIOR="-148.898590087891" SD="0" VALUE="-148.898590087891"/>
+    <Parameter HIDDEN="1" NAME="Root_Unlabeled467_x" PRIOR="-0.550457894802094" SD="0" VALUE="-0.550457894802094"/>
+    <Parameter HIDDEN="1" NAME="Root_Unlabeled467_y" PRIOR="79.1120758056641" SD="0" VALUE="79.1120758056641"/>
+    <Parameter HIDDEN="1" NAME="Root_Unlabeled467_z" PRIOR="-123.854827880859" SD="0" VALUE="-123.854827880859"/>
+  </Parameters>
+
+  <Skeleton>
+    <Segment BOUNDS="-21.7698 -21.7698 -'Root_Length' 21.7698 21.7698 0" CONTEXT="General" INERTIA="0 0 0" MASS="0" MASS-CENTRE="0 0 0" NAME="Root" RGB="255 164 0">
+      <JointFree BOUNDS="0 0 0 0 0 0 0 0 0 0 0 0" COVARIANCE="2.46490001678467 0 0 0 0 0  0 2.46490001678467 0 0 0 0  0 0 246.490005493164 0 0 0  0 0 0 1000000 0 0  0 0 0 0 1000000 0  0 0 0 0 0 1000000  " MEAN="0 0 0 0 0 0" NAME="World_Root" POST-ORIENTATION="0 0 0" POST-POSITION="0 0 0" PRE-ORIENTATION="0 0 0" PRE-POSITION="0 0 0" SIGNS="+ + + + + + " T="* * * * * * ">
+        <JointTemplate COVARIANCE="2.46490001678467 0 0 0 0 0  0 2.46490001678467 0 0 0 0  0 0 246.490005493164 0 0 0  0 0 0 1000000 0 0  0 0 0 0 1000000 0  0 0 0 0 0 1000000  " MEAN="0 0 0 0 0 0" POST-ORIENTATION="0 0 0" POST-POSITION="0 0 0" PRE-ORIENTATION="0 0 0" PRE-POSITION="0 0 0" TPOSE-COVARIANCE="0 0 0 0 0 0  0 0 0 0 0 0  0 0 0 0 0 0  0 0 0 0 0 0  0 0 0 0 0 0  0 0 0 0 0 0  " TPOSE-MEAN="0 0 0 0 0 0"/>
+      </JointFree>
+    </Segment>
+  </Skeleton>
+
+  <MarkerSet>
+    <Markers>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled466" POSITION="0 0 0" RADIUS="12.5" RGB="255 0 0" SEGMENT="Root" STATUS="required">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="0 0 0"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled468" POSITION="0 3.60822e-016 -217.698" RADIUS="12.5" RGB="255 0 0" SEGMENT="Root" STATUS="required">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="0 0 -'Root_Length'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled426" POSITION="-4.44089e-016 128.223 -123.745" RADIUS="12.5" RGB="255 0 0" SEGMENT="Root" STATUS="required">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="0 'Root_Unlabeled426_y' 'Root_Unlabeled426_z'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled457" POSITION="0.670912 -0.646069 -50.4553" RADIUS="12.5" RGB="255 0 0" SEGMENT="Root" STATUS="optional">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'Root_Unlabeled457_x' 'Root_Unlabeled457_y' 'Root_Unlabeled457_z'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled469" POSITION="35.0275 35.1235 -89.6785" RADIUS="12.5" RGB="255 0 0" SEGMENT="Root" STATUS="optional">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'Root_Unlabeled469_x' 'Root_Unlabeled469_y' 'Root_Unlabeled469_z'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled451" POSITION="34.7869 12.6562 -109.624" RADIUS="12.5" RGB="255 0 0" SEGMENT="Root" STATUS="optional">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'Root_Unlabeled451_x' 'Root_Unlabeled451_y' 'Root_Unlabeled451_z'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled129" POSITION="34.038 6.79921 -148.899" RADIUS="12.5" RGB="255 0 0" SEGMENT="Root" STATUS="optional">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'Root_Unlabeled129_x' 'Root_Unlabeled129_y' 'Root_Unlabeled129_z'"/>
+      </Marker>
+      <Marker COVARIANCE="1 0 0 0 1 0 0 0 1 " NAME="Unlabeled467" POSITION="-0.550458 79.1121 -123.855" RADIUS="12.5" RGB="255 0 0" SEGMENT="Root" STATUS="optional">
+        <MarkerTemplate COVARIANCE="1 0 0 0 1 0 0 0 1 " PLACEMENT-COVARIANCE="1 0 0 0 1 0 0 0 1 " POSITION="'Root_Unlabeled467_x' 'Root_Unlabeled467_y' 'Root_Unlabeled467_z'"/>
+      </Marker>
+    </Markers>
+    <Sticks>
+      <Stick MARKER1="Unlabeled466" MARKER2="Unlabeled468" RGB="255 0 0"/>
+      <Stick MARKER1="Unlabeled466" MARKER2="Unlabeled426" RGB="255 0 0"/>
+      <Stick MARKER1="Unlabeled466" MARKER2="Unlabeled457" RGB="255 0 0"/>
+      <Stick MARKER1="Unlabeled466" MARKER2="Unlabeled469" RGB="255 0 0"/>
+      <Stick MARKER1="Unlabeled466" MARKER2="Unlabeled451" RGB="255 0 0"/>
+      <Stick MARKER1="Unlabeled466" MARKER2="Unlabeled129" RGB="255 0 0"/>
+      <Stick MARKER1="Unlabeled466" MARKER2="Unlabeled467" RGB="255 0 0"/>
+      <Stick MARKER1="Unlabeled468" MARKER2="Unlabeled426" RGB="255 0 0"/>
+      <Stick MARKER1="Unlabeled468" MARKER2="Unlabeled457" RGB="255 0 0"/>
+      <Stick MARKER1="Unlabeled468" MARKER2="Unlabeled469" RGB="255 0 0"/>
+      <Stick MARKER1="Unlabeled468" MARKER2="Unlabeled451" RGB="255 0 0"/>
+      <Stick MARKER1="Unlabeled468" MARKER2="Unlabeled129" RGB="255 0 0"/>
+      <Stick MARKER1="Unlabeled468" MARKER2="Unlabeled467" RGB="255 0 0"/>
+      <Stick MARKER1="Unlabeled426" MARKER2="Unlabeled457" RGB="255 0 0"/>
+      <Stick MARKER1="Unlabeled426" MARKER2="Unlabeled469" RGB="255 0 0"/>
+      <Stick MARKER1="Unlabeled426" MARKER2="Unlabeled451" RGB="255 0 0"/>
+      <Stick MARKER1="Unlabeled426" MARKER2="Unlabeled129" RGB="255 0 0"/>
+      <Stick MARKER1="Unlabeled426" MARKER2="Unlabeled467" RGB="255 0 0"/>
+      <Stick MARKER1="Unlabeled457" MARKER2="Unlabeled469" RGB="255 0 0"/>
+      <Stick MARKER1="Unlabeled457" MARKER2="Unlabeled451" RGB="255 0 0"/>
+      <Stick MARKER1="Unlabeled457" MARKER2="Unlabeled129" RGB="255 0 0"/>
+      <Stick MARKER1="Unlabeled457" MARKER2="Unlabeled467" RGB="255 0 0"/>
+      <Stick MARKER1="Unlabeled469" MARKER2="Unlabeled451" RGB="255 0 0"/>
+      <Stick MARKER1="Unlabeled469" MARKER2="Unlabeled129" RGB="255 0 0"/>
+      <Stick MARKER1="Unlabeled469" MARKER2="Unlabeled467" RGB="255 0 0"/>
+      <Stick MARKER1="Unlabeled451" MARKER2="Unlabeled129" RGB="255 0 0"/>
+      <Stick MARKER1="Unlabeled451" MARKER2="Unlabeled467" RGB="255 0 0"/>
+      <Stick MARKER1="Unlabeled129" MARKER2="Unlabeled467" RGB="255 0 0"/>
+    </Sticks>
+  </MarkerSet>
+
+  <Alignment/>
+
+</KinematicModel>
