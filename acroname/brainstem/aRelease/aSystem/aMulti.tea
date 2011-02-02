@@ -1,0 +1,325 @@
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* file: aMulti.tea                                                */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* description: Routines for scratch pad access and multi-tasking  */
+/*              with BrainStem Module TEA programs.                */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/*        docs: Documentation can be found in the BrainStem        */
+/*              Reference under the major topic "TEA"              */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* Copyright 1994-2008. Acroname Inc.                              */
+/*                                                                 */
+/* This software is the property of Acroname Inc.  Any             */
+/* distribution, sale, transmission, or re-use of this code is     */
+/* strictly forbidden except with permission from Acroname Inc.    */
+/*                                                                 */
+/* To the full extent allowed by law, Acroname Inc. also excludes  */
+/* for itself and its suppliers any liability, wheither based in   */
+/* contract or tort (including negligence), for direct,            */
+/* incidental, consequential, indirect, special, or punitive       */
+/* damages of any kind, or for loss of revenue or profits, loss of */
+/* business, loss of information or data, or other financial loss  */
+/* arising out of or in connection with this software, even if     */
+/* Acroname Inc. has been advised of the possibility of such       */
+/* damages.                                                        */
+/*                                                                 */
+/* Acroname Inc.                                                   */
+/* www.acroname.com                                                */
+/* 720-564-0373                                                    */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+#ifndef _aMulti_T_
+#define _aMulti_T_
+
+#include <aCmd.tea>
+#include <aIOPorts.tea>
+#include <aPad.tea>
+
+
+
+// macros for backwards compatibility
+#define aMulti_PadWrChar	aPad_WriteChar
+#define aMulti_PadRdChar	aPad_ReadChar
+#define aMulti_PadWrInt	aPad_WriteInt
+#define aMulti_PadRdInt	aPad_ReadInt
+
+
+
+/* Runs another process and waits for it to complete.
+ * Parameters may be passed through scratch pad.
+ * Expects int return value from subprocess.
+ * Subprocess must be declared as "void main(char)".
+ */
+int aMulti_Run00(char fileID, char ProcID)
+{
+  int val=0;
+  asm
+  {
+    /* run fileID in VM[ProcID] with calling ProcID as input */
+    pushmb	aPortAddress	/* address of self */
+    pushlb	5
+    pushlb	cmdVM_RUN
+    pushlb	7		/* RUNCTRL */
+    pushsb	10		/* FileID */
+    pushsb	10		/* ProcID */
+    pushmb	aPortProcID	/* calling ProcID */
+    pushlb	7
+    popcmd
+    /* block on semaphore */
+    pushms	aPortProcID
+    pushls	aPortSemaphore
+    adds
+    pushmsx
+    popss	2
+  }
+  return val;
+}
+
+
+/* Runs another process and waits for it to complete.
+ * Passes an int parameter to the subprocess.
+ * Additional params may be passed through scratch pad.
+ * Expects int return value from subprocess.
+ * Subprocess must be declared as "void main(char,char)".
+ */
+int aMulti_Run10(char fileID, char ProcID, char c1)
+{
+  int val=0;
+  asm
+  {
+    /* run fileID in VM[ProcID] with calling ProcID as input */
+    /* pass one int param */
+    pushmb	aPortAddress	/* address of self */
+    pushlb	6
+    pushlb	cmdVM_RUN
+    pushlb	7		/* RUNCTRL */
+    pushsb	11		/* FileID */
+    pushsb	11		/* ProcID */
+    pushmb	aPortProcID	/* calling ProcID */
+    pushsb	12		/* c1 param */
+    pushlb	8
+    popcmd
+    /* block on semaphore */
+    pushms	aPortProcID
+    pushls	aPortSemaphore
+    adds
+    pushmsx
+    popss	2
+  }
+  return val;
+}
+
+
+
+/* Runs another process and waits for it to complete.
+ * Passes an int parameter to the subprocess.
+ * Additional params may be passed through scratch pad.
+ * Expects int return value from subprocess.
+ * Subprocess must be declared as "void main(char,char,int)".
+ */
+int aMulti_Run11(char fileID, char ProcID, char c1, int i1)
+{
+  int val=0;
+  asm
+  {
+    /* run fileID in VM[ProcID] with calling ProcID as input */
+    /* pass one int param */
+    pushmb	aPortAddress	/* address of self */
+    pushlb	8
+    pushlb	cmdVM_RUN
+    pushlb	7		/* RUNCTRL */
+    pushsb	13		/* FileID */
+    pushsb	13		/* ProcID */
+    pushmb	aPortProcID	/* calling ProcID */
+    pushsb	14		/* c1 param */
+    pushss	14		/* i1 param */
+    pushlb	10
+    popcmd
+    /* block on semaphore */
+    pushms	aPortProcID
+    pushls	aPortSemaphore
+    adds
+    pushmsx
+    popss	2
+  }
+  return val;
+}
+
+
+
+int aMulti_Run12(char fileID, char ProcID, char c1, int i1, int i2)
+{
+  int val=0;
+  asm
+  {
+    /* run fileID in VM[ProcID] with calling ProcID as input */
+    /* pass two int parameters (requires 2 commands) */
+    pushmb	aPortAddress	/* address of self */
+    pushlb	8
+    pushlb	cmdVM_RUN
+    pushlb	5		/* PROC | FIRST */
+    pushsb	15		/* FileID */
+    pushsb	15		/* ProcID */
+    pushmb	aPortProcID	/* calling ProcID */
+    pushsb	16		/* c1 param */
+    pushss	16		/* i1 param */
+    pushlb	10
+    popcmd
+    pushmb	aPortAddress	/* address of self */
+    pushlb	5
+    pushlb	cmdVM_RUN
+    pushlb	2		/* FINAL */
+    pushsb	14		/* ProcID */
+    pushss	11		/* i2 param */
+    pushlb	7
+    popcmd
+    /* block on semaphore */
+    pushms	aPortProcID
+    pushls	aPortSemaphore
+    adds
+    pushmsx
+    popss	2
+  }
+  return val;
+}
+
+int aMulti_Run13(char fileID, char ProcID, char c1, int i1, int i2, int i3)
+{
+  int val=0;
+  asm
+  {
+    /* run fileID in VM[ProcID] with calling ProcID as input */
+    /* pass three int parameters (requires 2 commands) */
+    pushmb	aPortAddress	/* address of self */
+    pushlb	8
+    pushlb	cmdVM_RUN
+    pushlb	5		/* PROC | FIRST */
+    pushsb	17		/* FileID */
+    pushsb	17		/* ProcID */
+    pushmb	aPortProcID	/* calling ProcID */
+    pushsb	18		/* c1 param */
+    pushss	18		/* i1 param */
+    pushlb	10
+    popcmd
+    pushmb	aPortAddress	/* address of self */
+    pushlb	7
+    pushlb	cmdVM_RUN
+    pushlb	2		/* FINAL */
+    pushsb	16		/* ProcID */
+    pushss	13		/* i2 param */
+    pushss	13		/* i3 param */
+    pushlb	9
+    popcmd
+    /* block on semaphore */
+    pushms	aPortProcID
+    pushls	aPortSemaphore
+    adds
+    pushmsx
+    popss	2
+  }
+  return val;
+}
+
+
+
+/* Terminates subprocess started with the aMulti_Run function
+ * or aMulti_RunInt function (both expect an int return value).
+ * Writes semaphore to indicate that subprocess is done.
+ * Passes int return value back to calling process.
+ */
+void aMulti_Halt(char callingProcID, int retval)
+{
+  asm
+  {
+    pushss	4
+    pushsb	7
+    convbs
+    pushls	aPortSemaphore
+    adds
+    popsmx
+  }
+}
+
+
+
+/* Launches a persisting process. */
+void aMulti_Spawn(char fileID, char ProcID)
+{
+  asm
+  {
+    /* run fileID in VM[ProcID] with calling ProcID as input */
+    pushmb	aPortAddress	/* address of self */
+    pushlb	5
+    pushlb	cmdVM_RUN
+    pushlb	7		/* RUNCTRL */
+    pushsb	8		/* FileID */
+    pushsb	8		/* ProcID */
+    pushmb	aPortProcID	/* calling ProcID */
+    pushlb	7
+    popcmd
+    pushlb	20		/* let process start */
+    popbm	aPortVMTimer
+  }
+}
+
+/* Kills an active process. */
+void aMulti_Kill(char ProcID)
+{
+  asm
+  {
+    pushmb	aPortAddress	/* address of self */
+    pushlb	2
+    pushlb	cmdVM_KILL
+    pushsb	6		/* ProcID */
+    pushlb	4
+    popcmd
+  }
+}
+
+
+
+/* This function sends a short to
+ * a subprocess via a semaphore.
+ */
+void aMulti_Signal(int proc, int data)
+{
+  asm
+  {
+    pushss	4			/* push data */
+    pushss	8			/* push proc */
+    pushls	aPortSemaphore		/* sema+proc */
+    adds
+    popsmx
+  }
+}
+
+
+
+/* This function receives a short from
+ * another process via a semaphore.
+ * It waits for its own semaphore to
+ * be written by another process.
+ */
+int aMulti_Wait()
+{
+  int val=0;
+  asm
+  {
+    pushms	aPortProcID
+    pushls	aPortSemaphore
+    adds
+    pushmsx
+    popss	2
+  }
+  return val;
+}
+
+#endif /* _aMulti_T_ */

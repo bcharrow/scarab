@@ -1,0 +1,22 @@
+<launch>
+
+  <node pkg="acroname_moto" type="acroname_moto_node" name="motor"
+        output="screen" respawn="false">
+    <param name="portname" value="acroname"/>
+    <param name="frameid" value="odom" />
+    <param name="axle_width" value="0.3"/>
+    <param name="max_wheel_vel" value="10.0"/>
+    <param name="min_wheel_vel" value="0.0"/>
+    <param name="wheel_diam" value="0.1"/>
+
+    <param name="left_channel" value="1"/>
+    <param name="right_channel" value="0"/>
+
+    <param name="motor_to_wheel_ratio" value="51.82"/>
+
+    <param name="pid_param_p" value="1.0"/>
+    <param name="pid_param_i" value="0.0"/>
+    <param name="pid_param_d" value="0.0"/>
+  </node>
+
+</launch>

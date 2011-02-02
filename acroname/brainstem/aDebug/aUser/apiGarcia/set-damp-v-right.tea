@@ -1,0 +1,11 @@
+#include <aAPI.tea>
+#include <aAPIGarcia.tea>
+
+void main(int v)
+{
+  aAPI_SetTxByte0(cmdPAD_IO);
+  aAPI_SetTxByte1(aGARCIA_MOTO_PADS_NULL_RVEL);
+  aAPI_SetTxShortVar(2, v);
+  aAPI_SetTxLength(4);
+  aAPI_BeginTx(aGARCIA_MOTO_ADDR);
+}

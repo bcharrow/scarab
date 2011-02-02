@@ -1,0 +1,37 @@
+# makefile: host/aExamples/aStub/makefile.Linux
+
+SHELL=/bin/sh
+CC=gcc
+ARCH=`arch`
+
+ROOT = ../../
+PROGNAME = aStub
+
+INCLUDES = -IaCommon \
+	   -IaUnix \
+	   -I../../aCommon \
+	   -I../../aUnix \
+	   -I../../aIO/aCommon \
+	   -I../../aIO/aUnix \
+	   -I../../aStem/aCommon \
+	   -I../../aStem/aUnix \
+	   -I../../aTEAvm/aCommon \
+	   -I../../aTEAvm/aUnix \
+	   -I../../aDebug/aSystem
+
+LIBRARIES = -lm \
+	    -laIO \
+	    -laStem
+
+VPATH = ./aCommon:./aUnix:../../aCommon:../../aDebug/aUnix/$ARCH/
+
+SOURCES = aAssert.c \
+	  aMemHandleDebug.c \
+	  aUtil.c \
+          aStemCore.c \
+	  aServo.c \
+	  aDigital.c \
+	  aAnalog.c \
+          unix_aStub.c
+
+include $(ROOT)make_program.Linux

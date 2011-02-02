@@ -1,0 +1,33 @@
+# makefile: host/aSteepOpt/makefile.Linux
+
+SHELL = /bin/sh
+CC = gcc
+
+ROOT := ../
+LIBNAME := aSteepOpt
+
+INCLUDES := -IaCommon \
+	    -IaUnix \
+	    -I../aCommon \
+	    -I../aIO/aCommon \
+	    -I../aIO/aUnix \
+	    -I../aStem/aCommon \
+	    -I../aStem/aUnix \
+	    -I../aTEAvm/aCommon \
+	    -I../aTEAvm/aUnix \
+	    -I../aSteep/aCommon \
+	    -I../aSteep/aUnix \
+	    -I../aDebug/aUnix \
+	    -I../aDebug/aSystem
+
+VPATH := aCommon:aUnix:../aCommon:../aTEAvm/aCommon
+
+SOURCES := aAssert.c \
+	   aMemHandleDebug.c \
+           aUtil.c \
+	   aAST.c \
+	   aTEA.c \
+	   aSteepOptInternal.c \
+	   aSteepOpt.c
+
+include $(ROOT)make_library.Linux

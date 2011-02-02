@@ -1,0 +1,52 @@
+# host/aRelease/aUnix/makefile.Linux
+
+SHELL=/bin/sh
+PLATFORM=$(shell uname)
+ARCH=`arch`
+
+DEST = ~/server/development/brainstem/software/release/aUnix
+SYMDEST = ~/server/development/symonym/software/release/aUnix
+
+
+.PHONY : all
+all :
+
+
+.PHONY : output
+output :
+	cp $(ARCH)/libaIO.so $(DEST)
+	cp $(ARCH)/libaUI.so $(DEST)
+	cp $(ARCH)/aLaser $(DEST)
+	cp $(ARCH)/libaIO.so $(SYMDEST)
+	cp $(ARCH)/libaUI.so $(SYMDEST)
+	cp $(ARCH)/libaStem.so $(SYMDEST)
+	cp $(ARCH)/libaTEAvm.so $(SYMDEST)
+	cp $(ARCH)/libaRobot.so $(SYMDEST)
+	cp $(ARCH)/aPackager $(SYMDEST)
+	cp $(ARCH)/aSymonym $(SYMDEST)
+
+
+.PHONY : prep
+prep :
+	rm -rf aPlugin
+	ln -sf ../../aDebug/aTest
+	ln -sf ../aUser
+	ln -sf ../../aDebug/aSymonym
+	ln -sf ../../aDebug/aSystem
+	ln -sf ../../aDebug/aAsset
+	ln -sf ../aObject
+	ln -sf ../aPlugin
+	chmod +x i386/run
+	chmod +x i586/run
+	chmod +x i686/run
+	chmod +x x86_64/run
+	chmod +x ARM/run
+
+
+.PHONY : clean
+clean :
+	rm -f aTest
+	rm -f aUser
+	rm -f aSystem
+	rm -f aAsset
+	rm -f aObject

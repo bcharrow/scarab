@@ -1,0 +1,5 @@
+Use ROS tools like:
+
+rxplot /motor/debug/sp_wheel_left,/motor/debug/wheel_left
+
+to examine the transient behaviors of the underlying PID control.

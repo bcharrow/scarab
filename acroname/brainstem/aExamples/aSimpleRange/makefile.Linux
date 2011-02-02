@@ -1,0 +1,33 @@
+# makefile: host/aExamples/aSimpleRange/makefile.Linux
+
+SHELL := /bin/sh
+CC := gcc
+
+ROOT = ../../
+PROGNAME := aSimpleRange
+
+INCLUDES = -IaCommon \
+	   -IaUnix \
+	   -I$(ROOT)aCommon \
+	   -I$(ROOT)aDebug/aUnix \
+	   -I$(ROOT)aDebug/aSystem \
+	   -I$(ROOT)aIO/aCommon \
+	   -I$(ROOT)aIO/aUnix \
+	   -I$(ROOT)aStem/aCommon \
+	   -I$(ROOT)aStem/aUnix \
+	   -I$(ROOT)aTEAvm/aCommon
+
+LIBRARIES := -laIO \
+	     -laStem
+
+VPATH := aCommon:aUnix:../../aCommon
+
+SOURCES := aUtil.c \
+	   aModuleUtil.c \
+	   aGP2D02.c \
+	   aStream_STDIO_Console.c \
+	   aSimpleRange.c \
+	   aStemCore.c \
+	   stdio_aSimpleRange.c
+
+include $(ROOT)make_program.Linux

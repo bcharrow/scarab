@@ -1,0 +1,62 @@
+
+                aRobot Shell Information
+
+If you choose to serve the aRobot API using the 
+aRobotAgent application, you can then log in to the API
+as a TCP/IP client from any machine that can access the 
+machine running the agent code.  This shell is called 
+the aRobotShell program and it is a very simple client
+for the API that lets you view the properties for a 
+given API and also set/get the values of these 
+properties.
+
+RUNNING
+
+To run the shell, you only need to specify the IP 
+address and port where the agent is running. 
+For example:
+
+aRobotShell 192.168.1.220 8008
+
+Port 8008 is the default port for both the aRobotAgent
+and the aRobotShell.
+
+COMMANDS
+
+There are only a few commands for the shell.  
+
+  help - Shows the command list.
+
+  exit - Exits the shell.
+
+  properties - lists the properties in the current object
+
+  objects - Lists the child objects at the current level.
+
+  set - Sets the value of a property with an example.
+
+       > set pwm_output 1000
+
+  get - Gets the value for a specified property.
+
+       > get pwm_output
+
+  rget - Gets continual updates for a given property.
+
+       > rget pwm_output
+
+  co - Change object to a child object.
+
+       > co arm
+
+  document - Generate documentation for a given object.
+
+       > document html
+
+             The document ends up in the aAsset
+             directory.
+
+The shell is a great way to browse the property tree
+for a given aRobot API.
+
+----------- Thanks for using our aRobot API! -----------

@@ -1,0 +1,120 @@
+# makefile: host/aRobot/makepkg.Linux
+
+SHELL := /bin/sh
+CC := gcc
+CCP := g++
+
+ROOT := ../
+PROGNAME := aRobotPackager
+
+INCLUDES := -IaCommon \
+	    -IaUnix \
+	    -IaRobotPackager \
+	    -I../aUnix \
+	    -I../aIO/aCommon \
+	    -I../aIO/aUnix \
+	    -I../aTEAvm/aCommon \
+	    -I../aTEAvm/aUnix \
+	    -I../aSteep \
+	    -I../aSteep/aCommon \
+	    -I../aSteep/aUnix \
+	    -I../aCommon \
+	    -I../aCommon/aPackageTags \
+	    -I../aCommon/aXMLTags \
+	    -I../aDebug/aUnix \
+	    -I../aDebug/aSystem
+
+
+#don't include X11 libraries for ARM
+ifeq ($(ARCH),ARM)
+LIBRARIES := -laIO \
+             -laUI \
+             -laSteep \
+             -laSteepGen \
+             -laSteepOpt \
+             -laTEAvm \
+	     -lm
+else
+LIBRARIES := -laIO \
+             -laUI \
+             -laSteep \
+             -laSteepGen \
+             -laSteepOpt \
+             -laTEAvm \
+	     -lm \
+	     -L/usr/X11R6/lib \
+	     -lX11
+endif
+
+VPATH := aCommon:\
+	 aRobotPackager:\
+	 aUnix:\
+	 ../aSteep:\
+	 ../aCommon:\
+	 ../aCommon/aXMLTags:\
+	 ../aCommon/aPackageTags
+
+SOURCES := aAssert.c \
+	   aMemLeakDebug.c \
+	   aStream_STDIO_Console.c \
+	   aUtil.c
+
+CPPSOURCES := acpList.cpp \
+	      acpByte.cpp \
+	      acpCounterStream.cpp \
+	      acpException.cpp \
+	      acpFloat.cpp \
+	      acpInt32.cpp \
+	      acpMessage.cpp \
+	      acpObject.cpp \
+	      acpProperty.cpp \
+	      acpShort.cpp \
+	      acpString.cpp \
+	      acpStringIO.cpp \
+	      acpTextBuffer.cpp \
+	      acpThread.cpp \
+	      acpValue.cpp \
+	      acpPackage.cpp \
+	      acpPkgImport.cpp \
+	      acpRobotPackage.cpp \
+	      acpRobotPackager.cpp \
+	      acpPkgXML.cpp \
+	      acpXmlTag_ANGLEUNIT.cpp \
+	      acpXmlTag_APIFILE.cpp \
+	      acpXmlTag_apiNAME.cpp \
+	      acpXmlTag_apiPACKAGE.cpp \
+	      acpXmlTag_BUFFERSIZE.cpp \
+	      acpXmlTag_CONVFAC.cpp \
+	      acpXmlTag_DEFAULT.cpp \
+	      acpXmlTag_DISTANCEUNIT.cpp \
+	      acpXmlTag_GET.cpp \
+	      acpXmlTag_INDEX.cpp \
+	      acpXmlTag_INITIALIZER.cpp \
+	      acpXmlTag_LINK.cpp \
+	      acpXmlTag_LINKNAME.cpp \
+	      acpXmlTag_MASSUNIT.cpp \
+	      acpXmlTag_NAME.cpp \
+	      acpXmlTag_PARAMSIZE.cpp \
+	      acpXmlTag_PRIMITIVE.cpp \
+	      acpXmlTag_PROPERTY.cpp \
+	      acpXmlTag_SET.cpp \
+	      acpXmlTag_STEMFILE.cpp \
+	      acpXmlTag_TEMPLATE.cpp \
+	      acpXmlTag_TEMPLATENAME.cpp \
+	      acpXmlTag_TITLE.cpp \
+	      acpXmlTag_TYPE.cpp \
+	      acpXmlTag_USEROBJECT.cpp \
+	      acpXmlTag_DESCRIPTION.cpp \
+              acpPackageTag.cpp \
+              acpTag_apiPACKAGE.cpp \
+              acpTag_GET.cpp \
+              acpTag_SET.cpp \
+              acpTag_TEMPLATE.cpp \
+              acpTag_USEROBJECT.cpp \
+              acpTag_INITIALIZER.cpp \
+              acpTag_PROPERTY.cpp \
+              acpTag_PRIMITIVE.cpp \
+              acpTag_LINK.cpp \
+	      aRobotPackager_main.cpp
+
+include $(ROOT)make_program_cpp.Linux

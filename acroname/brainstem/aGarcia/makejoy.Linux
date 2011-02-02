@@ -1,0 +1,14 @@
+# makefile: host/aGarcia/makejoy.Linux
+
+SHELL := /bin/sh
+
+.PHONY : debug
+debug :
+
+
+.PHONY : release
+release :
+
+
+.PHONY : clean
+clean :

@@ -1,0 +1,159 @@
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* file: aPPRK.tea                                                 */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* description: Routines for driving the servos on a               */
+/*              BrainStem-controlled PPRK.                         */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/*        docs: Documentation can be found in the BrainStem        */
+/*              Reference under the major topic "TEA"              */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* Copyright 1994-2008. Acroname Inc.                              */
+/*                                                                 */
+/* This software is the property of Acroname Inc.  Any             */
+/* distribution, sale, transmission, or re-use of this code is     */
+/* strictly forbidden except with permission from Acroname Inc.    */
+/*                                                                 */
+/* To the full extent allowed by law, Acroname Inc. also excludes  */
+/* for itself and its suppliers any liability, wheither based in   */
+/* contract or tort (including negligence), for direct,            */
+/* incidental, consequential, indirect, special, or punitive       */
+/* damages of any kind, or for loss of revenue or profits, loss of */
+/* business, loss of information or data, or other financial loss  */
+/* arising out of or in connection with this software, even if     */
+/* Acroname Inc. has been advised of the possibility of such       */
+/* damages.                                                        */
+/*                                                                 */
+/* Acroname Inc.                                                   */
+/* www.acroname.com                                                */
+/* 720-564-0373                                                    */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+
+#ifndef _aPPRK_T_
+#define _aPPRK_T_
+
+
+#include <aIOPorts.tea>
+#include <aA2D.tea>
+
+
+#define APPRK_S1        0       /* servo mapping */
+#define APPRK_S2        1
+#define APPRK_S3        2
+
+
+#define APPRK_IR1       0       /* analog input mapping */
+#define APPRK_IR2       1
+#define APPRK_IR3       2
+
+
+
+
+/* This function sets the individual speeds of all
+ * modified servos on a BrainStem-controlled PPRK.
+ * This function can also add a rotational offset r to
+ * all servo speeds to make the robot rotate or steer.
+ */
+
+void aPPRK_Vel(char s1, char s2, char s3, char r)
+{
+  asm
+  {
+    pushsb      6
+    pushlb      (unsigned char)128
+    addb
+    pushsb      4
+    addb
+    popbm       aPortServo+aPortServoBlockSize*APPRK_S1+aOffsetServoAbsolute
+    pushsb      5
+    pushlb      (unsigned char)128
+    addb
+    pushsb      4
+    addb
+    popbm       aPortServo+aPortServoBlockSize*APPRK_S2+aOffsetServoAbsolute
+    pushsb      4
+    pushlb      (unsigned char)128
+    addb
+    pushsb      4
+    addb
+    popbm       aPortServo+aPortServoBlockSize*APPRK_S3+aOffsetServoAbsolute
+  }
+}
+
+/* This function sets the speed of a servo.
+ * It also switches the enable bit based
+ * on the speed input value.
+ * Not for general use.
+ */
+
+void _private_aPPRK_GoOne(char v, int pcfg)
+{
+  asm
+  {
+    pushss 4 // push pcfg
+    pushmbx // pops pcfg, pushes config byte
+    pushsb 6 // push v to set flags
+    popb // pop v
+
+    brz v_zero
+v_nonz:
+    pushlb (char)0x80 // v non-zero so enable servo
+    orb
+    goto v_done
+v_zero:
+    pushlb 0x7F // v zero so disable servo
+    andb
+v_done:
+    pushss 5 // push pcfg
+    popbmx // pops pcfg, writes new config byte
+
+    pushsb 5 // push v
+    pushlb (char)128 // v+128 (center offset)
+    addb
+
+    pushss 5 // push pcfg
+    pushls 2 // point to absolute position port
+    adds
+    popbmx // write velocity
+  }
+}
+
+/* This function sets the individual speeds of all
+ * modified servos on a BrainStem-controlled PPRK.
+ * This function can also add a rotational offset r to
+ * all servo speeds to make the robot rotate or steer.
+ * If the speed of a servo == 0, it is disabled.
+ * If the speed of a servo != 0, it is enabled.
+ */
+
+void aPPRK_Go(char v1, char v2, char v3, char r)
+{
+  _private_aPPRK_GoOne(v1 + r, aPortServo + aPortServoBlockSize*APPRK_S1 + aOffsetServoConfig);
+  _private_aPPRK_GoOne(v2 + r, aPortServo + aPortServoBlockSize*APPRK_S2 + aOffsetServoConfig);
+  _private_aPPRK_GoOne(v3 + r, aPortServo + aPortServoBlockSize*APPRK_S3 + aOffsetServoConfig);
+}
+
+/* This function returns the range in centimeters
+ * from one of the IR rangers.
+ */
+
+int aPPRK_RangeCM(char i)
+{
+  int v = aA2D_ReadInt(i);
+  if (v > 84) {
+    v = (6780/(v-3))-4;
+  } else {
+    v = 1000;
+  }
+  return v;
+}
+
+#endif /* _aPPRK_T_ */

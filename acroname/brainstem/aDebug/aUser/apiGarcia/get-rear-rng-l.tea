@@ -1,0 +1,31 @@
+#include <aAPI.tea>
+#include <aAPIGarcia.tea>
+
+void main()
+{
+  int x = 0;
+
+  aAPI_SetTxByte0(cmdRFLXE_CHK);
+  aAPI_SetTxByte1(aGARCIA_GP_BIT_ENABLEREAR);
+  aAPI_SetTxByte2(aGARCIA_CODE_REAR_LEFT);
+  aAPI_SetTxLength(3);
+
+  aAPI_SetRxFilterByte(cmdDEV_VAL);
+  aAPI_SetRxTimeout(apiGARCIA_DEFAULT_TIMEOUT);
+
+  aAPI_BeginTx(aGARCIA_GP_ADDR);
+  aAPI_BeginRx(aGARCIA_GP_ADDR);
+
+  // return value is in buffer
+  // call routine to shift and mask
+  aGarciaAPI_DownshiftA2D();
+
+  // now do the interpolation
+  x = aGarciaAPI_ConvGP2D12(aAPI_GetRxShortVar(2));
+
+  // add offset to center point
+  x = x + apiGARCIA_RANGER_OFFSET_REAR;
+  
+  // restuff value
+  aAPI_SetRxShortVar(2, x);
+}

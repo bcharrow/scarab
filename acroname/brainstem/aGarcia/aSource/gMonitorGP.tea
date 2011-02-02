@@ -1,0 +1,263 @@
+/* gp_monitor.tea (gp,0,0) */
+/* GP monitoring task */
+/* - rear IR rangers */
+/* - battery voltage? */
+/* - dock voltage detection? */
+
+#include "gCommon.tea"
+
+
+#define gmonTAGSIDE			(char)238
+#define gmonTAGFRONT			(char)240
+#define gmonTAGREAR			(char)242
+#define gmonTAGDOWN			(char)244
+
+#define gmonBITSIDE			1
+#define gmonBITFRONT			2
+#define gmonBITREAR			4
+#define gmonBITDOWN			8
+
+#define gmonPORT_ENASIDE		0x0501
+#define gmonPORT_ENAFRONT		0x0505
+#define gmonPORT_ENAREAR		0x0509
+#define gmonPORT_ENADOWN		0x050D
+
+#define gmonPORT_RFLXESIDE		0x0380
+#define gmonPORT_RFLXEFRONT		0x0381
+#define gmonPORT_RFLXEREAR		0x0382
+#define gmonPORT_RFLXEDOWN		0x0383
+
+/* need persistent storage of flags */
+/* can't set individual bits in another module's scratchpad */
+
+char status_mirror = 0;
+char old_mirror = 0;
+
+
+
+void gp_monitor_init()
+{
+  /* initialize any non-zero constants */
+  gc_const_wrctr(aGARCIA_GP_CTR_REARTHR, 350);
+
+  /* init digital IO pins */
+  aDig_Config(aGARCIA_GP_DENABLE_SIDERNG, ADIG_OUTPUT);
+  aDig_Config(aGARCIA_GP_DENABLE_FRONTRNG, ADIG_OUTPUT);
+  aDig_Config(aGARCIA_GP_DENABLE_REARRNG, ADIG_OUTPUT);
+  aDig_Config(aGARCIA_GP_DENABLE_DOWNRNG, ADIG_OUTPUT);
+  aDig_Config(aGARCIA_GP_DIRCOMM_RX, 57);
+  aDig_Config(aGARCIA_GP_DIRCOMM_TX, 64);
+
+  /* all ranger enables off except lookdown sensors */
+  /* (this gets applied in monitor loop) */
+  gc_const_wrpadb(aGARCIA_GP_PADB_MIRRORIO, (1<<aGARCIA_GP_BIT_ENABLEDOWN));
+
+  /* initialize IR reception */
+  /* (style may change as GP 2.0 evolves) */
+  asm
+  {
+    pushmb aPortAddress
+    pushlb 2
+    pushlb cmdPTIME_RD
+    pushlb (char)0x40 + aGARCIA_GP_DIRCOMM_RX
+    pushlb 4
+    popcmd
+  }
+
+  /* enable link heartbeat with Moto board */
+  /* (this helps automate a software reset of both boards) */
+  asm
+  {
+    pushlb aGARCIA_MOTO_ADDR
+    pushlb 3
+    pushlb cmdVAL_SET
+    pushlb 5
+    pushlb 0
+    pushlb 5
+    popcmd
+  }
+
+  /* update tweakable PID constants */
+  /* (right now we have some variability in the PID period) */
+  asm
+  {
+    pushlb aGARCIA_MOTO_ADDR
+    pushlb 5
+    pushlb cmdMO_CFG
+    pushlb aGARCIA_MOTO_MOTOR_LEFT
+    pushlb aMOTION_PARAM_PERIOD
+    pushls aGARCIA_PID_PERIOD
+    pushlb 7
+    popcmd
+    pushlb aGARCIA_MOTO_ADDR
+    pushlb 5
+    pushlb cmdMO_CFG
+    pushlb aGARCIA_MOTO_MOTOR_RIGHT
+    pushlb aMOTION_PARAM_PERIOD
+    pushls aGARCIA_PID_PERIOD
+    pushlb 7
+    popcmd
+  }
+  
+  /* launch MOTO monitor process */
+  asm
+  {
+    pushlb aGARCIA_MOTO_ADDR
+    pushlb 4
+    pushlb cmdVM_RUN
+    pushlb 7
+    pushlb aGARCIA_MOTO_FILE_MONITOR
+    pushlb aGARCIA_MOTO_PID_MONITOR
+    pushlb 6
+    popcmd
+  }
+
+  /* stall for a second */
+  aCore_Sleep(10000);
+
+  if (aGarcia_Button()) {
+    asm {
+      pushlb aGARCIA_MOTO_ADDR
+      pushlb 4
+      pushlb cmdVM_RUN
+      pushlb 7
+      pushlb aGARCIA_MOTO_FILE_USER
+      pushlb aGARCIA_MOTO_PID_USER
+      pushlb 6
+      popcmd
+    }
+  }
+}
+
+
+
+void check_rear_sensors()
+{
+  char result = 0;
+  int r;
+  int rLEFT;
+  int rRIGHT;
+  int thr;
+  char rearctrl;
+  char flags;
+
+  rearctrl = gc_read_padb(aGARCIA_GP_PADB_REARCTRL) & aGARCIA_REARCTRL_MASK;
+
+  if (rearctrl)
+  {  
+    rLEFT = gc_range(aGARCIA_GP_ARANGE_REAR_LEFT);
+    rRIGHT = gc_range(aGARCIA_GP_ARANGE_REAR_RIGHT);
+    thr = gc_read_ctr(aGARCIA_GP_CTR_REARTHR);
+
+    if (rearctrl & aGARCIA_REARCTRL_DOCK)
+    {
+      /* when docking, check minimum (farthest) of both readings */
+      /* this helps account for directional uncertainty during dock */
+      if (rLEFT < rRIGHT)
+      {
+        r = rLEFT;
+      }
+      else
+      {
+        r = rRIGHT;
+      }
+      if (r > thr) result = 1;
+    }
+    else
+    {
+      if ((rearctrl & aGARCIA_REARCTRL_LEFT) && (rLEFT > thr)) result = 1;
+      if ((rearctrl & aGARCIA_REARCTRL_RIGHT) && (rRIGHT > thr)) result = 2;
+    }
+
+    /* check for inverse logic */
+    if (rearctrl & aGARCIA_REARCTRL_INV) result = 1 - 0;
+
+
+    /* write to Moto when end condition is detected */
+    /* then reset all rear check flags to disable check */
+    /* (this prevents slamming the I2C bus with messages) */   
+    if (result)
+    {
+      status_mirror |= result;
+      gc_write_padb_mo(aGARCIA_MOTO_PADB_GPSTAT, status_mirror);
+      flags = gc_read_padb(aGARCIA_GP_PADB_REARCTRL) & (~aGARCIA_REARCTRL_MASK);
+      gc_write_padb(aGARCIA_GP_PADB_REARCTRL, flags);
+    }
+  }
+}
+
+void twiddle(char mask, char mirror, char bit, int digport, int enaport, char tag)
+{
+  char q = 1;
+  if (mask & bit)
+  {
+    if (mirror & bit) q = 0;
+    aCore_Outportc(digport, q);
+    aCore_Outportc(enaport, tag + q);
+  }
+}
+
+void check_for_mirror_update()
+{
+  char mirror = 0;
+  
+  /* always stash button state */
+  asm
+  {
+    pushmb	aPortDigital
+    		+ aPortDigitalBlockSize * aGARCIA_GP_DBUTTON
+    		+ aOffsetDigitalIO
+    popbm	aPortScratch + aGARCIA_GP_PADB_MIRRORBUTTON
+  }
+
+  /* snag state */
+  asm
+  {
+    pushmb	aPortScratch + aGARCIA_GP_PADB_MIRRORIO
+    popbs	1
+  }
+
+  /* apply any changes */
+  if (mirror != old_mirror) {
+
+    char mask = 0;
+    asm
+    {
+      pushmb	aPortScratch + aGARCIA_GP_PADB_MIRRORMASK
+      compb
+      popbs	1
+    }
+  
+    twiddle(mask, mirror, gmonBITSIDE, gmonPORT_ENASIDE, gmonPORT_RFLXESIDE, gmonTAGSIDE);
+    twiddle(mask, mirror, gmonBITFRONT, gmonPORT_ENAFRONT, gmonPORT_RFLXEFRONT, gmonTAGFRONT);
+    twiddle(mask, mirror, gmonBITREAR, gmonPORT_ENAREAR, gmonPORT_RFLXEREAR, gmonTAGREAR);
+    twiddle(mask, mirror, gmonBITDOWN, gmonPORT_ENADOWN, gmonPORT_RFLXEDOWN, gmonTAGDOWN);
+
+    /* wipe out old change mask */
+    asm
+    {
+      pushlb	0
+      popbm	aPortScratch + aGARCIA_GP_PADB_MIRRORMASK
+    }
+
+    /* save whatever changes were made */
+    mirror = (old_mirror & (~mask)) | (mirror & mask);
+    aCore_Outportc(aPortScratch + aGARCIA_GP_PADB_MIRRORIO, mirror);
+    old_mirror = mirror;
+  }
+}
+
+void main()
+{
+  char i = 0;
+  gp_monitor_init();
+  while (1)
+  {
+    for (i=0; i<10; i++)
+    {
+      gc_const_sleep(100);
+      check_for_mirror_update();
+      check_rear_sensors();
+    }
+  }
+}

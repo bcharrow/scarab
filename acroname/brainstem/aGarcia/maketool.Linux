@@ -1,0 +1,14 @@
+# makefile: host/aGarcia/maketool.Linux
+
+SHELL := /bin/sh
+
+.PHONY : debug
+debug :
+
+
+.PHONY : release
+release :
+
+
+.PHONY : clean
+clean :

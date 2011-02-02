@@ -1,0 +1,139 @@
+<PRIMITIVE>
+ <NAME> "turn" </NAME>
+ <APIFILE> "/apiGarcia/execute-turn.tea" </APIFILE>
+ <PROPERTY>
+  <NAME> "side" </NAME>
+  <TYPE> int </TYPE>
+  <DEFAULT> 0 </DEFAULT>
+  <SET>
+   <INDEX> 0 </INDEX>
+   <PARAMSIZE> 1 </PARAMSIZE>
+   <CONVFAC> 1 </CONVFAC>
+  </SET>
+ </PROPERTY>
+ <PROPERTY>
+  <NAME> "angle" </NAME>
+  <TYPE> float </TYPE>
+  <DEFAULT> 0.0 </DEFAULT>
+  <SET>
+   <INDEX> 1 </INDEX>
+   <PARAMSIZE> 2 </PARAMSIZE>
+   <CONVFAC> aGARCIA_APIFAC_RADIANS2 </CONVFAC>
+  </SET>
+ </PROPERTY>
+</PRIMITIVE>
+
+<PRIMITIVE>
+ <NAME> "move" </NAME>
+ <APIFILE> "/apiGarcia/execute-move.tea" </APIFILE>
+ <PROPERTY>
+  <NAME> "distance" </NAME>
+  <TYPE> float </TYPE>
+  <DEFAULT> 0.0 </DEFAULT>
+  <SET>
+   <INDEX> 0 </INDEX>
+   <PARAMSIZE> 4 </PARAMSIZE>
+   <CONVFAC> aGARCIA_APIFAC_METERS </CONVFAC>
+  </SET>
+ </PROPERTY>
+</PRIMITIVE>
+
+<PRIMITIVE>
+ <NAME> "pivot" </NAME>
+ <APIFILE> "/apiGarcia/execute-pivot.tea" </APIFILE>
+ <PROPERTY>
+  <NAME> "angle" </NAME>
+  <TYPE> float </TYPE>
+  <DEFAULT> 0.0 </DEFAULT>
+  <SET>
+   <INDEX> 0 </INDEX>
+   <PARAMSIZE> 2 </PARAMSIZE>
+   <CONVFAC> aGARCIA_APIFAC_RADIANS </CONVFAC>
+  </SET>
+ </PROPERTY>
+</PRIMITIVE>
+
+<PRIMITIVE>
+ <NAME> "hug" </NAME>
+ <APIFILE> "/apiGarcia/execute-hug.tea" </APIFILE>
+ <PROPERTY>
+  <NAME> "side" </NAME>
+  <TYPE> int </TYPE>
+  <DEFAULT> 0 </DEFAULT>
+  <SET>
+   <INDEX> 0 </INDEX>
+   <PARAMSIZE> 1 </PARAMSIZE>
+   <CONVFAC> 1 </CONVFAC>
+  </SET>
+ </PROPERTY>
+ <PROPERTY>
+  <NAME> "mode" </NAME>
+  <TYPE> int </TYPE>
+  <DEFAULT> 0 </DEFAULT>
+  <SET>
+   <INDEX> 0 </INDEX>
+   <PARAMSIZE> 1 </PARAMSIZE>
+   <CONVFAC> 1 </CONVFAC>
+  </SET>
+ </PROPERTY>
+ <PROPERTY>
+  <NAME> "range" </NAME>
+  <TYPE> float </TYPE>
+  <DEFAULT> 0.0 </DEFAULT>
+  <SET>
+   <INDEX> 1 </INDEX>
+   <PARAMSIZE> 2 </PARAMSIZE>
+   <CONVFAC> aGARCIA_APIFAC_METERS </CONVFAC>
+  </SET>
+ </PROPERTY>
+</PRIMITIVE>
+
+<PRIMITIVE>
+ <NAME> "align" </NAME>
+ <APIFILE> "/apiGarcia/execute-align.tea" </APIFILE>
+ <PROPERTY>
+  <NAME> "side" </NAME>
+  <TYPE> int </TYPE>
+  <DEFAULT> 0 </DEFAULT>
+  <SET>
+   <INDEX> 0 </INDEX>
+   <PARAMSIZE> 1 </PARAMSIZE>
+   <CONVFAC> 1 </CONVFAC>
+  </SET>
+ </PROPERTY>
+ <PROPERTY>
+  <NAME> "mode" </NAME>
+  <TYPE> int </TYPE>
+  <DEFAULT> 0 </DEFAULT>
+  <SET>
+   <INDEX> 0 </INDEX>
+   <PARAMSIZE> 1 </PARAMSIZE>
+   <CONVFAC> 1 </CONVFAC>
+  </SET>
+ </PROPERTY>
+ <PROPERTY>
+  <NAME> "range" </NAME>
+  <TYPE> float </TYPE>
+  <DEFAULT> 0.0 </DEFAULT>
+  <SET>
+   <INDEX> 1 </INDEX>
+   <PARAMSIZE> 2 </PARAMSIZE>
+   <CONVFAC> aGARCIA_APIFAC_METERS </CONVFAC>
+  </SET>
+ </PROPERTY>
+</PRIMITIVE>
+
+<PRIMITIVE>
+ <NAME> "null" </NAME>
+ <APIFILE> "/apiGarcia/execute-null.tea" </APIFILE>
+ <PROPERTY>
+  <NAME> "acceleration" </NAME>
+  <TYPE> float </TYPE>
+  <DEFAULT> 0.0 </DEFAULT>
+  <SET>
+   <INDEX> 0 </INDEX>
+   <PARAMSIZE> 2 </PARAMSIZE>
+   <CONVFAC> 1 </CONVFAC>
+  </SET>
+ </PROPERTY>
+</PRIMITIVE>

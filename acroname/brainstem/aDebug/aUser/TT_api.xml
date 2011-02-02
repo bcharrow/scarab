@@ -1,0 +1,21 @@
+
+#include <aRobotDefs.tea>
+#include <aGarciaDefs.tea>
+
+<PACKAGE>
+
+<DISTANCEUNIT>
+aROBOT_UNITS_METERS
+</DISTANCEUNIT>
+
+<ANGLEUNIT>
+aROBOT_UNITS_RADIANS
+</ANGLEUNIT>
+
+<MASSUNIT>
+aROBOT_UNITS_KILOGRAMS
+</MASSUNIT>
+
+#include "/apiTT/tt_prop.xml"
+
+</PACKAGE>

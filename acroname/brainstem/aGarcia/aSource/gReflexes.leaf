@@ -1,0 +1,357 @@
+/* gReflexes.leaf */
+/* Garcia Moto and GP reflexes */
+
+
+
+#include <aCmd.tea>
+#include <aGarciaDefs.tea>
+#include <aGPReflexes.tea>
+#include <aMotoReflexes.tea>
+
+
+
+/************** MOTO REFLEX DEFINES *************/
+
+#define	moto_msgRAMPDONE	125
+#define	moto_msgLAUNCHUSER	124
+#define	moto_msgUSERLEDOUT	123
+#define	moto_msgUSERLEDPAD	122
+
+
+
+/************** GP REFLEX DEFINES *************/
+
+#define	gp_msgIRRXCOPY		125
+#define	gp_msgRESETMOTO		124
+#define	gp_msgRESETSELF		123
+#define	gp_msgSETTIMER1		122
+#define	gp_msgSETTIMER2		121
+#define	gp_msgMOTOHBOFF		120
+#define	gp_msgKILLMONMOTO	119
+#define	gp_msgKILLMONGP		118
+#define	gp_msgDUMPVER		117
+
+#define	gp_msgRD		110
+#define	gp_msgRD_SIDE_LEFT	109
+#define	gp_msgRD_SIDE_RIGHT	108
+#define	gp_msgRD_FRONT_LEFT	107
+#define	gp_msgRD_FRONT_RIGHT	106
+#define	gp_msgRD_REAR_LEFT	105
+#define	gp_msgRD_REAR_RIGHT	104
+#define	gp_msgRD_DOWN_LEFT	103
+#define	gp_msgRD_DOWN_RIGHT	102
+
+#define gp_msgENA0_ON		90
+#define gp_msgENA1_ON		89
+#define gp_msgENA2_ON		88
+#define gp_msgENA3_ON		87
+#define gp_msgRD_SETDELAY	86
+#define gp_msgRD_VIAPAD		85
+#define gp_msgRD_STASHID	84
+#define gp_msgDEBUG1		83
+#define gp_msgDEBUG2		82
+#define gp_msgDEBUG3		81
+#define gp_msgDEBUG4		80
+
+#define	gp_vecIRRX4		19
+#define	gp_vecDUALRESET		100
+#define	gp_vecDUALKILL		101
+#define	gp_vecDUMPVER		99
+
+#define	gp_vecRD_BASE		64
+#define	gp_vecRD_SIDE_LEFT	66 // base+2
+#define	gp_vecRD_SIDE_RIGHT	67 // base+3
+#define	gp_vecRD_FRONT_LEFT	64 // base+0
+#define	gp_vecRD_FRONT_RIGHT	65 // base+1
+#define	gp_vecRD_REAR_LEFT	68 // base+4
+#define	gp_vecRD_REAR_RIGHT	69 // base+5
+#define	gp_vecRD_DOWN_LEFT	79 // base+15
+#define	gp_vecRD_DOWN_RIGHT	74 // base+10
+#define	gp_vecRD		80
+
+#define	gp_vecENA0_ON		110
+#define	gp_vecENA0_OFF		111
+#define	gp_vecENA1_ON		112
+#define	gp_vecENA1_OFF		113
+#define	gp_vecENA2_ON		114
+#define	gp_vecENA2_OFF		115
+#define	gp_vecENA3_ON		116
+#define	gp_vecENA3_OFF		117
+
+#define	tmrENA_DELAY		20
+#define	gp_vecENA_DELAY		44	// DIFFERENT FROM GP 1.0!!!
+
+///////////////////////////////////////////////
+
+module[aGARCIA_MOTO_ADDR] {
+
+  /************* REFLEX COMMANDS *************/
+
+  /* set byte when motion is done */
+  message[moto_msgRAMPDONE] {
+    aGARCIA_MOTO_ADDR, cmdPAD_IO, aGARCIA_MOTO_PADB_MOVEDONE, 1
+  }
+
+  /* launch user file via reflex */
+  message[moto_msgLAUNCHUSER] {
+    aGARCIA_MOTO_ADDR, cmdVM_RUN, 7, aGARCIA_MOTO_FILE_USER, aGARCIA_MOTO_PID_USER
+  }
+
+  /* change state of user LED */
+  message[moto_msgUSERLEDOUT] {
+    aGARCIA_MOTO_ADDR, cmdDIG_IO, aGARCIA_MOTO_DLED_USER, 0
+  }
+
+  /* change state of user LED mirror byte */
+  message[moto_msgUSERLEDPAD] {
+    aGARCIA_MOTO_ADDR, cmdPAD_IO, aGARCIA_MOTO_PADB_MIRRORIO, 0
+  }
+
+
+  /************* REFLEX VECTORS *************/
+
+  vector[aGARCIA_MOTO_RFLX_RAMP] {
+    moto_msgRAMPDONE
+  }
+
+  vector[aMoto_RFX_BOOT] {
+    moto_msgLAUNCHUSER
+  }
+  
+  vector[aGARCIA_MOTO_RFLX_LED] {
+    char + moto_msgUSERLEDOUT[4],
+    char + moto_msgUSERLEDPAD[4]
+  }
+}
+
+
+module[aGARCIA_GP_ADDR] {
+
+  /************* REFLEX COMMANDS *************/
+
+  /* write 2-byte received IR value to Moto counter */
+  message[gp_msgIRRXCOPY] {
+    aGARCIA_MOTO_ADDR, cmdCTR_SET, aGARCIA_MOTO_CTR_IRRX, 0, 0
+  }
+
+  /* reset Moto module */
+  message[gp_msgRESETMOTO] {
+    aGARCIA_MOTO_ADDR, cmdRESET
+  }
+
+  /* reset self (GP) */
+  message[gp_msgRESETSELF] {
+    aGARCIA_GP_ADDR, cmdRESET
+  }
+
+  /* set wake-up timer */
+  message[gp_msgSETTIMER1] {
+    aGARCIA_GP_ADDR, cmdTMR_SET, 1, 78, 32
+  }
+
+  /* set self-reset timer */
+  message[gp_msgSETTIMER2] {
+    aGARCIA_GP_ADDR, cmdTMR_SET, 2, 4, 0
+  }
+
+  /* set Moto HB to internal mode */
+  message[gp_msgMOTOHBOFF] {
+    aGARCIA_MOTO_ADDR, cmdVAL_SET, 5, 1
+  }
+
+  /* kill Monitor process on Moto board */
+  message[gp_msgKILLMONMOTO] {
+    aGARCIA_MOTO_ADDR, cmdVM_KILL, aGARCIA_MOTO_PID_MONITOR
+  }
+
+  /* kill Monitor process on GP board */
+  message[gp_msgKILLMONGP] {
+    aGARCIA_GP_ADDR, cmdVM_KILL, aGARCIA_GP_PID_MONITOR
+  }
+
+  /* dump Braindump version */
+  message[gp_msgDUMPVER] {
+    aGARCIA_GP_ADDR, cmdDEBUG, aGARCIA_DUMP_NUM, aGARCIA_DUMP_REV
+  }
+
+
+  // Reflexes will turn sensor pairs on automatically if they are off.
+  // When turning a sensor pair on, the reflex pauses to give monitor
+  // time to catch and apply new state to sensor enable bits.
+  // Monitor has to tweak reflex enablers so they behave properly.
+  // (These reflexes involve some black magic.)
+
+  // raw messages for getting A2D values
+  message[gp_msgDEBUG1] { aGARCIA_GP_ADDR, cmdDEBUG, 2 }
+  message[gp_msgDEBUG2] { aGARCIA_GP_ADDR, cmdDEBUG, 4 }
+  message[gp_msgDEBUG3] { aGARCIA_GP_ADDR, cmdDEBUG, 6 }
+  message[gp_msgDEBUG4] { aGARCIA_GP_ADDR, cmdDEBUG, 8 }
+
+
+  message[gp_msgRD] {
+    aGARCIA_GP_ADDR, cmdRAW_INPUT, gp_vecRD_BASE, 0
+  }
+
+  message[gp_msgRD_SIDE_LEFT] {
+    aGARCIA_MOTO_ADDR, cmdA2D_RD, (char)130
+  }
+  message[gp_msgRD_SIDE_RIGHT] {
+    aGARCIA_MOTO_ADDR, cmdA2D_RD, (char)131
+  }
+  message[gp_msgRD_FRONT_LEFT] {
+    aGARCIA_MOTO_ADDR, cmdA2D_RD, (char)128
+  }
+  message[gp_msgRD_FRONT_RIGHT] {
+    aGARCIA_MOTO_ADDR, cmdA2D_RD, (char)129
+  }
+  message[gp_msgRD_REAR_LEFT] {
+    aGARCIA_GP_ADDR, cmdA2D_RD, (char)128
+  }
+  message[gp_msgRD_REAR_RIGHT] {
+    aGARCIA_GP_ADDR, cmdA2D_RD, (char)129
+  }
+  message[gp_msgRD_DOWN_LEFT] {
+    aGARCIA_MOTO_ADDR, cmdDIG_IO, (char)138
+  }
+  message[gp_msgRD_DOWN_RIGHT] {
+    aGARCIA_MOTO_ADDR, cmdDIG_IO, (char)133
+  }
+
+
+
+  // sensor selection and delay control
+  // raw input parameters passed through a window decision function
+  // that determines which sensors get picked
+  //  0 = A2D, 4,0x80, front left
+  //  1 = A2D, 4,0x81, front right
+  //  2 = A2D, 4,0x82, side left
+  //  3 = A2D, 4,0x83, side right
+  //  4 = A2D, 2,0x80, rear left
+  //  5 = A2D, 2,0x81, rear right
+  // 10 = DIG, 4,0x85, down left
+  // 15 = DIG, 4,0x8A, down right
+  message[gp_msgRD_VIAPAD] {
+    aGARCIA_GP_ADDR, cmdPAD_INPUT, gp_vecRD, aGARCIA_GP_PADB_STASHID
+  }
+  message[gp_msgRD_STASHID] {
+    aGARCIA_GP_ADDR, cmdPAD_IO, aGARCIA_GP_PADB_STASHID, 0
+  }
+  message[gp_msgRD_SETDELAY] {
+    aGARCIA_GP_ADDR, cmdTMR_SET, tmrENA_DELAY, (int)1200
+  }
+
+  // main reflex enabler check calls
+  // (secondary codes for rear and down are arbitrary)
+  // issue 2,3,41,0,[2,3] to read side sensor
+  // issue 2,3,41,1,[0,1] to read front sensor
+  // issue 2,3,41,2,[4,5] to read rear sensor
+  // issue 2,3,41,3,[10,15] to read down sensor
+
+  // control turning on enablers
+  message[gp_msgENA0_ON] {
+    aGARCIA_GP_ADDR, cmdPAD_IO, aGARCIA_GP_PADB_MIRRORIO, 1, (char)254
+  }
+  message[gp_msgENA1_ON] {
+    aGARCIA_GP_ADDR, cmdPAD_IO, aGARCIA_GP_PADB_MIRRORIO, 2, (char)253
+  }
+  message[gp_msgENA2_ON] {
+    aGARCIA_GP_ADDR, cmdPAD_IO, aGARCIA_GP_PADB_MIRRORIO, 4, (char)251
+  }
+  message[gp_msgENA3_ON] {
+    aGARCIA_GP_ADDR, cmdPAD_IO, aGARCIA_GP_PADB_MIRRORIO, 8, (char)247
+  }
+
+
+  /************* REFLEX VECTORS *************/
+
+  vector[gp_vecIRRX4] {
+    gp_msgIRRXCOPY[4] = int
+  }
+
+  /* software dual reset reflex
+   * issue Moto reset command
+   * give it time to take effect
+   * issue command to turn Moto HB off temporarily
+   * give time for that command to be sent
+   * reset self
+   * GP will turn Moto HB on at start-up
+   */
+  vector[gp_vecDUALRESET] {
+    gp_msgRESETMOTO,
+    gp_msgSETTIMER1
+  }
+  vector[25] {
+    gp_msgMOTOHBOFF,
+    gp_msgSETTIMER2
+  }
+  vector[26] {
+    gp_msgRESETSELF
+  }
+
+  // software dual monitor kill reflex
+  vector[gp_vecDUALKILL] {
+    gp_msgKILLMONMOTO,
+    gp_msgKILLMONGP
+  }
+
+  // get braindump version
+  vector[gp_vecDUMPVER] {
+    gp_msgDUMPVER
+  }
+
+
+
+  // vectors for taking sensor readings
+  // and controlling whether to turn enablers on
+  // (we can turn sensor pair enablers on if they are off)
+
+  vector[gp_vecENA_DELAY] {
+    gp_msgRD_VIAPAD
+  }
+  
+  vector[gp_vecENA0_OFF] {
+    gp_msgENA0_ON,
+    char + gp_msgRD_STASHID[4],
+    gp_msgRD_SETDELAY
+  }
+  vector[gp_vecENA0_ON] {
+    char + gp_msgRD[3]
+  }
+  vector[gp_vecENA1_OFF] {
+    gp_msgENA1_ON,
+    char + gp_msgRD_STASHID[4],
+    gp_msgRD_SETDELAY
+  }
+  vector[gp_vecENA1_ON] {
+    char + gp_msgRD[3]
+  }
+  vector[gp_vecENA2_OFF] {
+    gp_msgENA2_ON,
+    char + gp_msgRD_STASHID[4],
+    gp_msgRD_SETDELAY
+  }
+  vector[gp_vecENA2_ON] {
+    char + gp_msgRD[3]
+  }
+  vector[gp_vecENA3_OFF] {
+    gp_msgENA3_ON,
+    char + gp_msgRD_STASHID[4],
+    gp_msgRD_SETDELAY
+  }
+  vector[gp_vecENA3_ON] {
+    char + gp_msgRD[3]
+  }
+
+  vector[gp_vecRD] {
+    char + gp_msgRD[3]
+  }
+
+  vector[gp_vecRD_SIDE_LEFT]   { gp_msgRD_SIDE_LEFT   }
+  vector[gp_vecRD_SIDE_RIGHT]  { gp_msgRD_SIDE_RIGHT  }
+  vector[gp_vecRD_FRONT_LEFT]  { gp_msgRD_FRONT_LEFT  }
+  vector[gp_vecRD_FRONT_RIGHT] { gp_msgRD_FRONT_RIGHT }
+  vector[gp_vecRD_REAR_LEFT]   { gp_msgRD_REAR_LEFT   }
+  vector[gp_vecRD_REAR_RIGHT]  { gp_msgRD_REAR_RIGHT  }
+  vector[gp_vecRD_DOWN_LEFT]   { gp_msgRD_DOWN_LEFT   }
+  vector[gp_vecRD_DOWN_RIGHT]  { gp_msgRD_DOWN_RIGHT  }
+}

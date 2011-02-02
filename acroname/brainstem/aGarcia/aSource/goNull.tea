@@ -1,0 +1,171 @@
+/* goNull.tea (moto,5) */
+/* sensor-monitoring task with user inputs for motion */
+
+#include "gCommon.tea"
+
+#define	FRONT_AND_REAR	((1<<aGARCIA_GP_BIT_ENABLEREAR) | (1<<aGARCIA_GP_BIT_ENABLEFRONT))
+#define	DOWNMASK	(1<<aGARCIA_GP_BIT_ENABLEDOWN)
+
+
+
+int main(int tdamp)
+{
+  int netv = 0;
+  char flagF = 0;
+  char flags = 0;
+  int v = 0;
+  int vL = 0;
+  int vR = 0;
+  int vrampL = 0;
+  int vrampR = 0;
+  int old_sthr = 0;
+  int sthr = 0;
+  int decel = 1;
+  int status = 0;
+
+  /* read stall threshold to old_sthr */
+  asm {
+    pushms	aPortScratch + aGARCIA_MOTO_PADS_STALLTHR
+    popss	8
+  }
+  
+  /* INITIALIZE INPUT */
+
+  /* (none) */  
+
+  /* SET MOTION STATE BASED ON INPUT */
+  
+  if (tdamp)
+  {
+    gc_init_vdamp(tdamp);
+    
+    /* turn on rangers */
+    ENABLE_RANGERS(FRONT_AND_REAR);
+
+    /* restart monitor */
+    gc_aClrStatus;
+    gc_aMonEnable;
+
+    /* give time for monitors to stabilize */
+    gc_const_sleep(750);
+
+    /* then attempt motion */
+    gc_aClrEnc32;
+    while (1)
+    {
+      /* write input speeds to vrampL, vrampR */
+      asm {
+        pushms	aPortScratch + aGARCIA_MOTO_PADS_NULL_LVEL
+        popss	12
+        pushms	aPortScratch + aGARCIA_MOTO_PADS_NULL_RVEL
+        popss	10
+      }
+      
+      netv = vrampL + vrampR;
+
+      /* check for change to a net forward velocity */
+      /* (enable front sensor check and enable edge sensors) */
+      if ((netv > 0) && !flagF) {
+        gc_write_padb_gp(aGARCIA_GP_PADB_MIRRORMASK, ~DOWNMASK);
+        gc_write_padb_gp(aGARCIA_GP_PADB_MIRRORIO, DOWNMASK);
+        gc_const_wrpadb(aGARCIA_MOTO_PADB_ENDFLAGS, aGARCIA_ENDCTRL_FRONT);
+        gc_write_padb_gp(aGARCIA_GP_PADB_REARCTRL, 0);
+        flagF = 1;
+        gc_const_sleep(1000);
+      }
+
+      /* check for change to a net reverse velocity */
+      /* (enable rear sensor check and disable edge sensors) */
+      if ((netv & 0x8000) && flagF) {
+        if (gc_read_padb(aGARCIA_MOTO_PADB_EXEFLAGS)) {
+        gc_write_padb_gp(aGARCIA_GP_PADB_MIRRORMASK, ~DOWNMASK);
+        gc_write_padb_gp(aGARCIA_GP_PADB_MIRRORIO, 0);
+        }
+        gc_const_wrpadb(aGARCIA_MOTO_PADB_ENDFLAGS, aGARCIA_ENDCTRL_REAR);
+        gc_write_padb_gp(aGARCIA_GP_PADB_REARCTRL, (aGARCIA_REARCTRL_LEFT | aGARCIA_REARCTRL_RIGHT));
+        flagF = 0;
+        gc_const_sleep(1000);
+      }
+
+      /* time to dynamically update stall params */
+
+      /* first write setpoints to vL, vR */
+      asm {
+        pushms	aPortMotion
+		+ aPortMotionBlockSize * aGARCIA_MOTO_MOTOR_LEFT
+		+ aOffsetMotionSetpoint
+        popss	16
+        pushms	aPortMotion
+		+ aPortMotionBlockSize * aGARCIA_MOTO_MOTOR_RIGHT
+		+ aOffsetMotionSetpoint
+        popss	14
+      }
+
+      /* then calculate stall params based on max absolute velocity */
+      if (vL & 0x8000) vL = -vL;
+      if (vR & 0x8000) vR = -vR;
+      if (vR > vL) {
+        v = vR;
+      } else {
+        v = vL;
+      }
+      sthr = (v * 20) / 100;
+      if (sthr < 2) sthr = 2;
+
+      /* write sthr to stall threshold */
+      asm {
+        pushss	6
+        popsm	aPortScratch + aGARCIA_MOTO_PADS_STALLTHR
+      }
+      gc_set_stall_params(v, 3);
+      
+      if (gc_aGetStatus) break;
+      
+      aMotion_SetRampVelocity(vrampR, vrampL);
+    }
+
+    status = gc_aGetStatus;
+  
+    /* type of error determines deceleration rate */
+    if ((status == aGARCIA_ERRFLAG_FALL_LEFT) || (status == aGARCIA_ERRFLAG_FALL_LEFT)) {
+      decel = 1;
+    } else {
+      decel = 20;
+    }
+
+    /* an error occurred so we're done */
+    /* write new acceleration step time */    
+    asm {
+      pushss	4
+      pushlb	aMOTION_RIACCT
+      popbm	aPortMotion
+		+ aPortMotionBlockSize * aGARCIA_MOTO_MOTOR_RIGHT
+		+ aOffsetMotionRmpCfg
+      pushss	4
+      pushlb	aMOTION_RIACCT
+      popbm	aPortMotion
+		+ aPortMotionBlockSize * aGARCIA_MOTO_MOTOR_LEFT
+		+ aOffsetMotionRmpCfg
+    }
+
+    gc_stop_vdamp();
+  }
+    
+  /* motion done so turn off rangers and disable monitors */
+  DISABLE_RANGERS(FRONT_AND_REAR);
+  gc_write_padb_gp(aGARCIA_GP_PADB_REARCTRL, 0);
+  gc_aMonDisable;
+
+  /* write old_sthr back to stall threshold */
+  asm {
+    pushss	8
+    popsm	aPortScratch + aGARCIA_MOTO_PADS_STALLTHR
+  }
+
+  status = gc_read_pads(aGARCIA_MOTO_PADS_STATUS);
+  if (gc_read_padb(aGARCIA_MOTO_PADB_EXEFLAGS) & aGARCIA_EXECTRL_USER)
+  {
+    aMulti_Signal(aGARCIA_MOTO_PID_USER, status);
+  }
+  return status;
+}

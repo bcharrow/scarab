@@ -1,0 +1,24 @@
+#include <aAPI.tea>
+#include <aAPIGarcia.tea>
+
+void main()
+{
+  char c = 0;
+  aAPI_SetTxByte0(cmdPAD_IO);
+  aAPI_SetTxByte1(aGARCIA_GP_PADB_MIRRORBUTTON);
+  aAPI_SetTxLength(2);
+
+  aAPI_SetRxFilterByte(cmdPAD_IO);
+  aAPI_SetRxTimeout(apiGARCIA_DEFAULT_TIMEOUT);
+
+  aAPI_BeginTx(aGARCIA_GP_ADDR);
+  aAPI_BeginRx(aGARCIA_GP_ADDR);
+
+  // return value is 0x0C22
+  c = aAPI_GetRxByteVar(2);
+
+  // force value to be 0 or 1
+  if (c) {
+    aAPI_SetRxByteVar(2, 1);
+  }
+}

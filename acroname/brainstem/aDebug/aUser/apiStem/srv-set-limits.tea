@@ -1,0 +1,19 @@
+
+#include <aAPI.tea>
+#include <aAPIStemDefs.tea>
+
+void main(int n)
+{
+  char id;
+  char module;
+
+  module = aAPI_GetObjByteVar(apiSTEM_SERVO_MODULE);
+  id = aAPI_GetObjByteVar(apiSTEM_SERVO_ID);
+
+  aAPI_SetTxByte0(cmdSRV_LMT);
+  aAPI_SetTxByteVar(1, id);
+  aAPI_SetTxShortVar(2, n);
+  aAPI_SetTxLength(4);
+
+  aAPI_BeginTxVar(module);
+}

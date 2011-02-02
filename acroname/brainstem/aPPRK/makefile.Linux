@@ -1,0 +1,33 @@
+# makefile: host/aPPRK/makefile.Linux
+
+SHELL := /bin/sh
+CC := gcc
+
+ROOT := ../
+LIBNAME := aPPRK
+
+INCLUDES := -IaCommon \
+	    -IaUnix \
+	    -I../aCommon \
+	    -I../aIO/aCommon \
+	    -I../aIO/aUnix \
+	    -I../aUI/aCommon \
+	    -I../aUI/aUnix \
+	    -I../aStem/aCommon \
+	    -I../aStem/aUnix \
+	    -I../aTEAvm/aCommon \
+	    -I../aTEAvm/aUnix \
+	    -I../aDebug/aUnix \
+	    -I../aDebug/aSystem
+
+VPATH := aCommon:aUnix:../aCommon
+
+SOURCES := aAssert.c \
+	   aStreamUtil.c \
+	   aMemHandleDebug.c \
+	   aSV203.c \
+	   aBrainStem.c \
+           aPPRKInternal.c \
+           aPPRK.c
+
+include $(ROOT)make_library.Linux

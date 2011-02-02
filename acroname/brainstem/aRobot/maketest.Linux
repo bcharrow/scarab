@@ -1,0 +1,61 @@
+# makefile: host/aRobot/maketest.Linux
+
+SHELL := /bin/sh
+CC := gcc
+CCP := g++
+
+ROOT := ../
+PROGNAME := aRobotTest
+
+INCLUDES := -IaCommon \
+	    -IaUnix \
+	    -IaRobot \
+	    -IaRobotTest \
+	    -I../aIO/aCommon \
+	    -I../aIO/aUnix \
+	    -I../aUI/aCommon \
+	    -I../aUI/aUnix \
+	    -I../aStem/aCommon \
+	    -I../aStem/aUnix \
+	    -I../aCommon \
+	    -I../aDebug/aUnix \
+	    -I../aDebug/aSystem \
+	    -I../aUnix
+
+#don't include X11 libraries for ARM
+ifeq ($(ARCH),ARM)
+LIBRARIES := -laIO \
+             -laUI \
+             -laStem \
+             -laTEAvm \
+             -laRobot \
+             -lpthread \
+	     -lm
+else
+LIBRARIES := -laIO \
+             -laUI \
+             -laStem \
+             -laTEAvm \
+             -laRobot \
+             -lpthread \
+	     -lm \
+	     -L/usr/X11R6/lib \
+	     -lX11
+endif
+
+VPATH := aCommon:\
+	 aUnix:\
+	 aRobotTest:\
+	 ../aUnix:\
+	 ../aCommon
+
+SOURCES := aAssert.c \
+	   aUtil.c \
+	   aStream_STDIO_Console.c 
+
+CPPSOURCES := acpException.cpp \
+	      acpValue.cpp \
+	      acpObject.cpp \
+	      aRobotTest.cpp
+
+include $(ROOT)make_program_cpp.Linux

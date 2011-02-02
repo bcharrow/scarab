@@ -1,0 +1,85 @@
+# makefile: host/aUI/makefile.Linux
+
+SHELL := /bin/sh
+CC := gcc
+CCP := g++
+
+ROOT := ../
+LIBNAME := aUI
+
+# check to see if ARM is in use (then don't use X11)
+ifeq ($(ARCH),ARM)
+CFLAGS := -D aNOX
+endif
+
+INCLUDES := -IaCommon \
+	    -IaUnix \
+	    -IaFontGen \
+	    -Ijpg-6b \
+	    -I../aCommon \
+	    -I../aDebug/aUnix \
+	    -I../aIO/aCommon \
+	    -I../aIO/aUnix
+
+LIBRARIES = -L/usr/X11R6/lib \
+	    -lX11
+
+VPATH := aCommon:aUnix:aFontGen:jpg-6b:../aCommon
+
+SOURCES := aAssert.c \
+           aUtil.c \
+	   aMemHandleDebug.c \
+	   aMemLeakDebug.c \
+	   aUIInternal.c \
+	   aUI.c \
+	   aGD.c \
+	   aGDOffscreen.c \
+	   aGDPNG.c \
+	   aGDJPG.c \
+	   unix_aGD.c \
+	   unix_aUI.c \
+	   jcomapi.c \
+	   jddctmgr.c \
+	   jdmaster.c \
+           jerror.c \
+           jmemansi.c \
+           jdapimin.c \
+           jdhuff.c \
+           jdmerge.c \
+           jidctflt.c \
+           jmemmgr.c \
+           jdapistd.c \
+           jdinput.c \
+           jdphuff.c \
+           jidctfst.c \
+           jquant1.c \
+           jdcoefct.c \
+           jdmainct.c \
+           jdpostct.c \
+           jidctint.c \
+           jquant2.c \
+           jdcolor.c \
+           jdmarker.c \
+           jdsample.c \
+           jidctred.c \
+           jutils.c \
+	   font8.c \
+	   font9.c \
+	   font10.c \
+	   font11.c \
+	   font12.c \
+	   font14.c \
+	   font16.c \
+	   font30.c
+
+CPPSOURCES := aHTTP.cpp \
+	      acpASCIIHexFilter.cpp \
+	      acpCounterStream.cpp \
+	      acpList.cpp \
+	      acpString.cpp \
+	      acpException.cpp \
+	      acpPDFObject.cpp \
+	      acpGDPDF.cpp \
+	      aGDPDF.cpp
+
+include $(ROOT)make_library.Linux

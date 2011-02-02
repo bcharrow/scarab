@@ -1,0 +1,40 @@
+
+                aRobot Agent Information
+
+The aRobotAgent application creates an instance of an 
+aRobot API and it serves this API on a socket interface
+for remote use.  One example of using this is our aRobot
+Java interface.  This Java interface interacts through
+this socket interface allowing for a very lightweight
+interface on the Java side that will automatically
+follow any changes to the basic API.
+
+To run the agent, you first need to specify which .robot
+API file will be used for the exectution instance.  This
+is done with a file on non command line versions and it
+is specified on the command line for other versions.
+
+In Windows and the MacOS interfaces, this setting for 
+the API file resides in a file called aRobotAgent.config
+In this file, you can have a single line that sets the 
+API file for use in execution.  For example, if you are 
+using the Garcia API, you would have a line like:
+
+api_name = garcia_api.robot
+
+You will also need a configuration file for the api's 
+link(s).  This file by default takes the same name as 
+the api being used.  For the above example, the config
+file would be "garcia_api.config".  In the case of a 
+garcia, this file might have a few lines like:
+
+baudrate = 38400
+camera-boom = yes
+portname = tts/2
+
+With these configurations, you should be able to serve
+the API over TCP/IP and determine which API you would 
+like to serve.  Finally, you can specify the parameters
+for the BrainStem link or links using the .config files.
+
+----------- Thanks for using our aRobot API! -----------

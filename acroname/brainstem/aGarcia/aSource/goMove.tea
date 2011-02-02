@@ -1,0 +1,93 @@
+/* goMove.tea (moto,1) */
+/* go straight forward or backward */
+
+/* 4-byte signed range input */
+/* 2-byte velocity input (scratch pad, always positive) */
+
+#include "gCommon.tea"
+
+#define	FRONTREARMASK	~((1<<aGARCIA_GP_BIT_ENABLEREAR) | (1<<aGARCIA_GP_BIT_ENABLEFRONT))
+
+void move_straight(int rh, int rl, int v)
+{
+  aMotion_SetRampVelocity(v,v);
+  asm
+  {
+    /* set same 4-byte target distances (a,b) for both ramps */
+    pushss	8
+    pushlb	aMOTION_RMPCFGW + aMOTION_RIDSTH
+    popbm	aPortMotion+0*aPortMotionBlockSize+aOffsetMotionRmpCfg
+    pushss	6
+    pushlb	aMOTION_RMPCFGW + aMOTION_RIDSTL
+    popbm	aPortMotion+0*aPortMotionBlockSize+aOffsetMotionRmpCfg
+    pushss	8
+    pushlb	aMOTION_RMPCFGW + aMOTION_RIDSTH
+    popbm	aPortMotion+1*aPortMotionBlockSize+aOffsetMotionRmpCfg
+    pushss	6
+    pushlb	aMOTION_RMPCFGW + aMOTION_RIDSTL
+    popbm	aPortMotion+1*aPortMotionBlockSize+aOffsetMotionRmpCfg
+  }
+  gc_perform_dual_ramp();
+}
+
+int main(int rh, int rl)
+{
+  int v;
+  int acctm;
+  int status = 0;
+
+  
+  /* INITIALIZE INPUT */
+  
+  v = gc_read_pads(aGARCIA_MOTO_PADS_DEFVEL);
+  acctm = gc_read_pads(aGARCIA_MOTO_PADS_DEFACCTM);
+
+
+  /* SET MOTION STATE BASED ON INPUT */
+  
+  if (v && (rl || rh))
+  {
+    gc_set_stall_params(v, STALL_LOAD);
+    gc_init_ramp(ACCT_NORM);
+
+    /* reconfigure monitors */
+    gc_write_padb_gp(aGARCIA_GP_PADB_MIRRORMASK, FRONTREARMASK);
+    if (rh < 0)
+    {
+      /* reverse */
+      gc_const_wrpadb(aGARCIA_MOTO_PADB_ENDFLAGS, aGARCIA_ENDCTRL_REAR);
+      gc_write_padb_gp(aGARCIA_GP_PADB_MIRRORIO, (1<<aGARCIA_GP_BIT_ENABLEREAR));
+      gc_write_padb_gp(aGARCIA_GP_PADB_REARCTRL, (aGARCIA_REARCTRL_LEFT | aGARCIA_REARCTRL_RIGHT));
+      v = -v;
+    }
+    else
+    {
+      /* forward */
+      gc_const_wrpadb(aGARCIA_MOTO_PADB_ENDFLAGS, aGARCIA_ENDCTRL_FRONT);
+      gc_write_padb_gp(aGARCIA_GP_PADB_MIRRORIO, (1<<aGARCIA_GP_BIT_ENABLEFRONT));
+    }
+
+    /* restart monitor */
+    gc_aClrStatus;
+    gc_aMonEnable;
+
+    /* give time for monitors to stabilize */
+    gc_const_sleep(750);
+
+    /* then attempt motion */    
+    move_straight(rh, rl, v);
+  }
+  
+  /* motion done so turn monitors off */
+  gc_write_padb_gp(aGARCIA_GP_PADB_MIRRORMASK, FRONTREARMASK);
+  gc_write_padb_gp(aGARCIA_GP_PADB_MIRRORIO, 0);
+  gc_write_padb_gp(aGARCIA_GP_PADB_REARCTRL, 0);
+  gc_aMonDisable;
+
+  status = gc_read_pads(aGARCIA_MOTO_PADS_STATUS);
+  if (gc_read_padb(aGARCIA_MOTO_PADB_EXEFLAGS) & aGARCIA_EXECTRL_USER)
+  {
+    aMulti_Signal(aGARCIA_MOTO_PID_USER, status);
+  }
+  return status;
+}

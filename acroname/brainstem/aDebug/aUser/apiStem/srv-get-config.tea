@@ -1,0 +1,27 @@
+
+#include <aAPI.tea>
+#include <aAPIStemDefs.tea>
+
+void main()
+{
+  char id;
+  char module;
+
+  module = aAPI_GetObjByteVar(apiSTEM_SERVO_MODULE);
+  id = aAPI_GetObjByteVar(apiSTEM_SERVO_ID);
+
+  aAPI_SetTxByte0(cmdSRV_CFG);
+  aAPI_SetTxByteVar(1, id);
+  aAPI_SetTxLength(2);
+
+  aAPI_SetRxFilterByte(cmdSRV_CFG);
+  aAPI_SetRxTimeout(apiSTEM_DEFAULT_TIMEOUT);
+
+  aAPI_BeginTxVar(module);
+  aAPI_BeginRxVar(module);
+
+  aAPI_SetRxByteVar(1, 0);
+
+  // return value is in 0x0C22
+  // let 0x0C21 = 0 to make it an int
+}

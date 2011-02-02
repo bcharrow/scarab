@@ -1,0 +1,408 @@
+ACRONAME INC.
+June 15, 2004
+
+
+Listing of aSystem files and their functions.  (Build 22)
+See also the TEA section of:
+http://www.acroname.com/brainstem/ref/ref.html
+
+
+
+file: a6500.tea
+
+void a6500_Setup()	Configure pins for use with Polaroid 6500 sonar board.
+int a6500_ReadInt()	Take reading from Poloaroid 6500 sonar board.
+
+
+
+file: aA2D.tea
+
+int aA2D_ReadInt(char index)    Get 10-bit reading from A2D port
+char aA2D_ReadChar(char index)  Get 8-bit reading from A2D port
+
+
+
+file: aCmd.tea
+
+Defined values for BrainStem command codes, packet identifiers, and flags.
+
+
+
+file: aCompass.tea
+
+int aCompass_ReadInt()		Read heading as int from Devantech CMPS01 module.
+char aCompass_ReadChar()	Read heading as char from Devantech CMPS01 module.
+
+
+
+file:  aCore.tea
+
+void aCore_Sleep(int delay)           Halt VM process for a period of time.
+char aCore_Inportc(int port)          Read char from an IO port.
+void aCore_Outportc(int port, char a) Write char to an IO port.
+int aCore_Inporti(int port)           Read int from an IO port.
+void aCore_Outporti(int port, int a)  Write int to an IO port.
+
+
+
+file: aDig.tea
+
+void aDig_Config(char index, char flags)  Configure a digital IO pin.
+int aDig_ReadInt(char index)              Read integer (0-1) from digital input channel (0-4).
+char aDig_ReadChar(char index)            Read char (0-1) from digital input channel (0-4).
+int aDig_ReadAllInt()                     Read all digital inputs into an int (bits 0-4).
+int aDig_ReadTmr(char index)              Read time measurement from timer channel (1-4).
+void aDig_Write(char index, char data)    Write digital data (0-1) to a digital output.
+
+
+
+file:  aDump.tea
+
+void aDump_String(string s)  Send text string from VM to application.
+void aDump_Char(char c)      Send character from VM to application.
+void aDump_CharBin(char x)   Send char as binary string from VM to application.
+void aDump_CharDec(char x)   Send char as decimal string from VM to application.
+void aDump_CharUdec(char x)  Send char as unsigned decimal string from VM to application.
+void aDump_CharHex(char x)   Send char as hex string from VM to application.
+void aDump_IntBin(int x)     Send int as binary string from VM to application.
+void aDump_IntDec(int x)     Send int as decimal string from VM to application.
+void aDump_IntUdec(int x)    Send int as unsigned decimal string from VM to application.
+void aDump_IntHex(int x)     Send int as hex string from VM to application.
+void aDump_FixedIntDec(int n, char digits, char pad)     Send int as fixed-sized padded string from VM to application.
+
+
+
+file:  aEEP.tea
+
+char aEEP_ReadChar(unsigned char iic, int naddr)            Read char from IIC EEPROM.
+int aEEP_ReadInt(unsigned char iic, int naddr)              Read int from IIC EEPROM.
+void aEEP_WriteChar(unsigned char iic, int naddr, char b)   Write char to IIC EEPROM.
+void aEEP_WriteInt(unsigned char iic, int naddr, int n)     Write int to IIC EEPROM.
+
+
+
+file: aGP.tea
+
+int aGP_ReadGP2D02()  Take a reading from a Sharp GP2D02.
+
+
+
+file: aGPM.tea
+
+int aGPM_Get2DigitInt(char addr, char reg)      Get 2-digit int from GPM.
+int aGPM_Get3DigitInt(char addr, char reg)      Get 3-digit int from GPM.
+int aGPM_GetYear(char addr)                     Get year as integer.
+int aGPM_GetAltitude(char addr)                 Get altitude in meters as integer.
+int aGPM_GetAnalogInput(char addr, char n)      Get 8-bit reading from analog input.
+(macro)	aGPM_GetHours(addr)                     Get hours for current time as integer
+(macro)	aGPM_GetMinutes(addr)                   Get minutes for current time as integer.
+(macro)	aGPM_GetSeconds(addr)                   Get seconds for current time as integer.
+(macro)	aGPM_GetDay(addr)                       Get day as integer.
+(macro)	aGPM_GetMonth(addr)                     Get month as integer.
+(macro)	aGPM_GetLatitudeDegrees(addr)           Get degrees latitude as integer.
+(macro)	aGPM_GetLatitudeMinutes(addr)           Get minutes of latitude as integer.
+(macro)	aGPM_GetLatitudeFrac(addr)              Get fractional minutes of latitude as integer.
+(macro)	aGPM_GetLatitudeDirChar(addr)           Get latitude direction character.
+(macro)	aGPM_GetLongitudeDegrees(addr)          Get degrees longitude as integer.
+(macro)	aGPM_GetLongitudeMinutes(addr)          Get minutes of longitude as integer.
+(macro)	aGPM_GetLongitudeFrac(addr)             Get fractional minutes of latitude as integer.
+(macro)	aGPM_GetLongitudeDirChar(addr)          Get longitude direction character.
+(macro)	aGPM_GetGPSQuality(addr)                Get GPS quality code as char.
+(macro)	aGPM_GetSatellitesInUse(addr)           Get number of satellites in use as integer.
+(macro)	aGPM_GetTrueHeading(addr)               Get degrees of heading as integer.
+(macro)	aGPM_GetTrueHeadingFrac(addr)           Get fractional degrees of heading as integer.
+(macro)	aGPM_GetMagHeading(addr)                Get degrees of magnetic heading as integer.
+(macro)	aGPM_GetMagHeadingFrac(addr)            Get fractional degrees of magnetic heading as integer.
+(macro)	aGPM_GetSpeed(addr)                     Get speed in meters per second as integer.
+(macro)	aGPM_GetSpeedFrac(addr)                 Get fractional speed in meters per second as integer.
+(macro) aGPM_GetSatelliteID(addr, n)            Get ID of satellite in use.
+(macro) aGPM_GetSatelliteSignalLevel(addr, n)   Get signal level of satellite in use.
+(macro) aGPM_GetDigitalIO(addr)                 Get byte with state bits of 4 digital IO pins.
+(macro) aGPM_GetPosFoundFlag(addr)              Get flag indicating if position has been found.
+(macro) aGPM_GetStatus(addr)                    Get version and status info of GPS module.
+(macro)	aGPM_SetPortDir(addr, dir)              Set direction of digital IO pins.
+(macro)	aGPM_SetPortBits(addr, bits)            Set states of pins configured as digital outputs.
+
+
+
+file: aGPReflexes.tea
+
+definitions of reflex mappings for the GP 1.0 module
+
+
+
+file: aI2C.tea
+
+void aI2C_WriteChar(char addr, char reg, char data)                     Send 1 byte to I2C device.
+void aI2C_WriteInt(char addr, char reg, int data)                       Send 2 bytes (int) to I2C device.
+void aI2C_Write3(char addr, char reg, char a, char b, char c)           Send 3 bytes to I2C device.
+void aI2C_Write4(char addr, char reg, char a, char b, char c, char d)   Send 4 bytes to I2C device.
+char aI2C_ReadChar(char addr, char reg)                                 Read 1 byte from I2C device.
+int aI2C_ReadInt(char addr, char reg)                                   Read 2 bytes from I2C device.
+
+
+
+file: aIOPorts.tea
+
+Defined values for all the TEA VM I/O ports.
+
+
+
+file: aIRCM.tea
+
+(macro) aIRCM_SetLocalAddr(addr, data)	Set local node address.
+(macro) aIRCM_SetDestAddr(addr, data)	Set destination node address.
+(macro) aIRCM_SetTimeout(addr, data)	Set transmit timeout.
+(macro) aIRCM_SetRWData(addr, data)     Set remote write data.
+(macro) aIRCM_SetExtData(addr, x, data) Set an extended data byte.
+(macro) aIRCM_GetRWStatus(addr)         Get remote write status.
+(macro) aIRCM_GetRWError(addr)          Get remote write error.
+(macro) aIRCM_GetRRStatus(addr)         Get remote read status.
+(macro) aIRCM_GetRRError(addr)          Get remote read error.
+(macro) aIRCM_GetRRNode(addr)           Get remote read transmit node address.
+(macro) aIRCM_GetRRData(addr)           Get remote read data.
+(macro) aIRCM_GetRRWord(addr)           Get remote read transmit node and data and store in int.
+(macro) aIRCM_GetRemoteStatus(addr)     Get remote node status.
+(macro) aIRCM_GetIRCMStatus(addr)       Get module version.
+(macro) aIRCM_GetExtDataFlags(addr)     Get validity flags for extended data.
+(macro) aIRCM_GetExtData(addr, x)       Get an extended data byte.
+(macro) aIRCM_GetRCStatus(addr)         Get remote control read status.
+(macro) aIRCM_GetRCType(addr)           Get remote control type.
+(macro)	aIRCM_GetRCWord1(addr)          Get first 2 bytes of received remote control command.
+(macro)	aIRCM_GetRCWord2(addr)          Get last 2 bytes of received remote control command.
+char aIRCM_Transmit(char addr, char dest, char timeout, char data)  Send a byte to a remote node.
+
+
+
+file: aLCD.tea
+
+void aLCD_Byte(unsigned char a)  Send byte to LCD.
+void aLCD_IntDec(int a)          Send int as decimal string to LCD.
+void aLCD_IntUdec(int a)         Send int as unsigned decimal string to LCD.
+void aLCD_IntHex(int a)          Send int as hexadecimal string to LCD.
+void aLCD_CharDec(char a)        Send int as decimal string to LCD.
+void aLCD_CharUdec(char a)       Send int as unsigned decimal string to LCD.
+void aLCD_CharHex(char a)        Send int as hexadecimal string to LCD.
+void aLCD_String(string s)       Send text string to LCD.
+
+
+file: aLCDx.tea
+
+void aLCDx_Byte(unsigned char a)  Send printable byte to LCD.
+void aLCDx_Cmd(unsigned char a)   Send command byte to LCD.
+void aLCDx_IntDec(int a)          Send int as decimal string to LCD.
+void aLCDx_IntUdec(int a)         Send int as unsigned decimal string to LCD.
+void aLCDx_IntHex(int a)          Send int as hexadecimal string to LCD.
+void aLCDx_CharDec(char a)        Send int as decimal string to LCD.
+void aLCDx_CharUdec(char a)       Send int as unsigned decimal string to LCD.
+void aLCDx_CharHex(char a)        Send int as hexadecimal string to LCD.
+void aLCDx_String(string s)       Send text string to LCD.
+
+
+
+file: aMo.tea
+
+void aMo_Init()                                     Initialize pair of modified servos.
+void aMo_Go(char spdl, char spdr)                   Send speed settings to pair of modified servos.
+void aMo_Scoot(char spdl, char spdr, int time)      Send timed speed settings to pair of modified servos.
+void aMo_Steer(char maxspd, char minspd, char dir)  Steer pair of modified servos based on differential input.
+void aMo_HugIter(int range, int setpt, int side)    Perform one wall-hug iteration for GP2D02 and pair of modified servos.
+
+
+
+file: aMo_Def.tea
+
+Defined values for configuring a simple 2-wheel drive robot that uses modified servos for locomotion.
+
+
+
+file: aMotion.tea
+
+int aMotion_GetConfig(char ch, char code)                   general purpose motion control port read
+void aMotion_SetConfig(char ch, char code, int param)       general purpose motion control port write
+void aMotion_SetRampParam(char code, char ch, int param)    general purpose ramp control port write
+int aMotion_GetRampParam(char code, char ch)                general purpose ramp control port read
+void aMotion_SaveParameters(char channel)                   save control settings
+void aMotion_RampEnable(char channel, char enable)          control operation of ramp
+(macro)	aMotion_SetMode(channel, modeIndex, flags)          writes mode and flags
+(macro)	aMotion_GetMode(channel)                            reads mode
+(macro)	aMotion_GetFlags(channel)                           reads flags
+(macro)	aMotion_SetSetpoint(channel,position)               reads setpoint or PWM setting
+(macro)	aMotion_GetSetpoint(channel)                        gets setpoint or PWM setting
+(macro)	aMotion_SetParameter(channel, paramIndex, param)    sets P,I,D or other param
+(macro)	aMotion_GetParameter(channel, paramIndex)           gets P,I,D or other param
+(macro)	aMotion_PeekSet(channel)                            check setpoint
+(macro)	aMotion_PeekInput(channel)                          check input to PID loop
+(macro)	aMotion_PeekPWM(channel)                            check output of PID loop
+(macro)	aMotion_SetRampTarget(channel,posH,posL)            set 4-byte distance to travel
+(macro)	aMotion_GetRampTargetH(channel)                     read high 2 bytes of travel distance
+(macro)	aMotion_GetRampTargetL(channel)                     read low 2 bytes of travel distance
+(macro)	aMotion_SetRampVel(channel,maxVelocity)             set max velocity for ramp or new damped velocity
+(macro)	aMotion_GetRampVel(channel)                         read ramp velocity
+(macro)	aMotion_SetRampAccStepTime(channel,accsteptime)     set acceleration step time
+(macro)	aMotion_GetRampAccStepTime(channel)                 get acceleration step time
+(macro)	aMotion_SetRampFlags(channel,flags)                 set ramp reflex and control flags
+(macro)	aMotion_GetRampFlags(channel)                       get ramp reflex and control flags
+(macro)	aMotion_SetEnc32(channel, enc32H, enc32L)           set 4-byte (32-bit) encoder
+(macro)	aMotion_GetEnc32H(channel)                          read high 2 bytes of 4-byte (32-bit) encoder
+(macro)	aMotion_GetEnc32L(channel)                          read low 2 bytes of 4-byte (32-bit) encoder
+void aMotion_SetVelocity(int v0, int v1)                    set speeds for 2-wheel drive robot
+void aMotion_SetRampVelocity(int v0, int v1)                set ramp speeds for 2-wheel drive robot
+void aMotion_RampVelSteer(int maxspd, int minspd, int dir)  apply steering input to ramp velocities
+void aMotion_VelSteer(int maxspd, int minspd, int dir)      apply steering input to velocities
+
+
+
+file: aMotionDefs.tea
+
+Defined values specific to motion control.
+
+
+
+file: aMotoModules.tea
+
+Defined values specific Moto module.
+
+
+
+file: aMotoReflexes.tea
+
+definitions of reflex mappings for the Moto 1.0 module
+
+
+
+file: aMulti.tea
+
+int aMulti_Run00(char fileID, char ProcID)        Run a halting subprocess that takes no parameters.
+int aMulti_Run10(char fileID, char ProcID, char c1)
+                                                  Run a halting subprocess that takes 1 char parameter.
+int aMulti_Run11(char fileID, char ProcID, char c1, int i1)
+                                                  Run a halting subprocess that takes 1 char and 1 int parameters.
+int aMulti_Run12(char fileID, char ProcID, char c1, int i1, int i2)
+                                                  Run a halting subprocess that takes 1 char and 2 int parameters.
+int aMulti_Run13(char fileID, char ProcID, char c1, int i1, int i2, int i3)
+                                                  Run a halting subprocess that takes 1 char and 3 int parameters.
+void aMulti_Halt(char callingProcID, int retval)  Return from a halting subprocess.
+void aMulti_Spawn(char fileID, char ProcID)       Run a persisting subprocess.
+void aMulti_Kill(char ProcID)                     Kill a persisting subprocess.
+void aMulti_Signal(int proc, int data)            Send int via semaphore.
+int aMulti_Wait()                                 Stall process until an int is received via semaphore.
+void aMulti_PadWrChar(char x, char c)             Write char to scratchpad.
+char aMulti_PadRdChar(char x)                     Read char from scratchpad
+void aMulti_PadWrInt(char x, int n)               Write int to scratchpad.
+int aMulti_PadRdInt(char x)                       Read int from scratchpad.
+
+
+
+file:  aOOPic.tea
+
+void aOOPic_WriteChar(char oopic, char addr, char mask, char data)  write 1 byte to OOPic object
+char aOOPic_ReadChar(char oopic, char addr)                         read 1 byte from OOPic object
+void aOOPic_WriteInt(char oopic, char addr, char mask, int data)    write 2 bytes to OOPic object
+int aOOPic_ReadInt(char oopic, char addr)                           read 2 bytes from OOPic object
+
+
+
+file:  aPad.tea
+
+void aPad_WriteChar(char padIndex, char c)        write char to scratchpad
+char aPad_ReadChar(char padIndex)                 read char from scratchpad
+void aPad_WriteInt(char padIndex, int n)          write int to scratchpad
+int aPad_ReadInt(char padIndex)                   read int from scratchpad
+
+
+
+file:  aPPRK.tea
+
+void aPPRK_Vel(char s1, char s2, char s3, char r)  Control BrainStem PPRK servos.
+void aPPRK_Go(char s1, char s2, char s3, char r)   Control BrainStem PPRK servos (0 velocity disables servos).
+int aPPRK_RangeCM(char i)                          Convert ranger reading to linear centimeter estimate.
+
+
+
+file:  aPrint.tea
+
+void aPrint_String(string s)  Send text string from VM to Console.
+void aPrint_Char(char c)      Send character from VM to Console.
+void aPrint_CharBin(char x)   Send char as binary string from VM to Console.
+void aPrint_CharDec(char x)   Send char as decimal string from VM to Console.
+void aPrint_CharUdec(char x)  Send char as unsigned decimal string from VM to Console.
+void aPrint_CharHex(char x)   Send char as hex string from VM to Console.
+void aPrint_IntBin(int x)     Send int as binary string from VM to Console.
+void aPrint_IntDec(int x)     Send int as decimal string from VM to Console.
+void aPrint_IntUdec(int x)    Send int as unsigned decimal string from VM to Console.
+void aPrint_IntHex(int x)     Send int as hex string from VM to Console.
+void aPrint_FixedIntDec(int n, char digits, char pad)     Send int as fixed-sized padded string from VM to Console.
+
+
+
+file:  aReflex.tea
+
+void aReflex_TriggerChar(unsigned char vectorIndex, char param)    start a reflex and pass input byte
+
+
+
+file: aServo.tea
+
+char aServo_Count()                                          Return number of servo outputs on module.
+void aServo_SetConfig(char servo, unsigned char config)      Configure a servo output.
+unsigned char aServo_GetConfig(char servo)                   Retrieve config byte for a servo.
+void aServo_SetLimits(char servo, int limits)                Set positioning limits for a servo.
+int aServo_GetLimits(char servo)                             Retrieve positioning limits for a servo.
+void aServo_SetAbsolute(char servo, unsigned char position)  Set absolute position for a servo.
+unsigned char aServo_GetAbsolute(char servo)                 Retrieve current absolute position for a servo.
+void aServo_Relative(char servo, char offset)                Move servo a relative amount.
+void aServo_SetReflex(char servo, unsigned int reflex)       Set reflex info for a speed-controlled servo.
+unsigned int aServo_GetReflex(char servo)                    Get reflex info for a speed-controlled servo.
+void aServo_Stop(char servo)                                 Stop a servo that is executing a speed-controlled motion. 
+void aServo_Write(char index, char data)                     Disable a servo output and write 0 or 1 to that pin.
+
+
+
+file: aSP03.tea
+
+char aSP03_CheckCompletion()                    Checks if phrase is completed.
+void aSP03_WaitForCompletion()                  Waits until phrase is completed.
+void aSP03_SpeakPhrase(unsigned char nPhrase)   Speaks pre-stored phrase (1-30).
+void aSP03_SpeakString(unsigned char nVolume,   Speaks arbitrary phrase.
+		       unsigned char nPitch,
+		       unsigned char nSpeed,
+		       string s)
+void aSP03_SpeakInt(unsigned char nVolume,      Speaks arbitrary number.
+		       unsigned char nPitch,
+		       unsigned char nSpeed,
+		       int n)
+
+
+
+file: aSRF04.tea
+
+void aSRF04_Setup()	  Configure pins for use with Devantech SRF04 sonar board.
+int aSRF04_ReadInt()  Take reading from Devantech SRF04 sonar board.
+
+
+
+file: aSRF08.tea
+
+void aSRF08_RangeInt(unsigned char rangerAddress, 
+		     unsigned char unitCode)			Take reading from a Devantech SRF08 sonar board.
+
+
+
+file: aStash.tea
+
+void aStash_ByteGo()                                             Function to implement a byte-stash process.
+void aStash_ByteWr(char ProcID, char index, unsigned char data)  Writes byte to a byte-stash process.
+unsigned char aStash_ByteRd(char ProcID, char index)             Retrieves byte from a byte-stash process.
+
+
+
+file: aWWDefs.tea
+
+Defined values for using two Wheel Watcher quadrature encoder units.
+
+
+
+file: aWWEnc.tea
+
+Source code for process that monitors two Wheel Watcher quadrature encoder units.

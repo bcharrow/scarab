@@ -1,0 +1,14 @@
+# makefile: host/aGarcia/makescript.Linux
+
+SHELL := /bin/sh
+
+.PHONY : debug
+debug :
+
+
+.PHONY : release
+release :
+
+
+.PHONY : clean
+clean :

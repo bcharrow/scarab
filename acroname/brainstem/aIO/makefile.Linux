@@ -1,0 +1,52 @@
+# makefile: host/aIO/makefile.Linux
+
+SHELL := /bin/sh
+#ARCH = `arch`
+CC := gcc
+
+ROOT := ../
+LIBNAME := aIO
+
+INCLUDES := -IaCommon \
+	    -IaUnix \
+	    -Izlib-1.1.4 \
+	    -I../aCommon \
+	    -I../aDebug/aUnix
+
+VPATH := aCommon:aUnix:zlib-1.1.4:../aCommon
+
+SOURCES := aAssert.c \
+	   aMemHandleDebug.c \
+           aCCMap.c \
+	   aIOInternal.c \
+	   aIO.c \
+	   aMemPool.c \
+	   aMemPoolInternal.c \
+	   aParseFrame.c \
+	   aSettingFile.c \
+           aStream.c \
+	   aStreamBuffer.c \
+	   aStreamZLibFilter.c \
+           aSymbolTable.c \
+           aSymbolTableInternal.c \
+           aToken.c \
+           aTokenInternal.c \
+           aXML.c \
+	   unix_aIOUtils.c \
+           unix_aIO.c \
+           unix_aFile.c \
+	   unix_aDirectory.c \
+           unix_aStream.c \
+           unix_aUSB.c \
+	   adler32.c \
+	   deflate.c \
+	   infblock.c \
+	   infcodes.c \
+	   inffast.c \
+	   inflate.c \
+	   inftrees.c \
+	   infutil.c \
+	   trees.c \
+	   zutil.c \
+
+include $(ROOT)make_library.Linux

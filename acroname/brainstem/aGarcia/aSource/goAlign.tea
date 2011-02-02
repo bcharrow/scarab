@@ -1,0 +1,146 @@
+/* goAlign.tea (moto,4) */
+/* align front sensor with wall */
+/* takes 1-byte side input and 2-byte distance */
+
+#include "gCommon.tea"
+
+
+#define	WHSEEKVEL	3
+#define	WHSEEKTM	10
+#define	WHSEEKDMAX	15	/* offset for drop-off from max */
+#define	WHSEEKCMAX	10	/* drop-off count before max lost */
+
+#define	FRONTREARMASK	~((1<<aGARCIA_GP_BIT_ENABLEREAR) | (1<<aGARCIA_GP_BIT_ENABLEFRONT))
+
+void max_scan(char fside)
+{
+  int r;
+  int maxr = 0;
+  int maxct = 0;
+
+  while (1)
+  {
+    if (gc_aGetStatus) break;
+
+    r = gc_ravg(fside);
+
+    if (r > maxr)
+    {
+      /* set new max and clear drop-off count */
+      maxr = r;
+      maxct = 0;
+    }
+    else
+    {
+      /* detect a drop-off from the maximum */
+      if (r < (maxr - WHSEEKDMAX)) maxct++;
+    }
+
+    /* break when too many drop-offs occur in a row */
+    if (maxct > WHSEEKCMAX) break;
+
+    gc_const_sleep(WHSEEKTM);
+  }
+}
+
+
+
+void max_front_ir(char fside, char mode, int fthr, int v)
+{
+  int err = 0;
+  int v0 = v;
+  int v1 = -v;
+
+  /* if an error occurs then the loops */
+  /* won't execute and final speed will be 0 */
+
+  if (mode != aGARCIA_ALIGNMODE_STRAIGHT)
+  {  
+    /* determine initial rotate direction based on side */
+  
+    if (fside == aGARCIA_MOTO_ARANGE_FRONT_RIGHT)
+    {
+      v0 = -v;
+      v1 = v;
+    }
+
+    /* maximize reading on front sensor to get known alignment */
+
+    aMotion_SetVelocity(v0,v1);
+    max_scan(fside);
+    aMotion_SetVelocity(-v0,-v1);
+    max_scan(fside);
+    aMotion_SetVelocity(0,0);
+  }
+
+  if (mode != aGARCIA_ALIGNMODE_ROTATE)
+  {
+    /* move forward or backward to get desired distance */
+  
+    if (gc_ravg(fside) > fthr)
+    {
+      /* too close so back up */
+      v = -v;
+    }
+    aMotion_SetVelocity(v,v);
+    while (1)
+    {
+      if (gc_aGetStatus) break;
+      err = fthr - gc_ravg(fside);
+      if ((err < 5) && (err > -5)) break;
+      gc_const_sleep(WHSEEKTM);
+    }
+    aMotion_SetVelocity(0,0);
+  }
+}
+
+
+
+int main(char side, char mode, int rthr)
+{
+  int v = 0;
+  int status = 0;
+
+
+  /* INITIALIZE INPUT */
+
+  v = gc_read_pads(aGARCIA_MOTO_PADS_DEFVEL);
+
+
+  /* SET MOTION STATE BASED ON INPUT */
+
+  if (v)
+  {
+    gc_set_stall_params(v, STALL_LOAD);
+    
+    /* reconfigure monitors */
+    gc_const_wrpadb(aGARCIA_MOTO_PADB_ENDFLAGS, aGARCIA_ENDCTRL_REAR);
+    gc_write_padb_gp(aGARCIA_GP_PADB_MIRRORMASK, FRONTREARMASK);
+    gc_write_padb_gp(aGARCIA_GP_PADB_MIRRORIO, ((1<<aGARCIA_GP_BIT_ENABLEREAR) | (1<<aGARCIA_GP_BIT_ENABLEFRONT)));
+    gc_write_padb_gp(aGARCIA_GP_PADB_REARCTRL, (aGARCIA_REARCTRL_LEFT | aGARCIA_REARCTRL_RIGHT));
+
+    /* restart monitor */
+    gc_aClrStatus;
+    gc_aMonEnable;
+
+    /* give time for monitors to stabilize */
+    gc_const_sleep(750);
+
+    /* then attempt motion */
+    gc_aClrEnc32;
+    max_front_ir(side, mode, rthr, v);
+  }
+
+  /* motion done so turn monitors off */
+  gc_write_padb_gp(aGARCIA_GP_PADB_MIRRORMASK, FRONTREARMASK);
+  gc_write_padb_gp(aGARCIA_GP_PADB_MIRRORIO, 0);
+  gc_write_padb_gp(aGARCIA_GP_PADB_REARCTRL, 0);
+  gc_aMonDisable;
+
+  status = gc_read_pads(aGARCIA_MOTO_PADS_STATUS);
+  if (gc_read_padb(aGARCIA_MOTO_PADB_EXEFLAGS) & aGARCIA_EXECTRL_USER)
+  {
+    aMulti_Signal(aGARCIA_MOTO_PID_USER, status);
+  }
+  return status;
+}

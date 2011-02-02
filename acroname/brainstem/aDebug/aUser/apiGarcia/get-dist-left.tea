@@ -1,0 +1,17 @@
+#include <aAPI.tea>
+#include <aAPIGarcia.tea>
+
+void main()
+{
+  aAPI_SetTxByte0(cmdMO_ENC32);
+  aAPI_SetTxByte1(aGARCIA_MOTO_MOTOR_LEFT);
+  aAPI_SetTxLength(2);
+
+  aAPI_SetRxFilterByte(cmdMO_ENC32);
+  aAPI_SetRxTimeout(apiGARCIA_DEFAULT_TIMEOUT);
+
+  aAPI_BeginTx(aGARCIA_MOTO_ADDR);
+  aAPI_BeginRx(aGARCIA_MOTO_ADDR);
+
+  // return value is 0x0C22
+}

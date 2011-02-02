@@ -1,0 +1,73 @@
+DATADIR := unix_$(PROGNAME)_Data/
+
+OBJECTS = $(SOURCES:.c=.o)
+DEPENDS = $(SOURCES:.c=.d)
+
+OBJECTS += aOSDefs.o
+
+DBGCFLAGS := -include aUnix/unix_$(PROGNAME)_pfxd.h -Wall -Werror \
+	     -g
+DBGOBJDIR := $(DATADIR)$(ARCH)/aDebug/
+DBGDEPENDS := $(addprefix $(DBGOBJDIR), $(DEPENDS))
+DBGOBJECTS := $(addprefix $(DBGOBJDIR), $(OBJECTS))
+DBGOUTDIR := $(ROOT)aDebug/aUnix/$(ARCH)/
+
+RELCFLAGS := -include aUnix/unix_$(PROGNAME)_pfx.h -Wall -Werror \
+	     -O3
+RELOBJDIR := $(DATADIR)$(ARCH)/aRelease/
+RELDEPENDS := $(addprefix $(RELOBJDIR), $(DEPENDS))
+RELOBJECTS := $(addprefix $(RELOBJDIR), $(OBJECTS))
+RELOUTDIR := $(ROOT)aRelease/aUnix/$(ARCH)/
+
+.PHONY : all
+all : debug release
+
+debug : $(DBGOBJDIR) $(DBGDEPENDS) $(DBGOBJECTS)
+	@echo linking debug $(PROGNAME)
+	$(CC) -g -Wall -Werror -Wl,-rpath ./ -L$(DBGOUTDIR) $(LIBRARIES) \
+	      -o $(DBGOUTDIR)$(PROGNAME) $(DBGOBJECTS)
+
+release : $(RELOBJDIR) $(RELDEPENDS) $(RELOBJECTS)
+	@echo linking release $(PROGNAME)
+	$(CC) \
+	      -Wall -Werror -Wl,-rpath ./ -L$(RELOUTDIR) $(LIBRARIES) \
+	      -o $(RELOUTDIR)$(PROGNAME) $(RELOBJECTS)
+
+# directories
+$(DATADIR) :
+	@echo building directory $@
+	@[ -d $(DATADIR) ] || mkdir $(DATADIR)
+$(DBGOBJDIR) : $(DATADIR)
+	@echo building directory $@
+	@[ -d $(DBGOBJDIR) ] || mkdir -p $(DBGOBJDIR)
+$(RELOBJDIR) : $(DATADIR)
+	@echo building directory $@
+	@[ -d $(RELOBJDIR) ] || mkdir -p $(RELOBJDIR)
+
+# dependencies
+$(DBGOBJDIR)%.d: %.c $(DBGOBJDIR)
+#	@echo -n "$@ $(DBGOBJDIR)" > $@;
+	@set -e; $(CC) -MM $(DBGCFLAGS) $(INCLUDES) $< >> $@; [ -s $@ ] \
+		|| rm -f $@
+$(RELOBJDIR)%.d: %.c $(RELOBJDIR)
+#	@echo -n "$@ $(RELOBJDIR)" > $@;
+	@set -e; $(CC) -MM $(RELCFLAGS) $(INCLUDES) $< >> $@; [ -s $@ ] \
+		|| rm -f $@
+
+-include $(DBGDEPENDS)
+-include $(RELDEPENDS)
+
+# object generation
+$(DBGOBJDIR)%.o : %.c $(DBGOBJDIR)%.d
+	@echo compiling debug $<
+	$(CC) -c $(DBGCFLAGS) $(INCLUDES) -o $@ $<
+$(RELOBJDIR)%.o : %.c $(RELOBJDIR)%.d
+	@echo compiling release $<
+	$(CC) -c $(RELCFLAGS) $(INCLUDES) -o $@ $<
+
+# cleanup
+.PHONY: clean
+clean :
+	rm -rf $(DATADIR)
+	rm -f $(DBGOUTDIR)$(PROGNAME)
+	rm -f $(RELOUTDIR)$(PROGNAME)

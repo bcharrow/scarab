@@ -1,0 +1,93 @@
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* file: aMo_Def.tea                                               */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* description: Data for setting up dual modified servos for a     */
+/*              simple two-wheel differential drive robot.         */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/*        docs: Documentation can be found in the BrainStem        */
+/*              Reference under the major topic "TEA"              */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* Copyright 1994-2008. Acroname Inc.                              */
+/*                                                                 */
+/* This software is the property of Acroname Inc.  Any             */
+/* distribution, sale, transmission, or re-use of this code is     */
+/* strictly forbidden except with permission from Acroname Inc.    */
+/*                                                                 */
+/* To the full extent allowed by law, Acroname Inc. also excludes  */
+/* for itself and its suppliers any liability, wheither based in   */
+/* contract or tort (including negligence), for direct,            */
+/* incidental, consequential, indirect, special, or punitive       */
+/* damages of any kind, or for loss of revenue or profits, loss of */
+/* business, loss of information or data, or other financial loss  */
+/* arising out of or in connection with this software, even if     */
+/* Acroname Inc. has been advised of the possibility of such       */
+/* damages.                                                        */
+/*                                                                 */
+/* Acroname Inc.                                                   */
+/* www.acroname.com                                                */
+/* 720-564-0373                                                    */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+#ifndef _aMo_Def_T_
+#define _aMo_Def_T_
+
+
+/*
+ * This file may be copied and the defined values may be
+ * changed for a particular robot.  This file or a copy of
+ * it (with the same name or a different name) must be
+ * included before including the file aMo.tea.  The aMo.tea
+ * file uses this data for motor control calculations and
+ * for configuring the modified servos.
+ */
+
+
+
+/*
+
+MODIFIED SERVO PARAMETERS
+
+modified servos must be balanced so that the following
+absolute position settings have these effects:
+
+0   = servo is rotating backward at full speed
+60  = servo is stopped
+120 = servo is rotating forward at full speed
+
+Use GP.EXE to balance the servos.
+
+You may need to change some of the parameters
+listed below to configure the servos on your robot.
+Copy and rename the file for different robots.
+
+*/
+
+
+#define	AMO_SRVL	0		/* index of left servo */
+#define	AMO_SRVR	1		/* index of right servo */
+#define	AMO_CFGL	0xC0		/* invert and enable left servo */
+#define	AMO_CFGR	0x80		/* enable right servo */
+#define	AMO_POS0L	0x12		/* left servo position 0 offset */
+#define	AMO_POSRESL	0x22		/* left servo positioning resolution */
+#define	AMO_POS0R	0x26		/* right servo position 0 offset */
+#define	AMO_POSRESR	0x22		/* right servo positioning resolution */
+
+/* WALL HUG PARAMETERS */
+/* increase gain for quicker response */
+/* decrease minv to turn more sharply when no wall is present */
+/* decrease maxv to slow down wall-hug */
+/* minv should probably not be more than 0.5*maxv */
+
+#define	AMO_WHUGGAIN	4
+#define	AMO_WHUGMAXV	60
+#define	AMO_WHUGMINV	15
+
+#endif /* _aMo_Def_T_ */

@@ -1,0 +1,28 @@
+#include <aAPI.tea>
+#include <aAPIGarcia.tea>
+
+void main()
+{
+  int x = 0;
+
+  aAPI_SetTxByte0(cmdCTR_SET);
+  aAPI_SetTxByte1(aGARCIA_GP_CTR_REARTHR);
+  aAPI_SetTxLength(2);
+
+  aAPI_SetRxFilterByte(cmdCTR_SET);
+  aAPI_SetRxTimeout(apiGARCIA_DEFAULT_TIMEOUT);
+
+  aAPI_BeginTx(aGARCIA_GP_ADDR);
+  aAPI_BeginRx(aGARCIA_GP_ADDR);
+
+  // return value is 0x0C22
+
+  // now do the interpolation
+  x = aGarciaAPI_ConvGP2D12(aAPI_GetRxShortVar(2));
+
+  // add offset to center point
+  x = x + apiGARCIA_RANGER_OFFSET_REAR;
+  
+  // restuff value
+  aAPI_SetRxShortVar(2, x);
+}

@@ -1,0 +1,46 @@
+
+#include <aAPI.tea>
+#include <aAPIStemDefs.tea>
+#include <aIOPorts.tea>
+
+void main()
+{
+  char id;
+  char module;
+
+  module = (char)aAPI_GetObjShortVar(apiSTEM_SRF08_MASTER_ADDR);
+  id = (char)aAPI_GetObjShortVar(apiSTEM_SRF08_ADDR);
+
+  // send command to make sonar take a reading
+  // and return value in milliseconds
+  aAPI_SetTxByte0(0);
+  aAPI_SetTxByte1(0x52);
+  aAPI_SetTxLength(2);
+  aAPI_BeginTxVar(id);
+
+  // recommended 70ms delay
+  asm {
+    pushls 	800
+    popsm	aPortVMTimer
+  }
+  
+  // reset read register
+  aAPI_SetTxByte0(2);
+  aAPI_SetTxLength(1);
+  aAPI_BeginTxVar(id);
+
+  // send command to read result from the sonar
+  aAPI_SetTxByte0(cmdIIC_RD);
+  aAPI_SetTxByte1((unsigned char)0x80);
+  aAPI_SetTxByteVar(2, (id | 1));
+  aAPI_SetTxByte3(2);
+  aAPI_SetTxLength(4);
+  
+  aAPI_SetRxFilterByte(cmdDEV_VAL);
+  aAPI_SetRxTimeout(apiSTEM_DEFAULT_TIMEOUT);
+
+  aAPI_BeginTxVar(module);
+  aAPI_BeginRxVar(module);
+
+  // return value is in 0x0C22
+}

@@ -1,0 +1,147 @@
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* file: aSRF04.tea                                                */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* description: Routines for interfacing to the Devantech SRF04	   */
+/*              ranging module.                                    */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/*        docs: Documentation can be found in the BrainStem        */
+/*              Reference under the major topic "TEA"              */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* Copyright 1994-2008. Acroname Inc.                              */
+/*                                                                 */
+/* This software is the property of Acroname Inc.  Any             */
+/* distribution, sale, transmission, or re-use of this code is     */
+/* strictly forbidden except with permission from Acroname Inc.    */
+/*                                                                 */
+/* To the full extent allowed by law, Acroname Inc. also excludes  */
+/* for itself and its suppliers any liability, wheither based in   */
+/* contract or tort (including negligence), for direct,            */
+/* incidental, consequential, indirect, special, or punitive       */
+/* damages of any kind, or for loss of revenue or profits, loss of */
+/* business, loss of information or data, or other financial loss  */
+/* arising out of or in connection with this software, even if     */
+/* Acroname Inc. has been advised of the possibility of such       */
+/* damages.                                                        */
+/*                                                                 */
+/* Acroname Inc.                                                   */
+/* www.acroname.com                                                */
+/* 720-564-0373                                                    */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+#ifndef _aSRF04_T_
+#define _aSRF04_T_
+
+#include <aIOPorts.tea>
+
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * aSRF04_Setup
+ *
+ * purpose: sets up digital I/O pin 3 as an input with
+ *          edge timer, 1-0 transition.
+ *
+ *   using: you must define to pre-processor defines prior to 
+ *	    including this file.  They are:
+ *
+ *		aSRF04_INIT - the digital port number the INIT
+ *			      line is plugged into.
+ *		aSRF04_ECHO - the digital port number the ECHO
+ *			      line is plugged into.
+ */
+
+void aSRF04_Setup()
+{
+  asm {
+    // ECHO
+    pushlb	0b00000001
+    popbm	aPortDigital + (aPortDigitalBlockSize * aSRF04_ECHO) + aOffsetDigitalConfig
+
+    // INIT
+    pushlb	0b00000000
+    popbm	aPortDigital + (aPortDigitalBlockSize * aSRF04_INIT) + aOffsetDigitalConfig
+  }
+
+} /* aSRF04_Setup */
+
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * aSRF04_ReadInt
+ *
+ * purpose: Takes a reading from the SRF04 and returns
+ *	    the value as an int.
+ */
+
+int aSRF04_ReadInt()
+{
+  int val=0;
+
+  asm {
+    /* bring the INIT line up */
+    pushlb	1
+    popbm	aPortDigital + (aPortDigitalBlockSize * aSRF04_INIT) + aOffsetDigitalIO
+    
+    /* stall to create a pulse width */
+    pushlb	1
+    popbm	aPortVMTimer
+
+    /* drop the INIT line to start reading */
+    pushlb	0
+    popbm	aPortDigital + (aPortDigitalBlockSize * aSRF04_INIT) + aOffsetDigitalIO
+
+    /* await the echo from pin 3 */
+    pushms	aPortDigital + (aPortDigitalBlockSize * aSRF04_ECHO) + aOffsetDigitalPTime
+
+    /* pop the result into val */
+    popss	2 
+  }
+  
+  return val;
+
+} /* aSRF04_ReadInt */
+
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * aSRF04_ReadChar
+ *
+ * purpose: Takes a reading from the SRF04 and returns
+ *	    the value as an int.
+ */
+
+char aSRF04_ReadChar()
+{
+  char val=0;
+
+  asm {
+    /* bring the INIT line up */
+    pushlb	1
+    popbm	aPortDigital + (aPortDigitalBlockSize * aSRF04_INIT) + aOffsetDigitalIO
+    
+    /* stall to create a pulse width */
+    pushlb	1
+    popbm	aPortVMTimer
+
+    /* drop the INIT line to start reading */
+    pushlb	0
+    popbm	aPortDigital + (aPortDigitalBlockSize * aSRF04_INIT) + aOffsetDigitalIO
+
+    /* await the echo from pin 3 */
+    pushms	aPortDigital + (aPortDigitalBlockSize * aSRF04_ECHO) + aOffsetDigitalPTime
+
+    /* pop the result into val (just the high byte) */
+    popb
+    popbs	1 
+  }
+  
+  return val;
+
+} /* aSRF04_ReadChar */
+
+#endif /* _aSRF04_T_ */

@@ -1,0 +1,39 @@
+# host/aDebug/aUnix/makefile.Linux
+
+SHELL=/bin/sh
+PLATFORM=$(shell uname)
+ARCH=`arch`
+
+
+.PHONY : all
+all :
+
+
+.PHONY : prep
+prep :
+	rm -rf aPlugin
+	ln -sf ../aTest
+	ln -sf ../aUser
+	ln -sf ../aSystem
+	ln -sf ../aAsset
+	ln -sf ../aObject
+	ln -sf ../aPlugin
+	ln -sf ../aSymonym
+	chmod +x i386/run
+	chmod +x i586/run
+	chmod +x i686/run
+	chmod +x ARM/run
+
+
+.PHONY: clean
+clean :
+	rm -f aTest
+	rm -f aUser
+	rm -f aSystem
+	rm -f aAsset
+	rm -f aObject
+
+
+.PHONY : tests
+tests:
+	./run aIOTests

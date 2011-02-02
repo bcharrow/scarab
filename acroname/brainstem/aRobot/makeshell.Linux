@@ -1,0 +1,55 @@
+# makefile: host/aRobot/makeshell.Linux
+
+SHELL := /bin/sh
+CC := gcc
+CCP := g++
+
+ROOT := ../
+PROGNAME := aRobotShell
+
+INCLUDES := -IaCommon \
+	    -IaUnix \
+	    -IaRobot \
+	    -IaRobotShell \
+	    -I../aIO/aCommon \
+	    -I../aIO/aUnix \
+	    -I../aUI/aCommon \
+	    -I../aUI/aUnix \
+	    -I../aStem/aCommon \
+	    -I../aStem/aUnix \
+	    -I../aCommon \
+	    -I../aDebug/aUnix \
+	    -I../aDebug/aSystem \
+	    -I../aUnix
+
+LIBRARIES := -laIO \
+	     -lm
+
+VPATH := aCommon:\
+	 aUnix:\
+	 aRobotShell:\
+	 ../aUnix:\
+	 ../aCommon
+
+SOURCES := aAssert.c \
+	   aMemLeakDebug.c \
+	   aStream_TextLine.c \
+	   aUtil.c
+
+CPPSOURCES := acpException.cpp \
+	      acpValue.cpp \
+	      acpObject.cpp \
+	      acpProperty.cpp \
+	      acpShort.cpp \
+	      acpInt32.cpp \
+	      acpFloat.cpp \
+	      acpString.cpp \
+	      acpList.cpp \
+	      acpRobotClient.cpp \
+	      acpRobotShell.cpp \
+	      acpRobotProperty.cpp \
+	      acpRobotObject.cpp \
+	      acpHTMLDocument.cpp \
+	      unix_acpRobotShell.cpp 
+
+include $(ROOT)make_program_cpp.Linux

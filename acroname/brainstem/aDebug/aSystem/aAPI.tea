@@ -1,0 +1,187 @@
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* file: aAPI.tea                                                  */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* description: Routines for implementing host-side TEA            */
+/*              funtions specific to the Robot API.                */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/*        docs: Documentation can be found in the BrainStem        */
+/*              Reference under the major topic "TEA"              */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* Copyright 1994-2008. Acroname Inc.                              */
+/*                                                                 */
+/* This software is the property of Acroname Inc.  Any             */
+/* distribution, sale, transmission, or re-use of this code is     */
+/* strictly forbidden except with permission from Acroname Inc.    */
+/*                                                                 */
+/* To the full extent allowed by law, Acroname Inc. also excludes  */
+/* for itself and its suppliers any liability, wheither based in   */
+/* contract or tort (including negligence), for direct,            */
+/* incidental, consequential, indirect, special, or punitive       */
+/* damages of any kind, or for loss of revenue or profits, loss of */
+/* business, loss of information or data, or other financial loss  */
+/* arising out of or in connection with this software, even if     */
+/* Acroname Inc. has been advised of the possibility of such       */
+/* damages.                                                        */
+/*                                                                 */
+/* Acroname Inc.                                                   */
+/* www.acroname.com                                                */
+/* 720-564-0373                                                    */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+#ifndef _aAPI_T_
+#define _aAPI_T_
+
+// most API functions will use commands so include their codes here
+#include <aCmd.tea>
+#include <aAPIPorts.tea>
+
+// inlines for constant data
+#define aAPI_BeginTx(x)			asm { pushlb x popbm aAPIPortBeginTX }
+#define aAPI_BeginRx(x)			asm { pushlb x popbm aAPIPortBeginRX }
+#define aAPI_BeginTxRx(x,y)		asm { pushlb x pushlb y popsm aAPIPortBeginTXRX }
+#define aAPI_SetTxLength(x)		asm { pushlb x popbm aAPIPortTXLength }
+#define aAPI_SetRxTimeout(x)		asm { pushls x popsm aAPIPortRXTimeout }
+#define aAPI_SetRxFilterByte(x)		asm { pushlb x popbm aAPIPortRXFilterByte }
+#define aAPI_SetActiveFlag(x)		asm { pushlb x popbm aAPIPortActiveFlag }
+#define aAPI_SetAbortModule(x)		asm { pushlb x popbm aAPIPortAbortModule }
+#define aAPI_SetAbortMsgLength(x)	asm { pushlb x popbm aAPIPortAbortMsgLength }
+#define aAPI_AddAbortByte(x)		asm { pushlb x popbm aAPIPortAbortMsgAdd }
+#define aAPI_AddAbortShort(x)		asm { pushls x popsm aAPIPortAbortMsgAdd }
+#define	aAPI_SetTxByte0(x)		asm { pushlb x popbm aAPIPortTXBuffer }
+#define	aAPI_SetTxByte1(x)		asm { pushlb x popbm aAPIPortTXBuffer + 1 }
+#define	aAPI_SetTxByte2(x)		asm { pushlb x popbm aAPIPortTXBuffer + 2 }
+#define	aAPI_SetTxByte3(x)		asm { pushlb x popbm aAPIPortTXBuffer + 3 }
+#define	aAPI_SetTxByte4(x)		asm { pushlb x popbm aAPIPortTXBuffer + 4 }
+#define	aAPI_SetTxByte5(x)		asm { pushlb x popbm aAPIPortTXBuffer + 5 }
+#define	aAPI_SetTxByte6(x)		asm { pushlb x popbm aAPIPortTXBuffer + 6 }
+#define	aAPI_SetTxByte7(x)		asm { pushlb x popbm aAPIPortTXBuffer + 7 }
+#define	aAPI_SetAbortByte0(x)		asm { pushlb x popbm aAPIPortAbortMsg }
+#define	aAPI_SetAbortByte1(x)		asm { pushlb x popbm aAPIPortAbortMsg + 1 }
+#define	aAPI_SetAbortByte2(x)		asm { pushlb x popbm aAPIPortAbortMsg + 2 }
+#define	aAPI_SetAbortByte3(x)		asm { pushlb x popbm aAPIPortAbortMsg + 3 }
+#define	aAPI_SetAbortByte4(x)		asm { pushlb x popbm aAPIPortAbortMsg + 4 }
+#define	aAPI_SetAbortByte5(x)		asm { pushlb x popbm aAPIPortAbortMsg + 5 }
+#define	aAPI_SetAbortByte6(x)		asm { pushlb x popbm aAPIPortAbortMsg + 6 }
+#define	aAPI_SetAbortByte7(x)		asm { pushlb x popbm aAPIPortAbortMsg + 7 }
+
+// abbreviated variable byte subroutine calls
+#define aAPI_BeginTxVar(b)		aAPI_SetByte(aAPIPortBeginTX, 0, b)
+#define aAPI_BeginRxVar(b)		aAPI_SetByte(aAPIPortBeginRX, 0, b)
+#define aAPI_SetTxLengthVar(b)		aAPI_SetByte(aAPIPortTXLength, 0, b)
+#define aAPI_SetTxByteVar(x, b)		aAPI_SetByte(aAPIPortTXBuffer, x, b)
+#define aAPI_SetRxByteVar(x, b)		aAPI_SetByte(aAPIPortRXBuffer, x, b)
+#define aAPI_SetObjByteVar(x, b)	aAPI_SetByte(aAPIPortObjBuffer, x, b)
+#define aAPI_SetAbortByteVar(x, b)	aAPI_SetByte(aAPIPortAbortMsg, x, b)
+#define aAPI_SetAbortMsgLengthVar(b)	aAPI_SetByte(aAPIPortAbortMsgLength, 0, b)
+#define aAPI_GetTxByteVar(x)		aAPI_GetByte(aAPIPortTXBuffer, x)
+#define aAPI_GetRxByteVar(x)		aAPI_GetByte(aAPIPortRXBuffer, x)
+#define aAPI_GetObjByteVar(x)		aAPI_GetByte(aAPIPortObjBuffer, x)
+#define aAPI_GetAbortByteVar(x)		aAPI_GetByte(aAPIPortAbortMsg, x)
+
+// abbreviated variable short subroutine calls
+#define aAPI_SetTxShortVar(x, s)	aAPI_SetShort(aAPIPortTXBuffer, x, s)
+#define aAPI_SetRxShortVar(x, s)	aAPI_SetShort(aAPIPortRXBuffer, x, s)
+#define aAPI_SetObjShortVar(x, s)	aAPI_SetShort(aAPIPortObjBuffer, x, s)
+#define aAPI_SetAbortShortVar(x, s)	aAPI_SetShort(aAPIPortAbortMsg, x, s)
+#define aAPI_GetTxShortVar(x)		aAPI_GetShort(aAPIPortTXBuffer, x)
+#define aAPI_GetRxShortVar(x)		aAPI_GetShort(aAPIPortRXBuffer, x)
+#define aAPI_GetObjShortVar(x)		aAPI_GetShort(aAPIPortObjBuffer, x)
+#define aAPI_GetAbortShortVar(x)	aAPI_GetShort(aAPIPortAbortMsg, x)
+
+void aAPI_BeginTxRxVar(char x, char y)
+{
+  asm
+  {
+    pushss	4
+    popsm	aAPIPortBeginTXRX
+  }
+}
+
+void aAPI_SetByte(int port, int addr, char x)
+{
+  asm
+  {
+    pushsb	3
+    pushss	8
+    pushss	8
+    adds
+    popbmx
+  }
+}
+
+char aAPI_GetByte(int port, int addr)
+{
+  char c = 0;
+  asm
+  {
+    pushss	7
+    pushss	7
+    adds
+    pushmbx
+    popbs	1
+  }
+  return c;
+}
+
+void aAPI_SetShort(int port, int addr, int x)
+{
+  asm
+  {
+    pushss	4
+    pushss	10
+    pushss	10
+    adds
+    popsmx
+  }
+}
+
+int aAPI_GetShort(int port, int addr)
+{
+  int c = 0;
+  asm
+  {
+    pushss	8
+    pushss	8
+    adds
+    pushmsx
+    popss	2
+  }
+  return c;
+}
+
+void aAPI_AddAbortByteVar(char x)
+{
+  asm
+  {
+    pushsb	3
+    popbm	0x0C41
+  }
+}
+
+void aAPI_AddAbortShortVar(int x)
+{
+  asm
+  {
+    pushss	4
+    popsm	0x0C41
+  }
+}
+
+void aAPI_StoreStatus(int status)
+{
+  asm {
+    pushss	4
+    popbm	0x0C25
+    popbm	0x0C24
+  }
+}
+
+#endif /* _aAPI_T_ */

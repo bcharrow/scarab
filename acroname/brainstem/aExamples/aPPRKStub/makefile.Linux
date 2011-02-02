@@ -1,0 +1,41 @@
+# makefile: host/aExamples/aPPRKStub/makefile.Linux
+
+SHELL=/bin/sh
+CC=g++
+ARCH=`arch`
+
+ROOT = ../../
+PROGNAME = aPPRKStub
+
+INCLUDES = -IaCommon \
+	   -IaUnix \
+	   -I../../aCommon \
+	   -I../../aUnix \
+	   -I../../aIO/aCommon \
+	   -I../../aIO/aUnix \
+	   -I../../aUI/aCommon \
+	   -I../../aUI/aUnix \
+	   -I../../aPPRK/aCommon \
+	   -I../../aPPRK/aUnix \
+	   -I../../aStem/aCommon \
+	   -I../../aStem/aUnix \
+	   -I../../aTEAvm/aCommon \
+	   -I../../aTEAvm/aUnix \
+	   -I../../aDebug/aSystem
+
+LIBRARIES = -lm \
+	    -laIO \
+	    -laUI \
+	    -laStem \
+	    -laPPRK
+
+VPATH = ./aCommon:./aUnix:../../aCommon:../../aDebug/aUnix/$ARCH/
+
+SOURCES = aAssert.c \
+	  aMemLeakDebug.c \
+	  aStream_STDIO_Console.c \
+	  aUtil.c \
+	  aPPRKStub.c \
+          stdio_aPPRKStub.c
+
+include $(ROOT)make_program_cpp.Linux

@@ -1,0 +1,11 @@
+#include <aAPI.tea>
+#include <aAPIGarcia.tea>
+
+void main(int x)
+{
+  aAPI_SetTxByte0(cmdIRP_XMIT);
+  aAPI_SetTxByte1(aGARCIA_GP_DIRCOMM_TX);
+  aAPI_SetTxShortVar(2, x);
+  aAPI_SetTxLength(4);
+  aAPI_BeginTx(aGARCIA_GP_ADDR);
+}

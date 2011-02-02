@@ -1,0 +1,26 @@
+
+                Garcia Robot API Source Files
+
+These files may be used to rebuild the garcia_api.robot file.
+This file defines the interface between the host computer
+and Garcia robot when using the aRobot.dll in an application.
+
+The download already includes an garcia_api.robot file.  A user
+can rebuild this interface definition file if necessary.  The 
+files for this are located in the aUser directory under these 
+subdirectories:
+
+  aUser/apiGarcia
+  aUser/apiStem
+
+Open a command shell and go to the aBinary directory.
+Enter the following command at the prompt.
+
+aRobotPackager garcia_api.xml
+
+This garcia_api.xml file resides in the aUser directory and 
+it references the other files in the specific api sub-
+directories.  The resulting garcia_api.robot file will end
+up in the aObject directory when things are done.
+
+------------- Thanks for using our Garcia Robot! -------------

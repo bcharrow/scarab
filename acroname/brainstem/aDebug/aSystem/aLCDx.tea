@@ -1,0 +1,264 @@
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* file: aLCDx.tea                                                 */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* description: Alternate routines for use with IIC LCD display.   */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/*        docs: Documentation can be found in the BrainStem        */
+/*              Reference under the major topic "TEA"              */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* Copyright 1994-2008. Acroname Inc.                              */
+/*                                                                 */
+/* This software is the property of Acroname Inc.  Any             */
+/* distribution, sale, transmission, or re-use of this code is     */
+/* strictly forbidden except with permission from Acroname Inc.    */
+/*                                                                 */
+/* To the full extent allowed by law, Acroname Inc. also excludes  */
+/* for itself and its suppliers any liability, wheither based in   */
+/* contract or tort (including negligence), for direct,            */
+/* incidental, consequential, indirect, special, or punitive       */
+/* damages of any kind, or for loss of revenue or profits, loss of */
+/* business, loss of information or data, or other financial loss  */
+/* arising out of or in connection with this software, even if     */
+/* Acroname Inc. has been advised of the possibility of such       */
+/* damages.                                                        */
+/*                                                                 */
+/* Acroname Inc.                                                   */
+/* www.acroname.com                                                */
+/* 720-564-0373                                                    */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+
+#ifndef _aLCDx_T_
+#define _aLCDx_T_
+
+
+/*
+ * This library works with LCDs that expect a 0x00 byte
+ * before a series of printable characters and a 0x01 byte
+ * before a command character, such as the DS-LCDD2
+ * from Total Robots.
+ */
+
+/*
+ * ALCD_ADDR must be defined in the user program
+ * before this file is included!!!
+ *
+ * There are no routines for binary formatting
+ * because the result would be too big for popcmd.
+ */
+
+
+void aLCDx_Byte(unsigned char a)
+{
+  asm
+  {
+    pushlb ALCD_ADDR
+    pushlb 2 // will be sending two bytes
+    pushlb 0 // select register R0 for display character
+    pushsb 6 // retrieve the data byte (it's 6 bytes lower down in stack)
+    pushlb 4 // set size of packet to send
+    popcmd
+  }
+}
+
+void aLCDx_Cmd(unsigned char a)
+{
+  asm
+  {
+    pushlb ALCD_ADDR
+    pushlb 2 // will be sending two bytes
+    pushlb 1 // select register R1 for command character
+    pushsb 6 // retrieve the data byte (it's 6 bytes lower down in stack)
+    pushlb 4 // set size of packet to send
+    popcmd
+  }
+}
+
+
+/* format an integer into decimal string
+ * and send it out to the LCD display
+ */
+void aLCDx_IntDec(int a)
+{
+  asm
+  {
+    pushlb	ALCD_ADDR
+    pushlb	0 // place-holder for data size byte
+    pushlb	0 // select register R0 for display characters
+    pushss	7 // push the input short
+    fmtsd	// convert the short (push ASCII decimal digits and a size byte)
+    pushsb	1 // save a copy of the size byte
+    pushlb	1 // add 1 to it (this is data size)
+    addb
+    pushsb	1 // save another copy of the size byte
+    pushlb	2 // add 2 to it (this is offset to place-holder)
+    addb
+    popbsx	// write data size byte to place-holder
+    pushlb	3 // command size is 3 + size of string
+    addb
+    popcmd	// send the command to write number to LCD
+  }
+}
+
+/* format an integer into unsigned decimal string
+ * and send it out to the LCD display
+ */
+void aLCDx_IntUdec(int a)
+{
+  asm
+  {
+    pushlb	ALCD_ADDR
+    pushlb	0
+    pushlb	0
+    pushss	7
+    fmtsu
+    pushsb	1
+    pushlb	1
+    addb
+    pushsb	1
+    pushlb	2
+    addb
+    popbsx
+    pushlb	3
+    addb
+    popcmd
+  }
+}
+
+/* format an integer into hexadecimal string
+ * and send it out to the LCD display
+ */
+void aLCDx_IntHex(int a)
+{
+  asm
+  {
+    pushlb	ALCD_ADDR
+    pushlb	0
+    pushlb	0
+    pushss	7
+    fmtsh
+    pushsb	1
+    pushlb	1
+    addb
+    pushsb	1
+    pushlb	2
+    addb
+    popbsx
+    pushlb	3
+    addb
+    popcmd
+  }
+}
+
+/* format a char into decimal string
+ * and send it out to the LCD display
+ */
+void aLCDx_CharDec(char a)
+{
+  asm
+  {
+    pushlb	ALCD_ADDR
+    pushlb	0 // place-holder for data size byte
+    pushlb	0 // select register R0 for display characters
+    pushsb	6 // push the input byte
+    fmtbd	// convert the byte (push ASCII decimal digits and a size byte)
+    pushsb	1 // save a copy of the size byte
+    pushlb	1 // add 1 to it (this is data size)
+    addb
+    pushsb	1 // save another copy of the size byte
+    pushlb	2 // add 2 to it (this is offset to place-holder)
+    addb
+    popbsx	// write data size byte to place-holder
+    pushlb	3 // command size is 3 + size of string
+    addb
+    popcmd	// send the command to write number to LCD
+  }
+}
+
+
+
+/* format a char into unsigned decimal string
+ * and send it out to the LCD display
+ */
+void aLCDx_CharUdec(char a)
+{
+  asm
+  {
+    pushlb	ALCD_ADDR
+    pushlb	0
+    pushlb	0
+    pushsb	6
+    fmtbu
+    pushsb	1
+    pushlb	1
+    addb
+    pushsb	1
+    pushlb	2
+    addb
+    popbsx
+    pushlb	3
+    addb
+    popcmd
+  }
+}
+
+/* format a char into hexadecimal string
+ * and send it out to the LCD display
+ */
+void aLCDx_CharHex(char a)
+{
+  asm
+  {
+    pushlb	ALCD_ADDR
+    pushlb	0
+    pushlb	0
+    pushsb	6
+    fmtbh
+    pushsb	1
+    pushlb	1
+    addb
+    pushsb	1
+    pushlb	2
+    addb
+    popbsx
+    pushlb	3
+    addb
+    popcmd
+  }
+}
+
+
+
+/* send a string out to the LCD display */
+/* string is characters followed by a size byte */
+void aLCDx_String(string s)
+{
+  asm {
+    pushsb	3	// copy size
+next:
+    brz		end	// done when no more char left
+    pushlb	ALCD_ADDR
+    pushlb	2	// size of IIC data
+    pushlb	0	// R0 to output char
+    pushsb	4	// get size
+    pushlb	7	// add offset to string tail
+    addb	// get index to next char
+    pushsbx	// push next char
+    pushlb	4	// push size of IIC packet
+    popcmd	// send packet
+    decb 	1	// we've sent one byte
+    goto	next
+end:
+    popb	// get rid of size byte
+  }
+}
+
+#endif /* _aLCDx_T_ */

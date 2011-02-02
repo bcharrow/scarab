@@ -1,0 +1,12 @@
+#include <aAPI.tea>
+#include <aAPIGarcia.tea>
+
+void main(int vh, int vl)
+{
+  aAPI_SetTxByte0(cmdMO_ENC32);
+  aAPI_SetTxByte1(aGARCIA_MOTO_MOTOR_LEFT);
+  aAPI_SetTxShortVar(2, vh);
+  aAPI_SetTxShortVar(4, vl);
+  aAPI_SetTxLength(6);
+  aAPI_BeginTx(aGARCIA_MOTO_ADDR);
+}

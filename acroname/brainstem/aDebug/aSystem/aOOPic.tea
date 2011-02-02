@@ -1,0 +1,149 @@
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* file: aOOPic.tea                                                */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* description: Routines for read-write access to slaved OOPic.    */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/*        docs: Documentation can be found in the BrainStem        */
+/*              Reference under the major topic "TEA"              */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* Copyright 1994-2008. Acroname Inc.                              */
+/*                                                                 */
+/* This software is the property of Acroname Inc.  Any             */
+/* distribution, sale, transmission, or re-use of this code is     */
+/* strictly forbidden except with permission from Acroname Inc.    */
+/*                                                                 */
+/* To the full extent allowed by law, Acroname Inc. also excludes  */
+/* for itself and its suppliers any liability, wheither based in   */
+/* contract or tort (including negligence), for direct,            */
+/* incidental, consequential, indirect, special, or punitive       */
+/* damages of any kind, or for loss of revenue or profits, loss of */
+/* business, loss of information or data, or other financial loss  */
+/* arising out of or in connection with this software, even if     */
+/* Acroname Inc. has been advised of the possibility of such       */
+/* damages.                                                        */
+/*                                                                 */
+/* Acroname Inc.                                                   */
+/* www.acroname.com                                                */
+/* 720-564-0373                                                    */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+
+#ifndef _aOOPic_T_
+#define _aOOPic_T_
+
+/*
+ * This library has routines for single-byte and
+ * double-byte access to object data in a slave
+ * OOPic controller connected to the I2C bus.
+ * The OOPic must be connected via its network I2C
+ * bus, not the local I2C bus.  The "int" routines
+ * perform byte-order reversal to match the ordering
+ * of the bytes in 2-byte OOPic properties.
+ */
+
+#include <aIOPorts.tea>
+
+void aOOPic_WriteChar(char oopic, char addr, char mask, char data)
+{
+  asm
+  {
+    pushsb 6	/* OOPic node */
+    pushlb 1	/* shift it for Stem */
+    rlb
+    pushlb 3	/* command data size */
+    pushsb 7	/* data address */
+    pushlb (char)128	/* set high bit */
+    orb
+    pushsb 7	/* bit mask */
+    pushsb 7	/* data */
+    pushlb 5	/* total command size */
+    popcmd	/* send command */	
+  }
+}
+
+char aOOPic_ReadChar(char oopic, char addr)
+{
+  char c=0;
+  asm
+  {
+    pushsb 5	/* OOPic node */
+    pushlb 1	/* shift it for Stem */
+    rlb
+    pushlb 1	/* command data size */
+    pushsb 6	/* data address */
+    pushlb (char)128	/* set high bit */
+    orb
+    pushlb 3	/* total command size */
+    popcmd	/* send command */
+    
+    pushsb 5	/* OOPic address */
+    pushlb 1	/* shift it for Stem */
+    rlb
+    pushlb 1	/* set low bit for read */
+    orb
+    pushlb 1	/* number of bytes to read */
+    popsm aPortIICRead	/* do the read */
+
+    popbs 1	/* set return value */
+  }
+  return c;
+}
+
+void aOOPic_WriteInt(char oopic, char addr, char mask, int data)
+{
+  asm
+  {
+    pushsb 7	/* OOPic address */
+    pushlb 1	/* shift it for Stem */
+    rlb
+    pushlb 4	/* command data size */
+    pushsb 8	/* data address */
+    pushlb (char)128	/* set high bit */
+    orb
+    pushsb 8	/* bit mask */
+    pushsb 7	/* reversed data bytes */
+    pushsb 9
+    pushlb 6	/* total command size */
+    popcmd	/* send command */	
+  }
+}
+
+int aOOPic_ReadInt(char oopic, char addr)
+{
+  int n=0;
+  asm
+  {
+    pushsb 6	/* OOPic address */
+    pushlb 1	/* shift it for Stem */
+    rlb
+    pushlb 1	/* command data size */
+    pushsb 7	/* data address */
+    pushlb (char)128	/* set high bit */
+    orb
+    pushlb 3	/* total command size */
+    popcmd	/* send command */
+    
+    pushsb 6	/* OOPic address */
+    pushlb 1	/* shift it for Stem */
+    rlb
+    pushlb 1	/* set low bit for read */
+    orb
+    pushlb 2	/* number of bytes to read */
+    popsm aPortIICRead	/* do the read */
+
+    pushsb 2	/* extra push for byte-order swap */
+    popss 3	/* set return value */
+    popb	/* remove extra byte */
+  }
+  return n;
+}
+
+#endif /* _aOOPic_T_ */

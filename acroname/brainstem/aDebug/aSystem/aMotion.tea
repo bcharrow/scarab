@@ -1,0 +1,287 @@
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* file: aMotion.tea                                               */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* description: Routines for use with Moto board.                  */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/*        docs: Documentation can be found in the BrainStem        */
+/*              Reference under the major topic "TEA"              */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* Copyright 1994-2008. Acroname Inc.                              */
+/*                                                                 */
+/* This software is the property of Acroname Inc.  Any             */
+/* distribution, sale, transmission, or re-use of this code is     */
+/* strictly forbidden except with permission from Acroname Inc.    */
+/*                                                                 */
+/* To the full extent allowed by law, Acroname Inc. also excludes  */
+/* for itself and its suppliers any liability, wheither based in   */
+/* contract or tort (including negligence), for direct,            */
+/* incidental, consequential, indirect, special, or punitive       */
+/* damages of any kind, or for loss of revenue or profits, loss of */
+/* business, loss of information or data, or other financial loss  */
+/* arising out of or in connection with this software, even if     */
+/* Acroname Inc. has been advised of the possibility of such       */
+/* damages.                                                        */
+/*                                                                 */
+/* Acroname Inc.                                                   */
+/* www.acroname.com                                                */
+/* 720-564-0373                                                    */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+#ifndef _aMotion_T_
+#define _aMotion_T_
+
+#include <aCmd.tea>
+#include <aIOPorts.tea>
+#include <aMotionDefs.tea>
+
+
+
+/*************** GENERALIZED ACCESS ROUTINES *******************/
+
+int aMotion_GetConfig(char ch, char code)
+{
+  int val=0;
+  asm
+  {
+    pushsb	6			// push channel
+    pushlb	aPortMotionBlockSize
+    multb				// result is a short
+    pushls	aPortMotion		// calculate base address for channel
+    adds
+    pushsb	7			// push config code
+    convbs
+    adds
+    pushmsx				// read param
+    popss	2
+  }
+  return val;
+}
+
+void aMotion_SetConfig(char ch, char code, int param)
+{
+  asm
+  {
+    pushss	4			// push param
+    pushsb	8			// push channel
+    pushlb	aPortMotionBlockSize
+    multb				// result is a short
+    pushls	aPortMotion		// calculate base address for channel
+    adds
+    pushsb	9			// push config code
+    convbs
+    adds
+    popsmx				// write param to port
+  }
+}
+
+void aMotion_SetRampParam(char code, char ch, int param)
+{
+  asm
+  {
+    pushss	4			// push new param
+    pushsb	8			// push param code
+    pushsb	8			// push channel
+    pushlb	aPortMotionBlockSize	// calculate port offset
+    multb				// (result will be short)
+    pushls	aPortMotion
+		+aOffsetMotionRmpCfg	// calculate port
+    adds
+    popbmx				// initiate write of new param
+  }
+}
+
+int aMotion_GetRampParam(char code, char ch)
+{
+  int val=0;
+  asm
+  {
+    pushsb	6			// push param code (low nibble)
+    pushlb	aMOTION_RMPCFGR		// push read code (high nibble)
+    orb
+    pushsb	6			// push channel
+    pushlb	aPortMotionBlockSize	// calculate port offset
+    multb				// (result will be short)
+    pushls	aPortMotion
+    		+aOffsetMotionRmpCfg	// calculate port
+    adds
+    popbmx				// initiate retrieval of param
+    popss	2			// val=param
+  }
+  return val;
+}
+
+void aMotion_SaveParameters(char channel)
+{
+  if (channel == aMOTION_CHANNEL_ALL)
+  {
+    asm
+    {
+      pushmb	aPortAddress		// issue to self
+      pushlb	1
+      pushlb	cmdMO_SAV		// cmd with no channel ID (saves all)
+      pushlb	3
+      popcmd
+    }
+  }
+  else
+  {
+    asm
+    {
+      pushmb	aPortAddress		// issue to self
+      pushlb	2
+      pushlb	cmdMO_SAV
+      pushsb	6			// push channel ID
+      pushlb	4
+      popcmd
+    }
+  }
+}
+
+void aMotion_RampEnable(char channel, char enable)
+{
+  if (channel == aMOTION_CHANNEL_ALL)
+  {
+    asm
+    {
+      pushsb	3			// push enable code
+      pushlb	4			// shift it to high nibble
+      rlb
+      pushlb	aMOTION_RXALL		// push code to enable all motors
+      orb				// logical OR the nibbles
+      popbm	aPortMotion		// write to port
+      		+aOffsetMotionRmpEna
+    }
+  }
+  else
+  {
+    asm
+    {
+      pushsb	3			// push enable code
+      pushlb	4			// shift it to high nibble
+      rlb
+      pushsb	5			// push channel
+      orb				// logical OR the nibbles
+      popbm	aPortMotion		// write to port
+      		+aOffsetMotionRmpEna
+    }
+  }
+}
+
+
+
+/*************** PID CONFIGURATION ROUTINES *******************/
+
+#define	aMotion_SetMode(channel, modeIndex, flags)		aMotion_SetConfig(channel,0,((modeIndex)*256)|(flags))
+#define	aMotion_GetMode(channel)				aMotion_GetConfig(channel,0)>>8
+#define	aMotion_GetFlags(channel)				aMotion_GetConfig(channel,0)&0x00FF
+
+#define	aMotion_SetSetpoint(channel,position)			aMotion_SetConfig(channel,aOffsetMotionSetpoint,position)
+#define	aMotion_GetSetpoint(channel)				aMotion_GetConfig(channel,aOffsetMotionSetpoint)
+
+#define	aMotion_SetParameter(channel, paramIndex, param)	aMotion_SetConfig(channel,paramIndex,param)
+#define	aMotion_GetParameter(channel, paramIndex)		aMotion_GetConfig(channel,paramIndex)
+
+#define	aMotion_PeekSet(channel)				aMotion_GetConfig(channel,aOffsetMotionSetpoint)
+#define	aMotion_PeekInput(channel)				aMotion_GetConfig(channel,aOffsetMotionCInput)
+#define	aMotion_PeekPWM(channel)				aMotion_GetConfig(channel,aOffsetMotionCDuty)
+
+
+
+/*************** RAMP CONFIGURATION ROUTINES *******************/
+
+#define	aMotion_SetRampTarget(channel,posH,posL)		{aMotion_SetRampParam(aMOTION_RIDSTH,channel,posH);aMotion_SetRampParam(aMOTION_RIDSTL,channel,posL);}
+#define	aMotion_GetRampTargetH(channel)				aMotion_GetRampParam(aMOTION_RIDSTH,channel)
+#define	aMotion_GetRampTargetL(channel)				aMotion_GetRampParam(aMOTION_RIDSTL,channel)
+
+#define	aMotion_SetRampVel(channel,maxVelocity)			aMotion_SetRampParam(aMOTION_RIVMAX,channel,maxVelocity)
+#define	aMotion_GetRampVel(channel)				aMotion_GetRampParam(aMOTION_RIVMAX,channel)
+
+#define	aMotion_SetRampAccStepTime(channel, accsteptime)	aMotion_SetRampParam(aMOTION_RIACCT,channel,accsteptime)
+#define	aMotion_GetRampAccStepTime(channel)			aMotion_GetRampParam(aMOTION_RIACCT,channel)
+
+#define	aMotion_SetRampFlags(channel, flags)			aMotion_SetRampParam(aMOTION_RIFLAG,channel,flags)
+#define	aMotion_GetRampFlags(channel)				aMotion_GetRampParam(aMOTION_RIFLAG,channel)
+
+#define	aMotion_SetEnc32(channel, enc32H, enc32L)		{aMotion_SetConfig(channel,aOffsetMotionEnc32H,enc32H);aMotion_SetConfig(channel,aOffsetMotionEnc32L,enc32L);}
+#define	aMotion_GetEnc32H(channel)				aMotion_GetConfig(channel,aOffsetMotionEnc32H)
+#define	aMotion_GetEnc32L(channel)				aMotion_GetConfig(channel,aOffsetMotionEnc32L)
+
+
+
+/*************** SPECIALIZED DUAL-MOTOR CONTROL ROUTINES *******************/
+
+void aMotion_SetVelocity(int v0, int v1)
+{
+  asm
+  {
+    pushss	6
+    popsm	aPortMotion+0*aPortMotionBlockSize+aOffsetMotionSetpoint
+    pushss	4
+    popsm	aPortMotion+1*aPortMotionBlockSize+aOffsetMotionSetpoint
+  }
+}
+
+void aMotion_SetRampVelocity(int v0, int v1)
+{
+  asm
+  {
+    pushss	6				// new ramp vel 0 goes on stack
+    pushlb	aMOTION_RMPCFGW+aMOTION_RIVMAX	// write ramp vel
+    popbm	aPortMotion
+		+0*aPortMotionBlockSize
+    		+aOffsetMotionRmpCfg
+    pushss	4				// new ramp vel 1 goes on stack
+    pushlb	aMOTION_RMPCFGW+aMOTION_RIVMAX	// write ramp vel
+    popbm	aPortMotion
+		+1*aPortMotionBlockSize
+    		+aOffsetMotionRmpCfg
+  }
+}
+
+void aMotion_RampVelSteer(int maxspd, int minspd, int dir)
+{
+  int lmt=maxspd-minspd;
+  int dirx = dir;
+  int v0 = 0;
+  int v1 = 0;
+  if (dir & 0x8000) dirx = -dirx;
+  if (dirx > lmt) dirx = lmt;
+  if (dir & 0x8000)
+  {
+    v0 = dirx;
+  }
+  else
+  {
+    v1 = dirx;
+  }
+  aMotion_SetRampVelocity(maxspd-v0, maxspd-v1);
+}
+
+void aMotion_VelSteer(int maxspd, int minspd, int dir)
+{
+  int lmt=maxspd-minspd;
+  int dirx = dir;
+  int v0 = 0;
+  int v1 = 0;
+  if (dir & 0x8000) dirx = -dirx;
+  if (dirx > lmt) dirx = lmt;
+  if (dir & 0x8000)
+  {
+    v0 = dirx;
+  }
+  else
+  {
+    v1 = dirx;
+  }
+  aMotion_SetVelocity(maxspd-v0, maxspd-v1);
+}
+
+#endif /* _aMotion_T_ */

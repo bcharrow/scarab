@@ -1,0 +1,136 @@
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* file: aIOPorts.tea                                              */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* description: I/O Port definitions for the TEA Virtual Machine.  */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/*        docs: Documentation can be found in the BrainStem        */
+/*              Reference under the major topic "TEAvm"            */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* Copyright 1994-2008. Acroname Inc.                              */
+/*                                                                 */
+/* This software is the property of Acroname Inc.  Any             */
+/* distribution, sale, transmission, or re-use of this code is     */
+/* strictly forbidden except with permission from Acroname Inc.    */
+/*                                                                 */
+/* To the full extent allowed by law, Acroname Inc. also excludes  */
+/* for itself and its suppliers any liability, wheither based in   */
+/* contract or tort (including negligence), for direct,            */
+/* incidental, consequential, indirect, special, or punitive       */
+/* damages of any kind, or for loss of revenue or profits, loss of */
+/* business, loss of information or data, or other financial loss  */
+/* arising out of or in connection with this software, even if     */
+/* Acroname Inc. has been advised of the possibility of such       */
+/* damages.                                                        */
+/*                                                                 */
+/* Acroname Inc.                                                   */
+/* www.acroname.com                                                */
+/* 720-564-0373                                                    */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+#ifndef _aIOPorts_T_
+#define _aIOPorts_T_
+
+#define		aPortVMTimer		0x0000
+#define		aPortIICRead		0x0001
+#define		aPortProcID		0x0002
+#define		aPortSerial		0x0010
+#define		aPortDisplayASCII	0x0011
+#define		aPortSerialNTX		0x0012
+#define		aPortSerialNRX		0x0013
+#define		aPortEEPROMRead		0x0014
+#define		aPortVMQuiet		0x0015
+
+#define		aPortNA2D		0x0040
+#define		aPortNDigital		0x0041
+#define		aPortNIR02		0x0042
+#define		aPortNServo		0x0043
+#define		aPortNRflxCtr		0x0044
+#define		aPortNRflxEna		0x0045
+#define		aPortNScratch		0x0046
+#define		aPortNGPTimer		0x0047
+
+#define		aPortAddress		0x0080
+#define		aPortRouter		0x0081
+#define		aPortHBRate		0x0082
+#define		aPortIICBaud		0x0083
+#define		aPortSerBaud		0x0084
+#define		aPortHBMode		0x0085
+#define		aPortBootFlag		0x0086
+#define		aPortLinkFlag		0x0087
+#define		aPortVersion		0x0088
+#define		aPortBuildNum		0x0089
+#define		aPortBoardType		0x008A
+#define		aPortFileSlots		0x008B
+#define		aPortFileBytes		0x008C
+#define		aPortSerNum12		0x008D
+#define		aPortSerNum34		0x008E
+#define		aPortBoot1		0x008F
+#define		aPortBoot2		0x0090
+#define		aPortBoot3		0x0091
+#define		aPortBoot4		0x0092
+#define		aPortRelayFlag		0x0093
+#define		aPortQuietFlag		0x0094
+#define		aPortTimeout		0x0095
+
+#define		aPortSemaphore		0x0100
+#define		aPortScratch		0x0200
+#define		aPortRawInput		0x0300
+#define		aPortRflxEna		0x0380
+#define		aPortRflxCtr		0x03A0
+
+#define		aPortServo		0x0400
+#define		aPortServoBlockSize	8
+#define		 aOffsetServoConfig	0
+#define		 aOffsetServoLimits	1
+#define		 aOffsetServoAbsolute	2
+#define		 aOffsetServoRelative	3
+#define		 aOffsetServoReflex	4
+#define		 aOffsetServoStop	5
+
+#define		aPortA2D		0x0480
+#define		aPortA2DBlockSize	2
+#define		 aOffsetAnalogRead	0
+
+#define		aPortIR02		0x04C0
+#define		aPortIR02BlockSize	2
+#define		 aOffsetIR02Raw		0
+
+#define		aPortDigital		0x0500
+#define		aPortDigitalBlockSize	4
+#define		 aOffsetDigitalConfig	0
+#define		 aOffsetDigitalIO	1
+#define		 aOffsetDigitalPTime	2
+#define		 aOffsetDigitalPReset	3
+
+
+#define		aPortMotion		0x0600
+#define		aPortMotionBlockSize	16
+#define		 aOffsetMotionCfg	0
+#define		 aOffsetMotionP		1
+#define		 aOffsetMotionI		2
+#define		 aOffsetMotionD		3
+#define		 aOffsetMotionCOffset	4
+#define		 aOffsetMotionPWMRail	5
+#define		 aOffsetMotionPeriod	6
+#define		 aOffsetMotionLatency	7
+#define		 aOffsetMotionPWMFreq	8
+#define		 aOffsetMotionSetpoint	9
+#define		 aOffsetMotionCInput	10
+#define		 aOffsetMotionRmpCfg	11
+#define		 aOffsetMotionRmpEna	12
+#define		 aOffsetMotionEnc32H	13
+#define		 aOffsetMotionEnc32L	14
+#define		 aOffsetMotionCDuty	15
+
+#define          aPortIRRX              0x0711
+#define          aPortIRTX              0x0716
+
+#endif /* _aIOPorts_T_ */

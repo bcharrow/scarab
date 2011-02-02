@@ -1,0 +1,145 @@
+/* goHug.tea (moto,3) */
+/* wall-hug with various modes */
+
+/* 1-byte side input */
+/* 1-byte mode input */
+/* 2-byte velocity input (scratch pad, always positive) */
+
+
+#include "gCommon.tea"
+
+#define	WHUG_FAC	8
+
+#define	SIDEFRONTMASK	~((1<<aGARCIA_GP_BIT_ENABLESIDE) | (1<<aGARCIA_GP_BIT_ENABLEFRONT))
+
+
+void side_hug(char side, char mode, int set, int v)
+{
+  unsigned int r;
+  // ?????? remove parens get error, add casts get assert???
+  // ?????? unsigned int sideloss = (set - WHUG_SIDELOSS);
+  unsigned int sidethr = gc_read_pads(aGARCIA_MOTO_PADS_SIDETHR);
+  
+  int r1, r2, r3;
+  int err = 0;
+  int vmin;
+  int status;
+
+  /* fixed ratio for outside cornering */
+  /* (approximation works best at low speeds) */
+  
+  vmin = v/4;
+
+  r1 = gc_range(side);
+  r2 = r1;
+  r3 = r2;
+  
+  while(1)
+  {
+    status = gc_aGetStatus;
+    if (status) break;
+
+    r = gc_range(side);
+
+    /* use immediate reading for side loss detection */
+    if (mode == aGARCIA_HUGMODE_SIDELOSS)
+    {
+      if (r < sidethr) break;
+    }
+
+    /* use immediate reading for side dock detection */
+    if (mode == aGARCIA_HUGMODE_DOCKFIND)
+    {
+      if (r > sidethr) break;
+    }
+
+    /* compare setpoint with delayed and averaged readings */
+    err = (set - ((r2+r3)/2)) / WHUG_FAC;
+
+    if (side == aGARCIA_MOTO_ARANGE_SIDE_RIGHT) {    
+      err = -err;
+    }
+    
+    aMotion_RampVelSteer(v, vmin, err);
+    
+    /* update side reading queue */
+    r3=r2;
+    r2=r1;
+    r1=r;
+    
+//    gc_const_sleep(400);
+  }
+
+  /* we've stopped */  
+  if ((status == aGARCIA_ERRFLAG_FALL_LEFT) || (status == aGARCIA_ERRFLAG_FALL_RIGHT))
+  {
+    /* slam on the brakes if about to fall */
+    gc_stop_hard();
+  }
+  else
+  {
+    /* otherwise ramp down gradually */
+    gc_stop_vdamp();
+  }
+}
+
+
+
+int main(char side, char mode, int wthr)
+{
+  int v;
+  int acctm;
+  int status = 0;
+
+
+  /* INITIALIZE INPUT */
+
+  v = gc_read_pads(aGARCIA_MOTO_PADS_DEFVEL);
+  acctm = gc_read_pads(aGARCIA_MOTO_PADS_DEFACCTM);
+
+
+  /* SET MOTION STATE BASED ON INPUT */
+  
+  if (v)
+  {
+    gc_set_stall_params(v, STALL_LOAD);
+    gc_init_vdamp(ACCT_WHUG);
+    
+    /* reconfigure monitors */
+    if (mode == aGARCIA_HUGMODE_DOCKFIND)
+    {
+      gc_const_wrpadb(aGARCIA_MOTO_PADB_ENDFLAGS, 0);
+    }
+    else
+    {
+      gc_const_wrpadb(aGARCIA_MOTO_PADB_ENDFLAGS, aGARCIA_ENDCTRL_FRONT);
+    }
+    gc_write_padb_gp(aGARCIA_GP_PADB_MIRRORMASK, SIDEFRONTMASK);
+    gc_write_padb_gp(aGARCIA_GP_PADB_MIRRORIO, ~SIDEFRONTMASK);
+    
+
+    /* restart monitor */
+    gc_aClrStatus;
+    gc_aMonEnable;
+
+    /* give time for monitors to stabilize */
+    gc_const_sleep(750);
+
+    /* then attempt motion */
+    gc_aClrEnc32;
+    side_hug(side, mode, wthr, v);
+  }
+
+  /* motion done so turn monitors off */
+  gc_write_padb_gp(aGARCIA_GP_PADB_MIRRORMASK, SIDEFRONTMASK);
+  gc_write_padb_gp(aGARCIA_GP_PADB_MIRRORIO, 0);
+  gc_write_padb_gp(aGARCIA_GP_PADB_REARCTRL, 0);
+  gc_aMonDisable;
+
+  status = gc_read_pads(aGARCIA_MOTO_PADS_STATUS);
+  if (gc_read_padb(aGARCIA_MOTO_PADB_EXEFLAGS) & aGARCIA_EXECTRL_USER)
+  {
+    aMulti_Signal(aGARCIA_MOTO_PID_USER, status);
+  }
+  return status;
+}

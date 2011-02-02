@@ -1,0 +1,75 @@
+/* goX.tea (moto,?) */
+/* template for writing a primitive in Moto module */
+/* (store file in unused file slot) */
+
+#include "gCommon.tea"
+
+/* define additional constants for primitive here */
+
+#define	ENABLEMASK	~((1<<aGARCIA_GP_BIT_ENABLEREAR) | (1<<aGARCIA_GP_BIT_ENABLESIDE) | (1<<aGARCIA_GP_BIT_ENABLEFRONT))
+#define	ENDCTRLFLAGS	(aGARCIA_ENDCTRL_FRONT | aGARCIA_ENDCTRL_SIDE | aGARCIA_ENDCTRL_REAR | aGARCIA_ENDCTRL_IRRX)
+
+/* subroutines for action go here */
+void execute()
+{
+}
+
+int main(int r)
+{
+  int v;
+  int acctm;
+  int status = 0;
+
+
+  /* INITIALIZE INPUT */
+  
+  /* can read default velocity and ramp acceleration step time here */
+  v = gc_read_pads(aGARCIA_MOTO_PADS_DEFVEL);
+  acctm = gc_read_pads(aGARCIA_MOTO_PADS_DEFACCTM);
+  
+
+  /* SET MOTION STATE BASED ON INPUT */
+
+  /* input parameters (if any) could determine whether */
+  /* primitive actually performs any motions */  
+  if (1)
+  {
+    /* initialize stall and/or ramp here */
+    gc_set_stall_params(v, STALL_LOAD);
+    gc_init_ramp(acctm);
+
+    /* reconfigure monitors here */
+    
+    /* define what input will terminate primitive */
+    /* (may depend on input) */
+    gc_const_wrpadb(aGARCIA_MOTO_PADB_ENDFLAGS, ENDCTRLFLAGS);
+
+    /* enable desired rangers */
+    /* (may depend on input) */
+    gc_write_padb_gp(aGARCIA_GP_PADB_MIRRORMASK, ENABLEMASK);
+    gc_write_padb_gp(aGARCIA_GP_PADB_MIRRORIO, ~ENABLEMASK);
+
+    /* restart monitor */
+    gc_aClrStatus;
+    gc_aMonEnable;
+
+    /* give time for monitors to stabilize */
+    gc_const_sleep(750);
+
+    /* then attempt motion */    
+    execute();
+  }
+  
+  /* motion done so turn monitors off */
+  gc_write_padb_gp(aGARCIA_GP_PADB_MIRRORMASK, ENABLEMASK);
+  gc_write_padb_gp(aGARCIA_GP_PADB_MIRRORIO, 0);
+  gc_write_padb_gp(aGARCIA_GP_PADB_REARCTRL, 0);
+  gc_aMonDisable;
+
+  status = gc_read_pads(aGARCIA_MOTO_PADS_STATUS);
+  if (gc_read_padb(aGARCIA_MOTO_PADB_EXEFLAGS) & aGARCIA_EXECTRL_USER)
+  {
+    aMulti_Signal(aGARCIA_MOTO_PID_USER, status);
+  }
+  return status;
+}

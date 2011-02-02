@@ -1,0 +1,10 @@
+
+#include <aAPI.tea>
+#include <aAPIStemDefs.tea>
+
+void main()
+{
+  char x;
+  x = aAPI_GetObjByteVar(apiSTEM_SP03_PITCH);
+  aAPI_SetRxByteVar(0, x);
+}

@@ -1,0 +1,28 @@
+# makefile: host/aIO/make_tests.Linux
+
+SHELL := /bin/sh
+#ARCH = `arch`
+CC := gcc
+
+tests : debug release
+
+ROOT := ../
+PROGNAME := aIOTests
+
+INCLUDES := -IaCommon \
+	    -IaUnix \
+	    -I../aCommon \
+	    -I../aDebug/aUnix
+
+LIBRARIES := -laIO
+
+VPATH := aCommon:aUnix:../aCommon
+
+SOURCES := aAssert.c \
+	   aUtil.c \
+           aMemLeakDebug.c \
+	   aIOTests.c \
+	   stdio_aIOTests.c \
+ 	   aStream_STDIO_Console.c
+
+include $(ROOT)make_program.Linux

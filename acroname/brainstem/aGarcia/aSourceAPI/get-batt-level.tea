@@ -1,0 +1,32 @@
+#include <aAPI.tea>
+#include <aAPIGarcia.tea>
+
+void main()
+{
+  aAPI_SetTxByte0(cmdA2D_RD);
+  aAPI_SetTxByteVar(1, (char)(128 | aGARCIA_GP_ABATTERY));
+  aAPI_SetTxLength(2);
+
+  aAPI_SetRxFilterByte(cmdDEV_VAL);
+  aAPI_SetRxTimeout(apiGARCIA_DEFAULT_TIMEOUT);
+
+  aAPI_BeginTx(aGARCIA_GP_ADDR);
+  aAPI_BeginRx(aGARCIA_GP_ADDR);
+
+  asm
+  {
+    // extract return value    
+    // shift right once
+    pushmb	0x0C22
+    pushmb	0x0C23
+    pushlb	1
+    rrs
+
+    // mask out sign bit
+    // restuff value
+    pushls	0x7FFF
+    ands
+    popbm	0x0C23
+    popbm	0x0C22
+  }
+}

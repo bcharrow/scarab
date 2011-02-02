@@ -1,0 +1,142 @@
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* file: aCompass.tea                                              */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* description: Routines for interfacing to the Devantech          */
+/*              compass module.                                    */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/*        docs: Documentation can be found in the BrainStem        */
+/*              Reference under the major topic "TEA"              */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*                                                                 */
+/* Copyright 1994-2008. Acroname Inc.                              */
+/*                                                                 */
+/* This software is the property of Acroname Inc.  Any             */
+/* distribution, sale, transmission, or re-use of this code is     */
+/* strictly forbidden except with permission from Acroname Inc.    */
+/*                                                                 */
+/* To the full extent allowed by law, Acroname Inc. also excludes  */
+/* for itself and its suppliers any liability, wheither based in   */
+/* contract or tort (including negligence), for direct,            */
+/* incidental, consequential, indirect, special, or punitive       */
+/* damages of any kind, or for loss of revenue or profits, loss of */
+/* business, loss of information or data, or other financial loss  */
+/* arising out of or in connection with this software, even if     */
+/* Acroname Inc. has been advised of the possibility of such       */
+/* damages.                                                        */
+/*                                                                 */
+/* Acroname Inc.                                                   */
+/* www.acroname.com                                                */
+/* 720-564-0373                                                    */
+/*                                                                 */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+#ifndef _aCompass_T_
+#define _aCompass_T_
+
+#include <aIOPorts.tea>
+
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * aCompass_ReadInt
+ *
+ * read an int (2-byte) value from the compass module with the 
+ * range 0 - 3599. Also temporarily moves the IIC bus speed down
+ * to 100kHz for the reading and then restores the previous IIC
+ * bus speed.
+ */
+
+int aCompass_ReadInt()
+{
+  int val=0;
+
+  asm {
+   /* store the current IIC speed to restore later  */
+   pushmb aPortIICBaud
+   
+   /* set to 100kHz for the compass                 */
+   pushlb 0
+   popbm  aPortIICBaud
+
+   /* set the memory pointer in the compass         */
+   pushlb (unsigned char)0xC0  /* IIC address       */
+   pushlb 1                    /* data size         */
+   pushlb 2                    /* data byte         */
+   pushlb 3                    /* cmd size          */
+   popcmd
+
+   /* stall to let the compass set memory pointer   */
+   pushlb 1
+   popbm  aPortVMTimer
+
+   /* read the current heading as a two-btye value  */
+   pushlb (unsigned char)0xC1  /* IIC address       */
+   pushlb 2	               /* bytes to read     */
+   popsm  aPortIICRead
+
+   /* store into val                                */
+   popss  3
+
+   /* restore entry IIC speed                       */
+   popbm  aPortIICBaud
+  }
+
+  return val;
+
+}  /* aCompass_ReadInt */
+
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * aCompass_ReadChar
+ *
+ * read a byte (1-byte) value from the compass module with the 
+ * range 0 - 255. Also temporarily moves the IIC bus speed down
+ * to 100kHz for the reading and then restores the previous IIC
+ * bus speed.
+ */
+
+char aCompass_ReadChar()
+{
+  char val=0;
+
+  asm {
+   /* store the current IIC speed to restore later  */
+   pushmb aPortIICBaud
+   
+   /* set to 100kHz for the compass                 */
+   pushlb 0
+   popbm  aPortIICBaud
+
+   /* set the memory pointer in the compass         */
+   pushlb (unsigned char)0xC0  /* IIC address       */
+   pushlb 1                    /* data size         */
+   pushlb 1                    /* data byte         */
+   pushlb 3                    /* cmd size          */
+   popcmd
+
+   /* stall to let the compass set memory pointer   */
+   pushlb 1
+   popbm  aPortVMTimer
+
+   /* read the current heading as a one-btye value  */
+   pushlb (unsigned char)0xC1  /* IIC address       */
+   pushlb 1	               /* bytes to read     */
+   popsm  aPortIICRead
+
+   /* store into val                                */
+   popbs  2
+
+   /* restore entry IIC speed                       */
+   popbm  aPortIICBaud
+  }
+
+  return val;
+
+} /* aCompass_ReadChar */
+
+#endif /* _aCompass_T_ */
