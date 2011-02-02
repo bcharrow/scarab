@@ -1,0 +1,18 @@
+<launch>
+  <master type="zenmaster_sd" auto="restart" />
+  <param name="whitelist_topics" value="/scarab/amcl_pose,/scarab/move_base_simple/goal"/>
+  <param name="whitelist_services" value=""/>
+  <param name="whitelist_params" value=""/>
+
+  <node pkg="map_server"
+        name="map"
+        type="map_server"
+        output="screen"
+        args="$(find upenn_maps)/maps/levine_towne_map.yaml"/>
+
+  <group ns="scarab">
+    <param name="~tf_prefix" value="scarab"/>
+    <param name="motor/baud" value="38400" />
+    <include file="$(find move_base_configs)/config/scarab.xml" />
+  </group>
+</launch>

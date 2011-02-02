@@ -1,0 +1,9 @@
+<stack>
+  <description brief="move_base_utils">move_base_utils</description>
+  <author>Maintained by Nathan Michael</author>
+  <license>BSD</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/move_base_utils</url>
+  <depend stack="ros" />
+
+</stack>

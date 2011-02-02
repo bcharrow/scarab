@@ -1,0 +1,16 @@
+<package>
+  <description brief="simple_nav">
+
+     simple_nav
+
+  </description>
+  <author>Shaojie Shen</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/simple_nav</url>
+  <depend package="actionlib_msgs"/>
+  <depend package="geometry_msgs"/>
+
+</package>
+
+
