@@ -1,0 +1,20 @@
+<package>
+  <description brief="laser_odom">
+
+     laser_odom
+
+  </description>
+  <author>Shaojie Shen</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/laser_odom</url>
+  <depend package="sensor_msgs"/>
+  <depend package="tf"/>
+  <depend package="geometry_msgs"/>
+  <depend package="nav_msgs"/>
+  <depend package="laser_geometry"/>
+  <depend package="armadillo"/>
+
+</package>
+
+
