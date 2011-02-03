@@ -1,0 +1,15 @@
+<package>
+  <description brief="pamcl_rviz">
+
+     pamcl_rviz
+
+  </description>
+  <author>Benjamin Charrow</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/pamcl_rviz</url>
+  <depend package="roscpp"/>
+  <depend package="rviz"/>
+</package>
+
+

@@ -1,0 +1,57 @@
+Background\ ColorR=0
+Background\ ColorG=0
+Background\ ColorB=0
+Fixed\ Frame=/map
+Target\ Frame=<Fixed Frame>
+Map.Alpha=0.7
+Map.Draw\ Behind=1
+Map.Enabled=1
+Map.Topic=/map
+Markers.Enabled=1
+Markers.Marker\ Topic=/pamcl_marker/visualization_marker
+Markers.pamcl_markers=1
+Pose\ Array.ColorR=1
+Pose\ Array.ColorG=0.1
+Pose\ Array.ColorB=0
+Pose\ Array.Enabled=1
+Pose\ Array.Topic=/scarab/particlecloud
+TF.All\ Enabled=0
+TF.Enabled=1
+TF.Frame\ Timeout=15
+TF.Show\ Arrows=1
+TF.Show\ Axes=1
+TF.Show\ Names=1
+TF.Update\ Interval=0
+Tool\ 2D\ Nav\ GoalTopic=goal
+Tool\ 2D\ Pose\ EstimateTopic=initialpose
+Camera\ Type=rviz::FixedOrientationOrthoViewController
+Camera\ Config=35.3479 -3.49335 20.2677 4.27993 -0.707107 -0 -0 0.707107
+Property\ Grid\ State=selection=;expanded=.Global Options,Map.Enabled,TF.Enabled,TF.Enabled.TF.Frames,TF./mapTree/map,TF./scarab/lodomTree/scarab/lodom,TF./scarab/lbaseTree/scarab/lbase,TF./scarab/llaserTree/scarab/llaser,TF./scarab/wodomTree/scarab/wodom,TF./scarab/wbaseTree/scarab/wbase,TF./scarab/wlaserTree/scarab/wlaser,TF./scarab/odomTree/scarab/odom,TF./scarab/baseTree/scarab/base,TF./scarab/laserTree/scarab/laser,Markers.Enabled.Markers.Namespaces;scrollpos=0,16;splitterpos=133,250;ispageselected=1
+[Display0]
+Name=Map
+Package=rviz
+ClassName=rviz::MapDisplay
+[Display1]
+Name=TF
+Package=rviz
+ClassName=rviz::TFDisplay
+[Display2]
+Name=Pose Array
+Package=rviz
+ClassName=rviz::PoseArrayDisplay
+[Display3]
+Name=Markers
+Package=rviz
+ClassName=rviz::MarkerDisplay
+[TF.]
+mapEnabled=1
+[TF./scarab]
+baseEnabled=0
+laserEnabled=0
+lbaseEnabled=1
+llaserEnabled=1
+lodomEnabled=0
+odomEnabled=0
+wbaseEnabled=0
+wlaserEnabled=0
+wodomEnabled=0
