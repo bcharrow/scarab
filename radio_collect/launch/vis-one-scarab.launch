@@ -1,0 +1,37 @@
+<launch>
+  <master type="rosmaster_sd" auto="restart" />
+  <param name="whitelist_topics" value="" />
+  <param name="whitelist_services" value="" />
+  <param name="whitelist_params" value="" />
+
+  <node pkg="map_server"
+        name="map"
+        type="map_server"
+        output="screen"
+        args="$(find upenn_maps)/maps/levine_towne_map.yaml"/>
+
+  <node pkg="vis_nodes"
+        name="vis_map"
+        type="occupancy_grid"
+        output="screen">
+    <remap from="~topic" to="/map"/>
+    <param name="mailbox" value="map"/>
+    <param name="thickness" value="0.5"/>
+  </node>
+
+  <node pkg="vis_nodes"
+        name="vis_pose"
+        type="pose_with_covariance_stamped"
+        output="screen">
+    <remap from="~topic" to="/scarab/amcl_pose"/>
+    <param name="mailbox" value="scarab"/>
+  </node>
+  <node pkg="vis_nodes"
+        name="vis_particlecloud"
+        type="pose_array"
+        output="screen">
+    <remap from="~topic" to="/scarab/particlecloud" />
+    <param name="mailbox" value="field" />
+  </node>
+
+</launch>
