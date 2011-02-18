@@ -1,0 +1,21 @@
+<!-- Localize a scarab in levine using a prebuilt map -->
+<launch>
+  <!-- Name for the scarab namespace -->
+  <arg name="name" default="/" />
+
+  <master type="rosmaster_sd" auto="restart" />
+  <param name="whitelist_topics" value="/scarab/amcl_pose,/scarab/particlecloud"/>
+  <param name="whitelist_services" value=""/>
+  <param name="whitelist_params" value=""/>
+
+  <node pkg="map_server"
+        name="map"
+        type="map_server"
+        output="screen"
+        args="$(find upenn_maps)/maps/levine_towne_map.yaml"/>
+
+  <group ns="$(arg name)">
+    <param name="~tf_prefix" value="scarab"/>
+    <include file="$(find radio_collect)/config/scarab.xml" />
+  </group>
+</launch>
