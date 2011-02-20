@@ -21,7 +21,8 @@
     <param name="pid_period" value="0.02" />
   </node>
 
-  <node name="laser" pkg="urg_node" type="urg_node" respawn="false">
+  <node name="laser" pkg="urg_node" type="urg_node" respawn="false"
+        output="screen">
     <param name="laser_transform/x" value="0.0" />
     <param name="laser_transform/y" value="0.0" />
     <param name="laser_transform/z" value="0.198" />
@@ -39,6 +40,7 @@
   <node pkg="laser_odom" name="laser_odom" type="laser_odom" output="screen">
     <remap from="~scan" to="laser/scan"/>
     <remap from="~odom" to="motor/odom"/>
+    <param name="map_frame" value="map" type="string" />
   </node>
 
   <node pkg="pamcl"
@@ -46,8 +48,9 @@
         type="amcl"
         respawn="false"
         output="screen">
-    <param name="initial_pose_x" value="-7.4" type="double"/>
-    <param name="initial_pose_y" value="5.42" type="double"/>
+
+    <param name="initial_pose_x" value="3.25" type="double"/>
+    <param name="initial_pose_y" value="1.92" type="double"/>
     <param name="initial_pose_a" value="4.71" type="double"/>
     <param name="initial_pose_xx" value="0.4" type="double"/>
     <param name="initial_pose_yy" value="0.4" type="double"/>

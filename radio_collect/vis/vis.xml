@@ -2,11 +2,11 @@
 <!-- Visualize a single scarab -->
 <vis>
   <gui>
-    <size>800 600</size>
+    <size>1200 1200</size>
     <name>Vis</name>
     <menuOn>0</menuOn>
     <frame>
-     <frameRate>30</frameRate>
+      <frameRate>30</frameRate>
       <camera>
         <name>cam2</name>
         <position>-5 0 3</position>
@@ -49,11 +49,10 @@
   </plugin>
 
   <plugin>
-    <id>scarab</id>
+    <id>robot1</id>
     <filename>ScarabV3.so</filename>
-    <xyz>0 0 0</xyz>
+    <xyz>0 0 10000</xyz>
     <rpy>0 0 0</rpy>
-
     <plugin>
       <id>axes</id>
       <filename>Axes.so</filename>
@@ -62,19 +61,56 @@
       <zColor>0 0 1 1</zColor>
       <length>0.5 0.5 0.5</length>
     </plugin>
-
     <plugin>
       <id>particlecloud</id>
+      <attach>false</attach>
       <filename>PointCloud.so</filename>
-      <material>Transparent/Blue</material>
+      <material>Transparent/Yellow</material>
     </plugin>
   </plugin>
 
   <plugin>
-    <id>field</id>
-    <filename>PointCloud.so</filename>
-    <pointSize>0.1 0.1 0.1</pointSize>
+    <id>robot2</id>
+    <filename>ScarabV3.so</filename>
+    <xyz>0 0 10000</xyz>
+    <rpy>0 0 0</rpy>
+    <plugin>
+      <id>axes</id>
+      <filename>Axes.so</filename>
+      <xColor>1 0 0 1</xColor>
+      <yColor>0 1 0 1</yColor>
+      <zColor>0 0 1 1</zColor>
+      <length>0.5 0.5 0.5</length>
+    </plugin>
+    <plugin>
+      <id>particlecloud</id>
+      <attach>false</attach>
+      <filename>PointCloud.so</filename>
+      <material>Transparent/Green</material>
+    </plugin>
   </plugin>
+
+  <plugin>
+    <id>robot3</id>
+    <filename>ScarabV3.so</filename>
+    <xyz>0 0 10000</xyz>
+    <rpy>0 0 0</rpy>
+    <plugin>
+      <id>axes</id>
+      <filename>Axes.so</filename>
+      <xColor>1 0 0 1</xColor>
+      <yColor>0 1 0 1</yColor>
+      <zColor>0 0 1 1</zColor>
+      <length>0.5 0.5 0.5</length>
+    </plugin>
+    <plugin>
+      <id>particlecloud</id>
+      <attach>false</attach>
+      <filename>PointCloud.so</filename>
+      <material>Transparent/Red</material>
+    </plugin>
+  </plugin>
+
 
 
   <plugin>

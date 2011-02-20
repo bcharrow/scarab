@@ -1,8 +1,8 @@
 <launch>
-  <node pkg="acroname_moto" 
-        type="acroname_moto_node" 
+  <node pkg="acroname_moto"
+        type="acroname_moto_node"
         name="motor"
-        output="screen" 
+        output="screen"
         respawn="false">
     <param name="portname" value="acroname"/>
     <param name="frameid" value="odom" />
@@ -11,7 +11,7 @@
     <param name="freq" value="30.0"/>
 
     <param name="encoder_count_per_motor_rev" value="64.0"/>
-    <param name="axle_width" value="0.22"/> 
+    <param name="axle_width" value="0.22"/>
     <param name="wheel_diam" value="0.098"/>
     <param name="motor_to_wheel_ratio" value="53.45"/>
 
@@ -23,9 +23,9 @@
     <param name="pid_param_d" value="2.5"/>
   </node>
 
-  <node pkg="urg_node" 
-        name="laser" 
-        type="urg_node" 
+  <node pkg="urg_node"
+        name="laser"
+        type="urg_node"
         respawn="false"
         output="screen">
     <param name="laser_transform/x" value="0.0" type="double"/>
@@ -33,17 +33,26 @@
     <param name="laser_transform/z" value="0.198" type="double"/>
   </node>
 
-  <node pkg="mesh80211s" 
-        name="mesh80211s" 
-        type="mesh80211s" 
+  <node pkg="mesh80211s"
+        name="mesh80211s"
+        type="mesh80211s"
         respawn="false"
         output="screen">
-  </node> 
+  </node>
 
   <node pkg="laser_odom" name="laser_odom" type="laser_odom" output="screen">
     <remap from="~scan" to="laser/scan"/>
     <remap from="~odom" to="motor/odom"/>
-    <param name="map_frame" value="map" type="string"/>    
+    <param name="map_frame" value="/map" type="string"/>
+
+    <param name="lodom_frame" value="lodom" />
+    <param name="wodom_frame" value="wodom" />
+    <param name="lbase_frame" value="lbase" />
+    <param name="wbase_frame" value="wbase" />
+    <param name="llaser_frame" value="llaser" />
+    <param name="wlaser_frame" value="/scarab/wlaser" />
+
+    <param name="publish_map_frame" value="true" />
   </node>
 
   <node pkg="pamcl"
@@ -51,20 +60,20 @@
         type="amcl"
         respawn="false"
         output="screen">
-    <param name="initial_pose_x" value="-7.4" type="double"/>
-    <param name="initial_pose_y" value="5.42" type="double"/>
+    <param name="initial_pose_x" value="0" type="double"/>
+    <param name="initial_pose_y" value="0" type="double"/>
     <param name="initial_pose_a" value="4.71" type="double"/>
     <param name="initial_pose_xx" value="0.4" type="double"/>
     <param name="initial_pose_yy" value="0.4" type="double"/>
     <param name="initial_pose_aa" value="0.2" type="double"/>
 
     <remap from="scan" to="laser_odom/wscan"/>
-    <remap from="static_map" to="static_map"/>
+    <remap from="static_map" to="/static_map"/>
     <remap from="lodom" to="laser_odom/lodom"/>
 
     <param name="odom_frame_id" value="wodom"/>
     <param name="base_frame_id" value="wbase"/>
-    <param name="global_frame_id" value="map"/>
+    <param name="global_frame_id" value="/map"/>
 
     <param name="odom_model_type" value="diff"/>
     <param name="transform_tolerance" value="1.0" />
@@ -79,7 +88,7 @@
     <param name="odom_alpha3" value="0.5"/>
     <param name="odom_alpha4" value="0.5"/>
 
-    <param name="laser_z_hit" value="0.90"/> 
+    <param name="laser_z_hit" value="0.90"/>
     <param name="laser_z_rand" value="0.10"/>
     <param name="laser_sigma_hit" value="0.1"/>
     <param name="laser_lambda_short" value="0.1"/>
@@ -93,28 +102,28 @@
     <param name="recovery_alpha_fast" value="0.0"/>
   </node>
 
-  <node name="move_base" 
-        pkg="move_base" 
-        type="move_base"
-        output="screen"
-        respawn="false">
-    <remap from="static_map" to="static_map"/>
-    <remap from="map" to="map"/>
-    <remap from="odom" to="laser_odom/wodom"/>
-    <remap from="scan" to="laser_odom/wscan"/>
-    <remap from="cmd_vel" to="motor/cmd_vel"/>
-    <param name="controller_frequency" value="2.0" />
+  <!-- <node name="move_base" -->
+  <!--       pkg="move_base" -->
+  <!--       type="move_base" -->
+  <!--       output="screen" -->
+  <!--       respawn="false"> -->
+  <!--   <remap from="static_map" to="static_map"/> -->
+  <!--   <remap from="map" to="map"/> -->
+  <!--   <remap from="odom" to="laser_odom/wodom"/> -->
+  <!--   <remap from="scan" to="laser_odom/wscan"/> -->
+  <!--   <remap from="cmd_vel" to="motor/cmd_vel"/> -->
+  <!--   <param name="controller_frequency" value="2.0" /> -->
 
-    <rosparam file="$(find move_base_config)/config/costmap_common_params.yaml" 
-              command="load" ns="global_costmap" />
-    <rosparam file="$(find move_base_config)/config/costmap_common_params.yaml" 
-              command="load" ns="local_costmap" />
-    <rosparam file="$(find move_base_config)/config/local_costmap_params.yaml"
-              command="load" />
-    <rosparam file="$(find move_base_config)/config/global_costmap_params.yaml" 
-              command="load" />
-    <rosparam file="$(find move_base_config)/config/base_local_planner_params.yaml" 
-              command="load" />
-  </node>
+  <!--   <rosparam file="$(find move_base_config)/config/costmap_common_params.yaml" -->
+  <!--             command="load" ns="global_costmap" /> -->
+  <!--   <rosparam file="$(find move_base_config)/config/costmap_common_params.yaml" -->
+  <!--             command="load" ns="local_costmap" /> -->
+  <!--   <rosparam file="$(find move_base_config)/config/local_costmap_params.yaml" -->
+  <!--             command="load" /> -->
+  <!--   <rosparam file="$(find move_base_config)/config/global_costmap_params.yaml" -->
+  <!--             command="load" /> -->
+  <!--   <rosparam file="$(find move_base_config)/config/base_local_planner_params.yaml" -->
+  <!--             command="load" /> -->
+  <!-- </node> -->
 
 </launch>

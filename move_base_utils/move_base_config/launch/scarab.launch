@@ -1,6 +1,6 @@
 <launch>
-  <master type="zenmaster_sd" auto="restart" />
-  <param name="whitelist_topics" value="/scarab/amcl_pose,/scarab/move_base_simple/goal"/>
+  <master type="rosmaster_sd" auto="restart" />
+  <param name="whitelist_topics" value="/scarab/amcl_pose,/scarab/particlecloud"/>
   <param name="whitelist_services" value=""/>
   <param name="whitelist_params" value=""/>
 
@@ -13,6 +13,6 @@
   <group ns="scarab">
     <param name="~tf_prefix" value="scarab"/>
     <param name="motor/baud" value="38400" />
-    <include file="$(find move_base_configs)/config/scarab.xml" />
+    <include file="$(find move_base_config)/config/scarab.xml" />
   </group>
 </launch>

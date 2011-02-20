@@ -19,19 +19,17 @@
     <param name="thickness" value="0.5"/>
   </node>
 
-  <node pkg="vis_nodes"
-        name="vis_pose"
-        type="pose_with_covariance_stamped"
-        output="screen">
-    <remap from="~topic" to="/scarab/amcl_pose"/>
-    <param name="mailbox" value="scarab"/>
-  </node>
-  <node pkg="vis_nodes"
-        name="vis_particlecloud"
-        type="pose_array"
-        output="screen">
-    <remap from="~topic" to="/scarab/particlecloud" />
-    <param name="mailbox" value="field" />
-  </node>
+  <group ns="scarab34">
+    <include file="$(find radio_collect)/config/vis-scarab.xml">
+      <arg name="mailbox" value="robot1" />
+    </include>
+  </group>
+
+  <group ns="scarab26">
+    <include file="$(find radio_collect)/config/vis-scarab.xml">
+      <arg name="mailbox" value="robot2" />
+    </include>
+  </group>
+
 
 </launch>

@@ -1,0 +1,17 @@
+<launch>
+  <arg name="mailbox" />
+  <node pkg="vis_nodes"
+        name="vis_pose"
+        type="pose_with_covariance_stamped"
+        output="screen">
+    <remap from="~topic" to="amcl_pose"/>
+    <param name="mailbox" value="$(arg mailbox)"/>
+  </node>
+  <node pkg="vis_nodes"
+        name="vis_particlecloud"
+        type="pose_array"
+        output="screen">
+    <remap from="~topic" to="particlecloud" />
+    <param name="mailbox" value="$(arg mailbox)/particlecloud" />
+  </node>
+</launch>
