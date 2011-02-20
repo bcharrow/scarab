@@ -27,6 +27,7 @@ private:
   double motor_to_wheel_ratio;
   double pid_period;
   double pid_param_p, pid_param_i, pid_param_d;
+  double pwm_freq;
   int left_dir, right_dir;
   std::string portname;
   double freq;
@@ -99,6 +100,7 @@ public:
     node->param("left_channel", left_channel, 0);
     node->param("right_channel", right_channel, 1);
 
+    node->param("pwm_freq", pwm_freq, 20000.0);
     node->param("freq", freq, 15.0);
 
     node->param("portname", this->portname, std::string("acroname"));
@@ -137,6 +139,7 @@ public:
     motor_control.SetupPort(portname, baud);
     motor_control.SetupChannels(left_channel, left_dir, right_channel, right_dir);
     motor_control.SetupPID(pid_param_p, pid_param_i, pid_param_d, pid_period);
+    motor_control.SetPWMFreq(pwm_freq);
 
     DifferentialDriveMsgs::PIDParam param_msg;
     param_msg.p = pid_param_p;

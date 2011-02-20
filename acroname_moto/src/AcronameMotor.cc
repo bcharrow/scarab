@@ -97,6 +97,46 @@ SetupChannels(int left, int left_dir, int right, int right_dir)
   
 }
 
+int AcronameMotor::
+SetPWMFreq(double pwm_freq)
+{
+  int val = 0;
+  unsigned char paramH, paramL;
+
+  // PWM period = [(4^paramH)*(paramL+1)*0.1us]
+  // PWM freq = 1 / PWM period
+  // PWM resolution = log(40MHz / PWM freq)/log(2)
+  printf("=== Setting PWM Frequency: %f\n", pwm_freq);
+
+  if(pwm_freq > 39062.5)
+    paramH = 0;
+  else if(pwm_freq > 9765.63)
+    paramH = 1;
+  else
+    paramH = 2;
+
+  paramL = (unsigned char)(-1 + (78125*pow(2.0, 7.0-2.0*paramH))/pwm_freq);
+
+  val = paramL;
+  val |= (paramH << 8);
+
+  printf("paramL: %d, paramH: %d, val: %d (0h%x)\n", paramL, paramH, val, val);
+
+  /*
+  error = aMotion_SetParam(stemLib,
+                           aMODULE,
+                           left_channel,
+                           aMOTION_PARAM_PWMFREQ,
+			   val);
+  */
+
+  if(error != aErrNone) {
+    return -1;
+  }
+
+  return 0;
+}
+
 void AcronameMotor::
 SetupPID(double p, double i, double d, double period)
 {
