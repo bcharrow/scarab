@@ -1,0 +1,14 @@
+<package>
+  <description brief="key_to_twist">
+     key_to_twist
+  </description>
+  <author>Ben Charrow</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="roscpp"/>
+  <depend package="geometry_msgs" />
+  <url>http://ros.org/wiki/joy_to_twist</url>
+
+</package>
+
+
