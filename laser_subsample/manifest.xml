@@ -1,0 +1,15 @@
+<package>
+  <description brief="laser_subsample">
+
+     laser_subsample
+
+  </description>
+  <author>nmichael</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/laser_subsample</url>
+  <depend package="roscpp"/>
+  <depend package="sensor_msgs"/>
+</package>
+
+
