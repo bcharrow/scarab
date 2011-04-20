@@ -122,13 +122,13 @@ SetPWMFreq(double pwm_freq)
 
   printf("paramL: %d, paramH: %d, val: %d (0h%x)\n", paramL, paramH, val, val);
 
-  /*
+  
   error = aMotion_SetParam(stemLib,
                            aMODULE,
                            left_channel,
                            aMOTION_PARAM_PWMFREQ,
 			   val);
-  */
+  
 
   if(error != aErrNone) {
     return -1;
