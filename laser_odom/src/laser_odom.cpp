@@ -120,6 +120,16 @@ void scan_callback(const sensor_msgs::LaserScan::ConstPtr& msg)
   cov_fisher(scan_data, cov);
   if (cov[0] > 0.06)
     cov[0] = 0.06;
+  if (cov[0] < 0) {
+    ROS_WARN("Returning early");
+    //Save Previous Data=========================================================
+    prev_scan = scan;
+    prev_wheel_x = curr_wheel_x;
+    prev_wheel_y = curr_wheel_y;
+    prev_wheel_a = curr_wheel_a;
+    last_update = curr_update;
+    return;
+  }
 
   //Obtain wheel odometry info=================================================
   double diff_wheel_x = curr_wheel_x - prev_wheel_x;

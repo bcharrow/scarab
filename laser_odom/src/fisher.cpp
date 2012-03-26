@@ -100,9 +100,17 @@ void cov_fisher(vector<scanData> data, double* cov)
     }
   }
   FIM = FIM / 0.02;	//Normalize with sensor noise covariance: 0.02
-  mat iFIM= inv(FIM);
 
-  cov[0] = iFIM(0,0);
-  cov[1] = iFIM(1,1);
-  cov[2] = iFIM(2,2);
+  if (det(FIM) < 1e-6) {
+    ROS_WARN("FIM has small determinant");
+    cov[0] = -1;
+    cov[1] = -1;
+    cov[2] = -1;
+  } else {
+    mat iFIM= inv(FIM);
+
+    cov[0] = iFIM(0,0);
+    cov[1] = iFIM(1,1);
+    cov[2] = iFIM(2,2);
+  }
 }
