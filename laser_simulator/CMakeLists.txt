@@ -29,6 +29,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
 
+find_package(Armadillo REQUIRED)
 find_package(CGAL QUIET COMPONENTS Core PATHS /opt/local)
 
 if (NOT CGAL_FOUND)
@@ -39,11 +40,15 @@ include( ${CGAL_USE_FILE} )
 
 rosbuild_add_library(LaserSimulator src/LaserSimulator.cc)
 
+find_package(Armadillo REQUIRED)
+find_package(LAPACK REQUIRED)
+
 if ( CGAL_AUTO_LINK_ENABLED )    
   target_link_libraries(LaserSimulator ${CGAL_3RD_PARTY_LIBRARIES} )
 else()
   target_link_libraries(LaserSimulator ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} )
 endif()
+target_link_libraries(LaserSimulator ${ARMADILLO_LIBRARIES} ${LAPACK_LIBRARIES})
 
 rosbuild_add_executable(laser_simulator src/laser_simulator.cc)
 target_link_libraries(laser_simulator LaserSimulator)

@@ -13,7 +13,6 @@
   <depend package="nav_msgs"/>
   <depend package="sensor_msgs"/>
   <depend package="tf"/>
-  <depend package="armadillo"/>
   <depend package="odometry_aggregator"/>
 
 </package>
