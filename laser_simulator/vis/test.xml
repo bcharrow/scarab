@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+
+<vis>
+  <gui>
+    <size>800 600</size>
+    <name>Vis</name>
+    <menuOn>0</menuOn>
+    <frame>
+     <frameRate>30</frameRate>
+      <camera>
+        <name>cam2</name>
+        <position>-5 0 3</position>
+        <lookAt>0 0 2</lookAt>
+        <clipDist>0.1</clipDist>
+      </camera>
+      <size>800 600</size>
+    </frame>
+  </gui>
+
+  <plugin>
+    <id>light1</id>
+    <filename>Light.so</filename>
+    <position>0 0 100</position>
+    <diffuse>0.8 0.8 0.8</diffuse>
+    <specular>0.8 0.8 0.8</specular>
+  </plugin>
+
+  <plugin>
+    <id>floor1</id>
+    <filename>Plane.so</filename>
+    <segments>10</segments>
+    <range>50 50</range>
+    <material>Transparent/Gray</material>
+  </plugin>
+
+  <plugin>
+    <id>ambient</id>
+    <filename>Ambient.so</filename>
+    <color>1 1 1</color>
+  </plugin>
+
+  <plugin>
+    <id>axes</id>
+    <filename>Axes.so</filename>
+    <xColor>1 0 0 1</xColor>
+    <yColor>0 1 0 1</yColor>
+    <zColor>0 0 1 1</zColor>
+    <length>0.5 0.5 0.5</length>
+  </plugin>
+
+  <plugin>
+    <id>robot</id>
+    <filename>ScarabV3.so</filename>
+<!--    <material>Colors/Green</material>-->
+    <xyz>0 0 0</xyz>
+    <rpy>0 0 0</rpy>
+
+    <plugin>
+      <id>laser</id>
+      <filename>Lidar2DVisual.so</filename>
+      <xyz>0.0 0.0 0.2</xyz>
+      <material>Transparent/Yellow</material>
+    </plugin>
+
+    <plugin>
+      <id>axes</id>
+      <filename>Axes.so</filename>
+      <xColor>1 0 0 1</xColor>
+      <yColor>0 1 0 1</yColor>
+      <zColor>0 0 1 1</zColor>
+      <length>0.5 0.5 0.5</length>
+    </plugin>
+  </plugin>
+
+  <plugin>
+    <id>map</id>
+    <filename>PointCloud.so</filename>
+    <material>Transparent/Red</material>
+  </plugin>
+</vis>

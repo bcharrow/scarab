@@ -1,0 +1,73 @@
+<launch>
+  <node pkg="map_server" 
+	name="map" 
+	type="map_server" 
+	output="screen" 
+	args="$(find scarab_v_3)/maps/levineTowne.yaml"/>
+
+    <node pkg="kinematic_sim" 
+          type="kinematic_sim" 
+          name="KinematicSim"
+          output="screen" 
+          respawn="false">
+    <param name="publish_freq" value="100"/>
+    <param name="num_agents" value="1"/>
+
+    <param name="agent0" value="scarab1"/> 
+    <param name="initial0" value="0.00 0.00 0.00"/>
+    <param name="agent1" value="scarab2"/> 
+    <param name="initial1" value="1.00 0.00 0.00"/>
+  </node>
+
+  <node pkg="odometry_aggregator"
+        name="aggregator"
+        type="odometry_aggregator"
+        output="screen">
+    <param name="count" value="2"/>
+    <param name="rate" value="10"/>
+    <remap from="~robot1/odom" 
+           to="/scarab1/odom"/>
+    <remap from="~robot2/odom" 
+           to="/scarab2/odom"/>
+  </node>
+
+  <node pkg="laser_simulator"
+        name="laser_simulator"
+        type="laser_simulator"
+        output="screen">
+    <remap from="~map" to="/map"/>
+    <remap from="~odom" to="/scarab1/odom"/>
+    <remap from="~odom_array" to="/aggregator/odom_array"/>
+    <rosparam file="$(find laser_simulator)/config/models.yaml"/>
+    <rosparam file="$(find laser_simulator)/models/URG_04LX.yaml"/>
+    <param name="offset/x" value="0"/>
+    <param name="offset/y" value="0"/>
+    <param name="offset/z" value="0.2"/>
+  </node>
+
+  <node pkg="vis_nodes"
+        name="vis_map"
+        type="occupancy_grid"
+        output="screen">
+    <remap from="~topic" to="/map"/>
+    <param name="mailbox" value="map"/>
+    <param name="thickness" value="0.5"/>
+  </node>
+
+  <node pkg="vis_nodes"
+        name="vis_odometry"
+        type="odometry"
+        output="screen">
+    <remap from="~topic" to="/scarab1/odom"/>
+    <param name="mailbox" value="robot"/>
+  </node>
+
+  <node pkg="vis_nodes"
+        name="vis_laser"
+        type="laser"
+        output="screen">
+    <remap from="~topic" to="/laser_simulator/scan"/>
+    <param name="mailbox" value="robot/laser"/>
+  </node>
+
+</launch>

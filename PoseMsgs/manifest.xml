@@ -1,0 +1,14 @@
+<package>
+  <description brief="PoseMsgs">
+    Messages relating to object pose and shape. Assumes full 6DOF except when noted.
+  </description>
+  <author>Jon Fink</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depends package="std_msgs"/>
+  <export>
+    <cpp cflags="-I${prefix}/msg/cpp"/>
+  </export>
+</package>
+
+

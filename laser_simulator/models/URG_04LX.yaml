@@ -1,0 +1,6 @@
+min_angle_deg: -120.0
+max_angle_deg: 120
+scan_count: 240
+rate: 10
+min_range: 0.02
+max_range: 4.0
