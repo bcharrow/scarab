@@ -29,8 +29,15 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
 
+find_package(Armadillo REQUIRED)
+find_package(LAPACK REQUIRED)
+
+include_directories(${ARMADILLO_INCLUDE_DIRS})
+
 rosbuild_add_executable(laser_odom src/laser_odom.cpp
   src/icp.cpp
   src/point2d.cpp
   src/tree2d.cpp
   src/fisher.cpp )
+message(${ARMADILLO_LIBRARIES})
+target_link_libraries(laser_odom ${ARMADILLO_LIBRARIES} ${LAPACK_LIBRARIES})

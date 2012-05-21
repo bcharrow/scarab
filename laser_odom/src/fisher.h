@@ -1,6 +1,8 @@
 #ifndef FISHER_H
 #define FISHER_H
 
+#include <ros/ros.h>
+
 #include <iostream>
 #include "armadillo"
 #include "type.h"

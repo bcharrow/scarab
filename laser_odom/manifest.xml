@@ -13,7 +13,6 @@
   <depend package="geometry_msgs"/>
   <depend package="nav_msgs"/>
   <depend package="laser_geometry"/>
-  <depend package="armadillo"/>
 
 </package>
 
