@@ -5,5 +5,5 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/scarab</url>
   <depend stack="ros" />
-
+  <depend stack="rvo" />
 </stack>
