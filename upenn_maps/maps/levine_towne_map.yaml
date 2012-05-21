@@ -1,4 +1,4 @@
-image: levine_towne_map_obstacle.pgm
+image: levine_towne_map.pgm
 resolution: 0.050000
 origin: [-12.55, -17.63, 0.0000]
 negate: 0
