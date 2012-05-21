@@ -1,0 +1,6 @@
+types:
+  - {id: "scarab", xdim: 0.2, ydim: 0.2, zdim: 0.5}
+
+models:
+  - {id: "scarab1/base", type: "scarab"}
+  - {id: "scarab2/base", type: "scarab"}

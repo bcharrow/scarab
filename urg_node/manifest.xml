@@ -1,0 +1,11 @@
+<package>
+  <description brief="urg">urg</description>
+  <author>jonfink@grasp.upenn.edu</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="roscpp" />
+  <depend package="diagnostic_updater" />
+  <depend package="sensor_msgs" />
+  <depend package="tf" />
+  <url>https://kumar.cis.upenn.edu</url>
+</package>
