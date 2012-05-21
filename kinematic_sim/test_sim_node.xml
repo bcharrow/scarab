@@ -1,0 +1,8 @@
+<launch>
+  <node pkg="kinematic_sim" type="kinematic_sim" name="KinematicSim" output="screen" respawn="false">
+    <param name="num_agents" value="3"/>
+    <param name="name0" value="agent0"/> <param name="initial0" value="0.0 0.0 0.0"/>
+    <param name="name1" value="agent1"/> <param name="initial1" value="1.0 1.0 0.0"/>
+    <param name="name2" value="agent2"/> <param name="initial2" value="0.0 1.0 0.0"/>
+  </node>
+</launch>

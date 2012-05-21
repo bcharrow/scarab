@@ -1,0 +1,18 @@
+<package>
+  <description brief="kinematic_sim">
+
+     kinematic_sim
+
+  </description>
+  <author>Jon Fink</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/kinematic_sim</url>
+  <depend package="roscpp"/>
+  <depend package="tf"/>
+  <depend package="geometry_msgs"/>
+  <depend package="nav_msgs"/>
+
+</package>
+
+
