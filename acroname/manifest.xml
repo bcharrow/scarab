@@ -10,9 +10,7 @@
   <url>http://pr.willowgarage.com/wiki/acroname</url>
   <export>
     <cpp cflags="-I${prefix}/brainstem -I${prefix}/brainstem/aDebug/aSystem -DaUNIX"
-         lflags="-L${prefix}/brainstem/aDebug/aUnix/i686 -Wl,-rpath,${prefix}/brainstem/aDebug/aUnix/i686 -lm -laIO -laStem"/>
+         lflags="-L${prefix}/brainstem/aDebug/aUnix/x86_64 -Wl,-rpath,${prefix}/brainstem/aDebug/aUnix/x86_64 -lm -laIO -laStem"/>
   </export>
 
 </package>
-
-

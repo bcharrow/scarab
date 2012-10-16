@@ -36,44 +36,44 @@ prep :
 
 debug :
 	make -C aIO ARCH=$(ARCH) debug
-	make -C aUI ARCH=$(ARCH) debug
+# 	make -C aUI ARCH=$(ARCH) debug
 	make -C aStem ARCH=$(ARCH) debug
-	make -C aTEAvm ARCH=$(ARCH) debug
-	make -C aLeaf ARCH=$(ARCH) debug
-	make -C aSteepOpt ARCH=$(ARCH) debug
-	make -C aSteepGen ARCH=$(ARCH) debug
-	make -C aSteep ARCH=$(ARCH) debug
-	make -C aPPRK ARCH=$(ARCH) debug
-	make -C aGarcia ARCH=$(ARCH) debug
-	make -C aRobot ARCH=$(ARCH) debug
-ifeq ($(ARCH),ARM)
-else
-	make -C aConsole ARCH=$(ARCH) debug
-endif
-	make -C aExamples ARCH=$(ARCH) debug
+# 	make -C aTEAvm ARCH=$(ARCH) debug
+# 	make -C aLeaf ARCH=$(ARCH) debug
+# 	make -C aSteepOpt ARCH=$(ARCH) debug
+# 	make -C aSteepGen ARCH=$(ARCH) debug
+# 	make -C aSteep ARCH=$(ARCH) debug
+# 	make -C aPPRK ARCH=$(ARCH) debug
+# 	make -C aGarcia ARCH=$(ARCH) debug
+# 	make -C aRobot ARCH=$(ARCH) debug
+# ifeq ($(ARCH),ARM)
+# else
+# 	make -C aConsole ARCH=$(ARCH) debug
+# endif
+# 	make -C aExamples ARCH=$(ARCH) debug
 
 
 release : 
 	make -C aIO ARCH=$(ARCH) release
-	make -C aUI ARCH=$(ARCH) release
+	# make -C aUI ARCH=$(ARCH) release
 	make -C aStem ARCH=$(ARCH) release
-	make -C aTEAvm ARCH=$(ARCH) release
-	make -C aLeaf ARCH=$(ARCH) release
-	make -C aSteepOpt ARCH=$(ARCH) release
-	make -C aSteepGen ARCH=$(ARCH) release
-	make -C aSteep ARCH=$(ARCH) release
-	make -C aPPRK ARCH=$(ARCH) release
-	make -C aGarcia ARCH=$(ARCH) release
-	make -C aRobot ARCH=$(ARCH) release
-ifeq ($(ARCH),ARM)
-else
-	make -C aConsole ARCH=$(ARCH) release
-endif
-	make -C aExamples ARCH=$(ARCH) release
+	# make -C aTEAvm ARCH=$(ARCH) release
+	# make -C aLeaf ARCH=$(ARCH) release
+	# make -C aSteepOpt ARCH=$(ARCH) release
+	# make -C aSteepGen ARCH=$(ARCH) release
+	# make -C aSteep ARCH=$(ARCH) release
+	# make -C aPPRK ARCH=$(ARCH) release
+	# make -C aGarcia ARCH=$(ARCH) release
+	# make -C aRobot ARCH=$(ARCH) release
+# ifeq ($(ARCH),ARM)
+# else
+# 	make -C aConsole ARCH=$(ARCH) release
+# endif
+# 	make -C aExamples ARCH=$(ARCH) release
 
 
 tests :
-	make -C aIO ARCH=$(ARCH) tests
+	# make -C aIO ARCH=$(ARCH) tests
 
 
 clean :
