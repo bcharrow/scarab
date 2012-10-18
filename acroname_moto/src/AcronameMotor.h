@@ -27,7 +27,7 @@ public:
   ~AcronameMotor();
   void SetupPort(const string &portname, const long &portspeed);
   void SetupChannels(int left, int left_dir, int right, int right_dir);
-  int SetPWMFreq(double pwm_freq);
+  int SetPWMFreq(unsigned char paramH, unsigned char paramL);
   void SetupPID(double p, double i, double d, double period);
 
   int SetVel(short int left_vel, short int right_vel);

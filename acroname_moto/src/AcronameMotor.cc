@@ -1,3 +1,4 @@
+#include <ros/ros.h>
 #include <string>
 #include <stdlib.h>
 #include <math.h>
@@ -49,10 +50,7 @@ SetupPort(const string &portname, const long &portspeed)
   }
 
   if (error == aErrNone)
-    aStem_SetStream(stemLib, 
-                    linkStream, 
-                    kStemModuleStream, 
-                    &error);
+    aStem_SetStream(stemLib, linkStream, kStemModuleStream, &error);
 
 }
 
@@ -98,36 +96,30 @@ SetupChannels(int left, int left_dir, int right, int right_dir)
 }
 
 int AcronameMotor::
-SetPWMFreq(double pwm_freq)
+SetPWMFreq(unsigned char paramH, unsigned char paramL)
 {
+  // See acroname's site for details on parameters
+  // http://www.acroname.com/brainstem/ref/ref.html#Commands/cmdMO_CFG.html
   int val = 0;
-  unsigned char paramH, paramL;
 
   // PWM period = [(4^paramH)*(paramL+1)*0.1us]
   // PWM freq = 1 / PWM period
   // PWM resolution = log(40MHz / PWM freq)/log(2)
-  printf("=== Setting PWM Frequency: %f\n", pwm_freq);
 
-  if(pwm_freq > 39062.5)
-    paramH = 0;
-  else if(pwm_freq > 9765.63)
-    paramH = 1;
-  else
-    paramH = 2;
+  double period = pow(4, paramH) * (paramL + 1) * 1e-7;
+  double freq = 1 / period;
+  double resolution = log(40 * 10e6 / freq) / log(2);
 
-  paramL = (unsigned char)(-1 + (78125*pow(2.0, 7.0-2.0*paramH))/pwm_freq);
-
+  paramH = 0;
+  paramL = 255;
   val = paramL;
   val |= (paramH << 8);
 
-  printf("paramL: %d, paramH: %d, val: %d (0h%x)\n", paramL, paramH, val, val);
-
+  ROS_INFO("paramL: %d, paramH: %d, PWM Freq = %.2f Resolution = %0.1f",
+           paramL, paramH, freq, resolution);
   
-  error = aMotion_SetParam(stemLib,
-                           aMODULE,
-                           left_channel,
-                           aMOTION_PARAM_PWMFREQ,
-			   val);
+  error = aMotion_SetParam(stemLib, aMODULE, left_channel,
+                           aMOTION_PARAM_PWMFREQ, val);
   
 
   if(error != aErrNone) {
@@ -137,81 +129,72 @@ SetPWMFreq(double pwm_freq)
   return 0;
 }
 
+int16_t fixed_width(double p) {
+  // Convert double precision number to 16-bit fixed precision number.  High
+  // bit is sign bit, low order 5 bits are fractional, middle bits are
+  // integral.
+  int16_t integral = static_cast<int16_t>(p);
+  int16_t high_mask = 0x7fe0;
+  int16_t low_mask = 0x001f;
+  int16_t fractional = round((p - integral) * 32.0);
+  int16_t result = (high_mask & (integral << 5)) | (low_mask & fractional);
+  return result;
+}
+
+
 void AcronameMotor::
 SetupPID(double p, double i, double d, double period)
 {
-  /* Set the PID P term. The values for this are stored on the Moto 
-   * in fixed point notations. The resolution step size for the term 
-   * is in increments of 0.031. Therefore, setting the value to 32 
-   * would set the term to 0.031 X 32 = 0.99199 (aka 1.00).
-   */  
-  error = aMotion_SetParam(stemLib,
-                           aMODULE,
-                           left_channel,
-                           aMOTION_PARAM_P,
-                           (int)(round(p/0.031)));
 
-  error = aMotion_SetParam(stemLib,
-                           aMODULE,
-                           left_channel,
-                           aMOTION_PARAM_I,
-                           (int)(round(i/0.031)));
+  // Set motor PID params.  The resolution step size is fixed width, see
+  // documentaiton for details
+  error = aMotion_SetParam(stemLib, aMODULE, left_channel, aMOTION_PARAM_P,
+                           fixed_width(p));
+  if (error != aErrNone) { ROS_WARN("Error setting param!"); }
 
-  error = aMotion_SetParam(stemLib,
-                           aMODULE,
-                           left_channel,
-                           aMOTION_PARAM_D,
-                           (int)(round(d/0.031)));
+  error = aMotion_SetParam(stemLib, aMODULE, left_channel, aMOTION_PARAM_I,
+                           fixed_width(i));
+  if (error != aErrNone) { ROS_WARN("Error setting param!"); }
 
-  error = aMotion_SetParam(stemLib,
-                           aMODULE,
-                           right_channel,
-                           aMOTION_PARAM_P,
-                           (int)(round(p/0.031)));
+  error = aMotion_SetParam(stemLib, aMODULE, left_channel, aMOTION_PARAM_D,
+                           fixed_width(d));
+  if (error != aErrNone) { ROS_WARN("Error setting param!"); }
 
-  error = aMotion_SetParam(stemLib,
-                           aMODULE,
-                           right_channel,
-                           aMOTION_PARAM_I,
-                           (int)(round(i/0.031)));
+  error = aMotion_SetParam(stemLib, aMODULE, right_channel, aMOTION_PARAM_P,
+                           fixed_width(p));
+  if (error != aErrNone) { ROS_WARN("Error setting param!"); }
 
-  error = aMotion_SetParam(stemLib,
-                           aMODULE,
-                           right_channel,
-                           aMOTION_PARAM_D,
-                           (int)(round(d/0.031)));
+  error = aMotion_SetParam(stemLib, aMODULE, right_channel, aMOTION_PARAM_I,
+                           fixed_width(i));
+  if (error != aErrNone) { ROS_WARN("Error setting param!"); }
+
+  error = aMotion_SetParam(stemLib, aMODULE, right_channel, aMOTION_PARAM_D,
+                           fixed_width(d));
+  if (error != aErrNone) { ROS_WARN("Error setting param!"); }
 
   /* Set the Period value. The increment value that can be stored is 
    * in 0.1msec increments. Depending on the Moto firmware, the lowest 
    * possible value is 1msec, which is a value of 10. 
    */
-  error = aMotion_SetParam(stemLib,
-                           aMODULE,
-                           left_channel,
+  error = aMotion_SetParam(stemLib, aMODULE, left_channel,
                            aMOTION_PARAM_PERIOD,
                            (int)(round(period/0.0001)));
+  if (error != aErrNone) { ROS_WARN("Error setting param!"); }
 
-  error = aMotion_SetParam(stemLib,
-                           aMODULE,
-                           right_channel,
+  error = aMotion_SetParam(stemLib, aMODULE, right_channel,
                            aMOTION_PARAM_PERIOD,
                            (int)(round(period/0.0001)));
+  if (error != aErrNone) { ROS_WARN("Error setting param!"); }
 }
 
 int AcronameMotor::
 SetVel(short int left_vel, short int right_vel)
 {
-  //if(error == aErrNone) {
-    error = aMotion_SetValue(stemLib,
-                             aMODULE,
-                             left_channel,
-                             left_vel); 
+  error = aMotion_SetValue(stemLib, aMODULE, left_channel, left_vel);
+  if (error != aErrNone) { ROS_WARN("Error setting left velocity!"); }
 
-    error = aMotion_SetValue(stemLib,
-                             aMODULE,
-                             right_channel,
-                             right_vel);
-  //}
+  error = aMotion_SetValue(stemLib, aMODULE, right_channel, right_vel);
+  if (error != aErrNone) { ROS_WARN("Error setting right velocity!"); }
 
   if(error == aErrNone)
     return 0;
@@ -222,18 +205,9 @@ SetVel(short int left_vel, short int right_vel)
 int AcronameMotor::
 GetVel(short int &left_vel, short int &right_vel)
 {
-  //if(error == aErrNone) {
+  error = aMotion_GetPIDInput(stemLib, aMODULE, left_channel, &left_vel);
 
-    error = aMotion_GetPIDInput(stemLib,
-                                aMODULE,
-                                left_channel,
-                                &left_vel);
-
-    error = aMotion_GetPIDInput(stemLib,
-                                aMODULE,
-                                right_channel,
-                                &right_vel);
-  //}
+  error = aMotion_GetPIDInput(stemLib, aMODULE, right_channel, &right_vel);
 
   if(error == aErrNone)
     return 0;

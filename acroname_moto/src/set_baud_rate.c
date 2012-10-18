@@ -47,7 +47,7 @@
 /* Note: This value will change if you plug the adapter in other   */
 /* USB ports, depending on your adapter type.                      */
 #define aPORTNAME "acroname"
-#define aPORTSPEED 9600
+
 
 /* Program specific macros */
 #define LOOPDELAY 250
@@ -61,11 +61,31 @@ int main(int argc, char* argv[]) {
   aIOLib ioLib;
   aStemLib stemLib;
   aStreamRef linkStream;
-  short setpoint = 0;
-  short pidval = 0;
-  
-  printf("Running the motor example.\n");     
-  
+
+
+  if (argc != 3) {
+    fprintf(stderr, "usage: set_baud_rate current_baud desired_baud\n");
+    exit(-1);
+  }
+  int current_baud = atoi(argv[1]);
+  int desired_baud = atoi(argv[2]);
+
+  int bauds[] = {2400, 4800, 9600, 19200, 38400, 57600, 115200, 31250};
+  int baud_ind = 0;
+  while (baud_ind < 8) {
+    if (bauds[baud_ind] == desired_baud) {
+      break;
+    }
+    baud_ind++;
+  }
+  if (baud_ind == 8) {
+    fprintf(stderr, "%i is invalid baud\n", desired_baud);
+    exit(-1);
+  }
+
+  printf("Communicating with brainstem at %i and setting it to %i.\n",
+         current_baud, desired_baud);
+
   /* Get the references to the aIO and aStem library objects. */
   if (error == aErrNone)
     aIO_GetLibRef(&ioLib, &error);
@@ -80,7 +100,7 @@ int main(int argc, char* argv[]) {
   if (error == aErrNone)
     aStream_CreateSerial(ioLib, 
                          aPORTNAME, 
-                         aPORTSPEED,                  
+                         current_baud,
                          &linkStream, 
                          &error);
 
@@ -118,9 +138,9 @@ int main(int argc, char* argv[]) {
   int got_reply = 0;
 
 
-  unsigned char get_baud_rate[2] = {cmdVAL_GET, 4};
-  unsigned char set_baud_rate[3] = {cmdVAL_SET, 4, 4};
-  unsigned char save_baud_rate[1] = {cmdVAL_SAV};
+  char get_baud_rate[2] = {cmdVAL_GET, 4};
+  char set_baud_rate[3] = {cmdVAL_SET, 4, baud_ind};
+  char save_baud_rate[1] = {cmdVAL_SAV};
 
   while( got_reply < 2) {
   
@@ -231,7 +251,8 @@ int main(int argc, char* argv[]) {
    */
   aStem_ReleaseLibRef(stemLib, NULL);
   aIO_ReleaseLibRef(ioLib, NULL);
-  
+
+  printf("Great!  Now restart the brainstem\n");
   return error;
   
 } /* main */
