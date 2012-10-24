@@ -335,9 +335,5 @@ int main(int argc, char **argv)
     ROS_ERROR("Problem starting motor control interface.");
   }
 
-  d.SetVel(0.0, 0.0);
-
-  ros::Duration(2.0).sleep();
-
   return(0);
 }

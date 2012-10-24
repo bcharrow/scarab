@@ -110,8 +110,6 @@ SetPWMFreq(unsigned char paramH, unsigned char paramL)
   double freq = 1 / period;
   double resolution = log(40 * 10e6 / freq) / log(2);
 
-  paramH = 0;
-  paramL = 255;
   val = paramL;
   val |= (paramH << 8);
 
@@ -218,6 +216,8 @@ GetVel(short int &left_vel, short int &right_vel)
 AcronameMotor::
 ~AcronameMotor()
 {
+  SetVel(0, 0);
+  ros::Duration(1.0).sleep();
   aStem_ReleaseLibRef(stemLib, NULL);
   aIO_ReleaseLibRef(ioLib, NULL);
 

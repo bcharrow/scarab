@@ -1,7 +1,7 @@
-int8 sp_enc_left
-int8 sp_enc_right
-int8 enc_left
-int8 enc_right
+int16 sp_enc_left
+int16 sp_enc_right
+int16 enc_left
+int16 enc_right
 float64 sp_wheel_left
 float64 sp_wheel_right
 float64 wheel_left
