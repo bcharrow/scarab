@@ -6,21 +6,23 @@
     <param name="frameid" value="odom" />
     
     <param name="axle_width" value="0.27"/>
-    <param name="max_wheel_vel" value="0.2"/>
+    <param name="max_wheel_vel" value="0.45"/>
     <param name="min_wheel_vel" value="0.0"/>
     <param name="wheel_diam" value="0.1"/>
     <param name="encoder_count_per_motor_rev" value="3000" />
 
+    <param name="left_module" value="4"/>
     <param name="left_channel" value="1"/>
     <param name="left_dir" value="1"/>
+    <param name="right_module" value="6"/>
     <param name="right_channel" value="0"/>
-    <param name="right_dir" value="-1"/>
+    <param name="right_dir" value="1"/>
 
     <param name="motor_to_wheel_ratio" value="43.2"/>
-    <param name="pid_param_p" value="0.2"/>
+    <param name="pid_param_p" value="0.3"/>
     <param name="pid_param_i" value="0.0"/>
-    <param name="pid_param_d" value="0.1"/>
-    <param name="pid_period" value="0.001" />
+    <param name="pid_param_d" value="0.5"/>
+    <param name="pid_period" value="0.005" />
 
     <param name="paramH" value="0" />
     <param name="paramL" value="255" />

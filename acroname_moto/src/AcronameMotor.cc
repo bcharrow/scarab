@@ -6,8 +6,7 @@
 
 using namespace std;
 
-AcronameMotor::AcronameMotor()
-{
+AcronameMotor::AcronameMotor() {
   this->error = aErrNone;  
   
   /* Get the references to the aIO and aStem library objects. */
@@ -17,13 +16,10 @@ AcronameMotor::AcronameMotor()
     aStem_GetLibRef(&stemLib, &error);
 
   if( error != aErrNone )
-    printf("Problem getting librefs\n");
-
+    ROS_WARN("Problem getting librefs\n");
 }
 
-void AcronameMotor::
-SetupPort(const string &portname, const long &portspeed)
-{
+void AcronameMotor::SetupPort(const string &portname, const long &portspeed) {
   /* Build a link stream to communicate serially with the stem. */
   if (error == aErrNone)
     aStream_CreateSerial(ioLib, 
@@ -33,19 +29,19 @@ SetupPort(const string &portname, const long &portspeed)
                          &error);
 
   if( error != aErrNone ) {
-    printf("Problem forming link to Moto... ");
+    ROS_WARN("Problem forming link to Moto... ");
     
     switch(error) {
     case aErrNotFound:
-      printf("port not found!\n");
+      ROS_WARN("port not found!\n");
       break;
     case aErrRange:
-      printf("baud rate not available\n");
+      ROS_WARN("baud rate not available\n");
       break;
     case aErrOverrun:
-      printf("buffer overrun\n");
+      ROS_WARN("buffer overrun\n");
     default:
-      printf("unknown problem\n");
+      ROS_WARN("unknown problem\n");
     };
   }
 
@@ -54,53 +50,26 @@ SetupPort(const string &portname, const long &portspeed)
 
 }
 
-void AcronameMotor::
-SetupChannels(int left, int left_dir, int right, int right_dir)
-{
-  left_channel = left;
-  right_channel = right;
-
+void AcronameMotor::SetupChannel(const MotoAddr &addr, bool forward) {
   unsigned char mode_flags = 0;
-
-  if(left_dir > 0) {
-    mode_flags = 0;
+  if (forward) {
     mode_flags |= (1 << aMOTION_PWMFLAG_INVPID);
-  }
-  else {
-    mode_flags = 0;
+  } else {
     mode_flags |= (1 << aMOTION_PWMFLAG_INVPWM);
   }
 
-  error = aMotion_SetMode(stemLib,
-                          aMODULE,
-                          left_channel,
-                          aMOTION_MODE_ENCVEL,
-                          mode_flags);
+  error = aMotion_SetMode(stemLib, addr.module, addr.channel,
+                          aMOTION_MODE_ENCVEL, mode_flags);
 
-  if(right_dir > 0) {
-    mode_flags = 0;
-    mode_flags |= (1 << aMOTION_PWMFLAG_INVPID);
+  if( error != aErrNone ) {
+    ROS_WARN("Problem setting up channels on %s", addr.String().c_str());
   }
-  else {
-    mode_flags = 0;
-    mode_flags |= (1 << aMOTION_PWMFLAG_INVPWM);
-  }
-
-  error = aMotion_SetMode(stemLib,
-                          aMODULE,
-                          right_channel,
-                          aMOTION_MODE_ENCVEL,
-                          mode_flags);
-
-  
 }
 
-int AcronameMotor::
-SetPWMFreq(unsigned char paramH, unsigned char paramL)
-{
+void AcronameMotor::
+SetPWMFreq(const MotoAddr &addr, unsigned char paramH, unsigned char paramL) {
   // See acroname's site for details on parameters
   // http://www.acroname.com/brainstem/ref/ref.html#Commands/cmdMO_CFG.html
-  int val = 0;
 
   // PWM period = [(4^paramH)*(paramL+1)*0.1us]
   // PWM freq = 1 / PWM period
@@ -109,22 +78,18 @@ SetPWMFreq(unsigned char paramH, unsigned char paramL)
   double period = pow(4, paramH) * (paramL + 1) * 1e-7;
   double freq = 1 / period;
   double resolution = log(40 * 10e6 / freq) / log(2);
-
-  val = paramL;
+  int val = paramL;
   val |= (paramH << 8);
 
   ROS_INFO("paramL: %d, paramH: %d, PWM Freq = %.2f Resolution = %0.1f",
            paramL, paramH, freq, resolution);
   
-  error = aMotion_SetParam(stemLib, aMODULE, left_channel,
+  error = aMotion_SetParam(stemLib, addr.module, addr.channel,
                            aMOTION_PARAM_PWMFREQ, val);
-  
 
   if(error != aErrNone) {
-    return -1;
+    ROS_WARN("Problem setting PWMFreq on %s", addr.String().c_str());
   }
-
-  return 0;
 }
 
 int16_t fixed_width(double p) {
@@ -139,92 +104,53 @@ int16_t fixed_width(double p) {
   return result;
 }
 
-
 void AcronameMotor::
-SetupPID(double p, double i, double d, double period)
-{
-
+SetupPID(const MotoAddr &addr, double p, double i, double d, double period) {
   // Set motor PID params.  The resolution step size is fixed width, see
   // documentaiton for details
-  error = aMotion_SetParam(stemLib, aMODULE, left_channel, aMOTION_PARAM_P,
-                           fixed_width(p));
-  if (error != aErrNone) { ROS_WARN("Error setting param!"); }
+  std::string addr_str = addr.String();
+  const char *addr_char = addr_str.c_str();
+  error = aMotion_SetParam(stemLib, addr.module, addr.channel,
+                           aMOTION_PARAM_P, fixed_width(p));
+  if (error != aErrNone) { ROS_WARN("Error setting P on %s", addr_char); }
 
-  error = aMotion_SetParam(stemLib, aMODULE, left_channel, aMOTION_PARAM_I,
-                           fixed_width(i));
-  if (error != aErrNone) { ROS_WARN("Error setting param!"); }
+  error = aMotion_SetParam(stemLib, addr.module, addr.channel,
+                           aMOTION_PARAM_I, fixed_width(i));
+  if (error != aErrNone) { ROS_WARN("Error setting I on %s", addr_char); }
 
-  error = aMotion_SetParam(stemLib, aMODULE, left_channel, aMOTION_PARAM_D,
-                           fixed_width(d));
-  if (error != aErrNone) { ROS_WARN("Error setting param!"); }
-
-  error = aMotion_SetParam(stemLib, aMODULE, right_channel, aMOTION_PARAM_P,
-                           fixed_width(p));
-  if (error != aErrNone) { ROS_WARN("Error setting param!"); }
-
-  error = aMotion_SetParam(stemLib, aMODULE, right_channel, aMOTION_PARAM_I,
-                           fixed_width(i));
-  if (error != aErrNone) { ROS_WARN("Error setting param!"); }
-
-  error = aMotion_SetParam(stemLib, aMODULE, right_channel, aMOTION_PARAM_D,
-                           fixed_width(d));
-  if (error != aErrNone) { ROS_WARN("Error setting param!"); }
+  error = aMotion_SetParam(stemLib, addr.module, addr.channel,
+                           aMOTION_PARAM_D, fixed_width(d));
+  if (error != aErrNone) { ROS_WARN("Error setting D on %s", addr_char); }
 
   /* Set the Period value. The increment value that can be stored is 
    * in 0.1msec increments. Depending on the Moto firmware, the lowest 
    * possible value is 1msec, which is a value of 10. 
    */
-  error = aMotion_SetParam(stemLib, aMODULE, left_channel,
-                           aMOTION_PARAM_PERIOD,
-                           (int)(round(period/0.0001)));
-  if (error != aErrNone) { ROS_WARN("Error setting param!"); }
+  error = aMotion_SetParam(stemLib, addr.module, addr.channel,
+                           aMOTION_PARAM_PERIOD, (int)(round(period/0.0001)));
+  if (error != aErrNone) { ROS_WARN("Error setting period on %s", addr_char); }
 
-  error = aMotion_SetParam(stemLib, aMODULE, right_channel,
-                           aMOTION_PARAM_PERIOD,
-                           (int)(round(period/0.0001)));
-  if (error != aErrNone) { ROS_WARN("Error setting param!"); }
 }
 
-int AcronameMotor::
-SetVel(short int left_vel, short int right_vel)
-{
-  error = aMotion_SetValue(stemLib, aMODULE, left_channel, left_vel);
-  if (error != aErrNone) { ROS_WARN("Error setting left velocity!"); }
-
-  error = aMotion_SetValue(stemLib, aMODULE, right_channel, right_vel);
-  if (error != aErrNone) { ROS_WARN("Error setting right velocity!"); }
-
-  if(error == aErrNone)
-    return 0;
-
-  return -1;
+void AcronameMotor::SetVel(const MotoAddr &addr, short int vel) {
+  error = aMotion_SetValue(stemLib, addr.module, addr.channel, vel);
+  if (error != aErrNone) {
+    ROS_WARN("Error setting velocity on %s", addr.String().c_str());
+  }
 }
 
-int AcronameMotor::
-GetVel(short int &left_vel, short int &right_vel)
-{
-  error = aMotion_GetPIDInput(stemLib, aMODULE, left_channel, &left_vel);
-
-  error = aMotion_GetPIDInput(stemLib, aMODULE, right_channel, &right_vel);
-
-  if(error == aErrNone)
-    return 0;
-
-  return -1;
+void AcronameMotor::GetVel(const MotoAddr &addr, short int *vel) {
+  error = aMotion_GetPIDInput(stemLib, addr.module, addr.channel, vel);
+  if (error != aErrNone) {
+    ROS_WARN("Error getting PID input on %s", addr.String().c_str());
+  }
 }
 
-AcronameMotor::
-~AcronameMotor()
-{
-  SetVel(0, 0);
-  ros::Duration(1.0).sleep();
+AcronameMotor::~AcronameMotor() {
   aStem_ReleaseLibRef(stemLib, NULL);
   aIO_ReleaseLibRef(ioLib, NULL);
-
 }
 
-bool AcronameMotor::
-ok()
-{
-  return (error == aErrNone);
+bool AcronameMotor::ok() {
+  return error == aErrNone;
 }

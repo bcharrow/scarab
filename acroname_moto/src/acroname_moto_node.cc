@@ -14,6 +14,8 @@
 
 #include "acroname_moto/motor_debug.h"
 
+using namespace std;
+
 class AcronameMotoDriver
 {
 private:
@@ -31,7 +33,7 @@ private:
   int left_dir, right_dir;
   std::string portname;
   double freq;
-
+  AcronameMotor::MotoAddr left_motor, right_motor;
   // For debugging
   acroname_moto::motor_debug debug_data;
 
@@ -94,12 +96,15 @@ public:
     node->param("pid_param_i", this->pid_param_i, 0.0);
     
     node->param("left_dir", this->left_dir, 1);
-    node->param("right_dir", this->right_dir, -1);
-    
-    int left_channel, right_channel;
-    node->param("left_channel", left_channel, 0);
-    node->param("right_channel", right_channel, 1);
+    node->param("right_dir", this->right_dir, 0);
 
+    node->param("left_module", left_motor.module, 4);
+    node->param("right_module", right_motor.module, 4);
+    node->param("left_channel", left_motor.channel, 0);
+    node->param("right_channel", right_motor.channel, 1);
+    ROS_INFO("Left Motor: %s  Right Motor: %s",
+             left_motor.String().c_str(), right_motor.String().c_str());
+    
     node->param("paramH", paramH, 0);
     node->param("paramL", paramL, 255);
     node->param("freq", freq, 15.0);
@@ -138,11 +143,14 @@ public:
     ROS_INFO("Setting up acroname_moto on port %s with baud %d",
              portname.c_str(), baud);
     motor_control.SetupPort(portname, baud);
-    motor_control.SetupChannels(left_channel, left_dir, right_channel, right_dir);
-    motor_control.SetupPID(pid_param_p, pid_param_i, pid_param_d, pid_period);
-    if (motor_control.SetPWMFreq(paramH, paramL) != 0) {
-      ROS_ERROR("Problem setting PWM frequency");
-    }
+    motor_control.SetupChannel(left_motor, left_dir > 0 ? true : false);
+    motor_control.SetupChannel(right_motor, right_dir > 0 ? true : false);
+    motor_control.SetupPID(left_motor, pid_param_p, pid_param_i, pid_param_d,
+                           pid_period);
+    motor_control.SetupPID(right_motor, pid_param_p, pid_param_i, pid_param_d,
+                           pid_period);
+    motor_control.SetPWMFreq(left_motor, paramH, paramL);
+    motor_control.SetPWMFreq(right_motor, paramH, paramL);
 
     DifferentialDriveMsgs::PIDParam param_msg;
     param_msg.p = pid_param_p;
@@ -153,6 +161,10 @@ public:
     tuning_pub.publish(param_msg);
 
     this->x = this->y = this->th = this->v = this->w = 0.0;
+  }
+
+  ~AcronameMotoDriver() {
+    SetVel(0.0, 0.0);
   }
 
   bool ok()
@@ -173,7 +185,10 @@ public:
     pid_param_d = input->d;
     pid_period = input->period;
     
-    motor_control.SetupPID(pid_param_p, pid_param_i, pid_param_d, pid_period);
+    motor_control.SetupPID(left_motor, pid_param_p, pid_param_i, pid_param_d,
+                           pid_period);
+    motor_control.SetupPID(right_motor, pid_param_p, pid_param_i, pid_param_d,
+                           pid_period);
 
     DifferentialDriveMsgs::PIDParam param_msg;
     param_msg.p = pid_param_p;
@@ -229,14 +244,16 @@ public:
     debug_data.sp_enc_left = enc_left;
     debug_data.sp_enc_right = enc_right;
 
-    int err = motor_control.SetVel(enc_left, enc_right);
-    ROS_DEBUG("Setting motors: %d %d %d", enc_left, enc_right, err);
+    motor_control.SetVel(left_motor, enc_left);
+    motor_control.SetVel(right_motor, enc_right);
+    ROS_DEBUG("Setting motors: %d %d", enc_left, enc_right);
   }
 
   void UpdateVelAndPublish()
   {
     short int enc_left, enc_right;
-    motor_control.GetVel(enc_left, enc_right);
+    motor_control.GetVel(left_motor, &enc_left);
+    motor_control.GetVel(right_motor, &enc_right);
 
     debug_data.enc_left = enc_left;
     debug_data.enc_right = enc_right;
