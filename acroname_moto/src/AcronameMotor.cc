@@ -81,8 +81,8 @@ SetPWMFreq(const MotoAddr &addr, unsigned char paramH, unsigned char paramL) {
   int val = paramL;
   val |= (paramH << 8);
 
-  ROS_INFO("paramL: %d, paramH: %d, PWM Freq = %.2f Resolution = %0.1f",
-           paramL, paramH, freq, resolution);
+  ROS_DEBUG("paramL: %d, paramH: %d, PWM Freq = %.2f Resolution = %0.1f",
+            paramL, paramH, freq, resolution);
   
   error = aMotion_SetParam(stemLib, addr.module, addr.channel,
                            aMOTION_PARAM_PWMFREQ, val);

@@ -2,6 +2,9 @@
 #include <string.h>
 #include <math.h>
 
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/thread.hpp>
+
 #include "ros/ros.h"
 
 #include "AcronameMotor.h"
@@ -24,6 +27,8 @@ private:
   double axle_width;
   double max_wheel_vel;
   double min_wheel_vel;
+  double accel_period_;         /**< Update period of linear ramp */
+  double accel_max_;            /**< Maximum acceleration */
   double wheel_diam;
   double encoder_count_per_motor_rev;
   double motor_to_wheel_ratio;
@@ -34,8 +39,12 @@ private:
   std::string portname;
   double freq;
   AcronameMotor::MotoAddr left_motor, right_motor;
-  // For debugging
-  acroname_moto::motor_debug debug_data;
+
+  struct {
+    acroname_moto::motor_debug state;
+    AcronameMotor control;
+  } motors_;
+  boost::mutex motors_mutex_; // Guards access to motors
 
   std::string frameid;
 
@@ -63,11 +72,10 @@ private:
   string odom_frame_id;
   string base_frame_id;
 
-  AcronameMotor motor_control;
+
 
 public:
-  AcronameMotoDriver(ros::NodeHandle *node)
-  {
+  AcronameMotoDriver(ros::NodeHandle *node) {
     this->node = node;
     odom_pub = node->advertise<nav_msgs::Odometry>("odom", 100);
     debug_pub = node->advertise<acroname_moto::motor_debug>("debug",5);
@@ -83,6 +91,11 @@ public:
     node->param("axle_width", this->axle_width, 0.3);
     node->param("max_wheel_vel", this->max_wheel_vel, 0.5);
     node->param("min_wheel_vel", this->min_wheel_vel, 0.01);
+
+
+    node->param("accel_max", accel_max_, 0.6);
+    node->param("accel_period", accel_period_, 1.0 / 20.0);
+
     node->param("frameid", frameid, string("DEFAULT_ODOM"));
 
     node->param("wheel_diam", this->wheel_diam, 0.1);
@@ -102,8 +115,6 @@ public:
     node->param("right_module", right_motor.module, 4);
     node->param("left_channel", left_motor.channel, 0);
     node->param("right_channel", right_motor.channel, 1);
-    ROS_INFO("Left Motor: %s  Right Motor: %s",
-             left_motor.String().c_str(), right_motor.String().c_str());
     
     node->param("paramH", paramH, 0);
     node->param("paramL", paramL, 255);
@@ -142,15 +153,17 @@ public:
 
     ROS_INFO("Setting up acroname_moto on port %s with baud %d",
              portname.c_str(), baud);
-    motor_control.SetupPort(portname, baud);
-    motor_control.SetupChannel(left_motor, left_dir > 0 ? true : false);
-    motor_control.SetupChannel(right_motor, right_dir > 0 ? true : false);
-    motor_control.SetupPID(left_motor, pid_param_p, pid_param_i, pid_param_d,
+    ROS_INFO("Left Motor: %s  Right Motor: %s",
+             left_motor.String().c_str(), right_motor.String().c_str());
+    motors_.control.SetupPort(portname, baud);
+    motors_.control.SetupChannel(left_motor, left_dir > 0 ? true : false);
+    motors_.control.SetupChannel(right_motor, right_dir > 0 ? true : false);
+    motors_.control.SetupPID(left_motor, pid_param_p, pid_param_i, pid_param_d,
                            pid_period);
-    motor_control.SetupPID(right_motor, pid_param_p, pid_param_i, pid_param_d,
+    motors_.control.SetupPID(right_motor, pid_param_p, pid_param_i, pid_param_d,
                            pid_period);
-    motor_control.SetPWMFreq(left_motor, paramH, paramL);
-    motor_control.SetPWMFreq(right_motor, paramH, paramL);
+    motors_.control.SetPWMFreq(left_motor, paramH, paramL);
+    motors_.control.SetPWMFreq(right_motor, paramH, paramL);
 
     DifferentialDriveMsgs::PIDParam param_msg;
     param_msg.p = pid_param_p;
@@ -167,27 +180,25 @@ public:
     SetVel(0.0, 0.0);
   }
 
-  bool ok()
-  {
-    return motor_control.ok();
+  bool ok() {
+    boost::mutex::scoped_lock lock(motors_mutex_);
+    return motors_.control.ok();
   }
 
-  void OnTwistCmd(const geometry_msgs::TwistConstPtr &input) 
-  {
+  void OnTwistCmd(const geometry_msgs::TwistConstPtr &input)  {
     ROS_DEBUG("Got cmd_vel: %2.2f %2.2f", input->linear.x, input->angular.z);
     SetVel(input->linear.x, input->angular.z);
   }
 
-  void OnParam(const DifferentialDriveMsgs::PIDParamConstPtr &input) 
-  {
+  void OnParam(const DifferentialDriveMsgs::PIDParamConstPtr &input) {
     pid_param_p = input->p;
     pid_param_i = input->i;
     pid_param_d = input->d;
     pid_period = input->period;
     
-    motor_control.SetupPID(left_motor, pid_param_p, pid_param_i, pid_param_d,
+    motors_.control.SetupPID(left_motor, pid_param_p, pid_param_i, pid_param_d,
                            pid_period);
-    motor_control.SetupPID(right_motor, pid_param_p, pid_param_i, pid_param_d,
+    motors_.control.SetupPID(right_motor, pid_param_p, pid_param_i, pid_param_d,
                            pid_period);
 
     DifferentialDriveMsgs::PIDParam param_msg;
@@ -199,103 +210,156 @@ public:
     tuning_pub.publish(param_msg);
   }
 
-  void SetVel(const double &v, const double &w)
-  {
+  // Obtains lock for motor data structure, but should only be called by one
+  // thread
+  void SetVel(const double &v, const double &w) {
     ROS_DEBUG("Recieved velocity command: %f %f", v, w);
 
-    debug_data.sp_v = v;
-    debug_data.sp_w = w;
+    // Current state
+    acroname_moto::motor_debug setpoints;
+    double des_left_vel;
+    double des_right_vel;
+    // Update desired velocity and encoder counts per period
+    {
+      boost::mutex::scoped_lock lock(motors_mutex_);
+      setpoints = motors_.state;
 
-    // Velocity command (v, w) is in this->cmd_vel
-    // Compute the differential drive speeds from the input
-    double left = v - (axle_width/2.0)*w;
-    double right = v + (axle_width/2.0)*w;
+      // Set new setpoints
+      motors_.state.sp_v = v;
+      motors_.state.sp_w = w;
+      // Velocity command (v, w) is in this->cmd_vel
+      // Compute the differential drive speeds from the input
+      des_left_vel = v - (axle_width/2.0)*w;
+      des_right_vel = v + (axle_width/2.0)*w;
 
-    debug_data.sp_wheel_left = left;
-    debug_data.sp_wheel_right = right;
 
-    // Scale the speeds to respect the wheel speed limit
-    double limitk = 1.0;
-    if (fabs(left) > max_wheel_vel)
-      limitk = max_wheel_vel/fabs(left);
-    if (fabs(right) > max_wheel_vel) {
-		double rlimitk = max_wheel_vel/fabs(right);
-		if (rlimitk < limitk)
-			limitk = rlimitk;
+      // Scale the speeds to respect the wheel speed limit
+      double limitk = 1.0;
+      if (fabs(des_left_vel) > max_wheel_vel) {
+        limitk = max_wheel_vel/fabs(des_left_vel);
+      }
+      if (fabs(des_right_vel) > max_wheel_vel) {
+        double rlimitk = max_wheel_vel/fabs(des_right_vel);
+        if (rlimitk < limitk) {
+          limitk = rlimitk;
+        }
+      }
+
+      if (limitk != 1.0) {
+        des_left_vel *= limitk;
+        des_right_vel *= limitk;
+      }
+
+      // Deal with min limits
+      if (fabs(des_left_vel) < min_wheel_vel)
+        des_left_vel = 0.0;
+      if (fabs(des_right_vel) < min_wheel_vel)
+        des_right_vel = 0.0;
+
+      motors_.state.sp_wheel_left = des_left_vel;
+      motors_.state.sp_wheel_right = des_right_vel;
+
+      // Convert wheel speeds in in m/s to to encoder counts per period
+      motors_.state.sp_enc_left = round(encvel_per_ms *
+                                        motors_.state.sp_wheel_left);
+      motors_.state.sp_enc_right = round(encvel_per_ms *
+                                         motors_.state.sp_wheel_right);
+
+      ROS_DEBUG("Desired encoder setoint: %d %d",
+                motors_.state.sp_enc_left, motors_.state.sp_enc_right);
     }
-    
-    if (limitk != 1.0) {
-      left *= limitk;
-      right *= limitk;
+
+    // Go to new velocity setpoint via linear ramp (i.e. limit max accel)
+    ros::Duration d(accel_period_);
+    while (true) {
+      double left_err = des_left_vel - setpoints.sp_wheel_left;
+      double right_err = des_right_vel - setpoints.sp_wheel_right;
+      ROS_DEBUG("  Error is %0.3f", left_err);
+
+      double left_corr = copysign(min(fabs(left_err), d.toSec() * accel_max_),
+                                  left_err);
+      double right_corr = copysign(min(fabs(right_err), d.toSec() * accel_max_),
+                                   right_err);
+      ROS_DEBUG("  Left Correction=%0.3f  Right correction=%0.3f",
+                left_corr, right_corr);
+
+      setpoints.sp_wheel_left += left_corr;
+      setpoints.sp_enc_left = round(encvel_per_ms * setpoints.sp_wheel_left);
+
+      setpoints.sp_wheel_right += right_corr;
+      setpoints.sp_enc_right = round(encvel_per_ms * setpoints.sp_wheel_right);
+
+      ROS_DEBUG("  Setting motors: %d %d",
+                setpoints.sp_enc_left, setpoints.sp_enc_right);
+
+      {
+        boost::mutex::scoped_lock lock(motors_mutex_);
+        motors_.control.SetVel(left_motor, setpoints.sp_enc_left);
+        motors_.control.SetVel(right_motor, setpoints.sp_enc_right);
+      }
+
+      if (max(fabs(left_err), fabs(right_err)) == 0) {
+        break;
+      } else {
+        d.sleep();
+      }
     }
-    
-    // Deal with min limits
-    if (fabs(left) < min_wheel_vel)
-      left = 0.0;
-    if (fabs(right) < min_wheel_vel)
-      right = 0.0;
-
-    // left and right are wheel speeds in m/s
-    // convert to encoder counts per period
-    short int enc_left,  enc_right;
-    enc_left = round(encvel_per_ms*left);
-    enc_right = round(encvel_per_ms*right);
-
-    debug_data.sp_enc_left = enc_left;
-    debug_data.sp_enc_right = enc_right;
-
-    motor_control.SetVel(left_motor, enc_left);
-    motor_control.SetVel(right_motor, enc_right);
-    ROS_DEBUG("Setting motors: %d %d", enc_left, enc_right);
   }
 
-  void UpdateVelAndPublish()
-  {
+  // Thread safe way of updating odometry estimate and publishing state
+  void UpdateVelAndPublish() {
     short int enc_left, enc_right;
-    motor_control.GetVel(left_motor, &enc_left);
-    motor_control.GetVel(right_motor, &enc_right);
+    acroname_moto::motor_debug pub_state;
+    {
+      boost::mutex::scoped_lock lock(motors_mutex_);
+      motors_.control.GetVel(left_motor, &enc_left);
+      motors_.control.GetVel(right_motor, &enc_right);
 
-    debug_data.enc_left = enc_left;
-    debug_data.enc_right = enc_right;
+      motors_.state.enc_left = enc_left;
+      motors_.state.enc_right = enc_right;
 
-    double left_vel, right_vel;
+      // ROS_INFO("Motor left = %i Motor right = %i", enc_left, enc_right);
+      double left_vel, right_vel;
 
-    left_vel = enc_left/encvel_per_ms;
-    right_vel = enc_right/encvel_per_ms;
+      left_vel = enc_left/encvel_per_ms;
+      right_vel = enc_right/encvel_per_ms;
 
-    debug_data.wheel_left = left_vel;
-    debug_data.wheel_right = right_vel;
+      motors_.state.wheel_left = left_vel;
+      motors_.state.wheel_right = right_vel;
 
-    this->v = (left_vel + right_vel)/2;
-    this->w = (right_vel - left_vel)/axle_width;    
+      this->v = (left_vel + right_vel)/2;
+      this->w = (right_vel - left_vel)/axle_width;
+
+      motors_.state.v = this->v;
+      motors_.state.w = this->w;
+
+      pub_state = motors_.state;
+    }
+    debug_pub.publish(pub_state);
 
     IntegrateOdometry();
 
-    state.pose.pose.position.x = this->x; 
+    state.pose.pose.position.x = this->x;
     state.pose.pose.position.y = this->y;
     state.pose.pose.orientation = tf::createQuaternionMsgFromYaw(this->th);
     state.twist.twist.linear.x = this->v;
     state.twist.twist.angular.z = this->w;
 
-    debug_data.v = this->v;
-    debug_data.w = this->w;
 
     state.header.stamp = ros::Time::now();
-    
+
     //ROS_INFO("l: %d, r: %d", enc_left, enc_right);
 
-    debug_pub.publish(debug_data);
     odom_pub.publish(state);
 
     tf::Transform transform;
     transform.setOrigin(tf::Vector3(this->x, this->y, 0));
     transform.setRotation(tf::createQuaternionFromYaw(this->th));
-    broadcaster.sendTransform(tf::StampedTransform(transform, ros::Time(state.header.stamp), 
-                                                   odom_frame_id, base_frame_id));    
+    broadcaster.sendTransform(tf::StampedTransform(transform, ros::Time(state.header.stamp),
+                                                   odom_frame_id, base_frame_id));
   }
 
-  void IntegrateOdometry()
-  {
+  void IntegrateOdometry() {
     ros::Time now = ros::Time::now();
     double dt = (now-last_vel_update).toSec();
 
@@ -320,37 +384,32 @@ public:
     last_vel_update = now;
   }
 
-  bool spin()
-  {
+  void Spin() {
     ros::Rate r(this->freq);
     while(node->ok()) {
       UpdateVelAndPublish();
-
-      ros::spinOnce();
       r.sleep();
     }
-
-    return true;
   }
-
-
 };
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
   ros::init(argc, argv, "motor");
   ros::NodeHandle n("~");
   AcronameMotoDriver d(&n);
 
   ros::Duration(2.0).sleep();
 
-  if(d.ok()) {
-    ROS_INFO("Starting acroname_moto_node::spin()");
-    d.spin();
-  }
-  else {
+  if(!d.ok()) {
     ROS_ERROR("Problem starting motor control interface.");
+    return -1;
   }
 
-  return(0);
+  boost::thread motor_thread(&AcronameMotoDriver::Spin, &d);
+  ros::spin();
+
+  // Thread should shutdown once ROS is done
+  motor_thread.join();
+
+  return 0;
 }
