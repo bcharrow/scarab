@@ -1,0 +1,32 @@
+<launch>
+  <!--============================= Control =============================-->
+  <include file="$(find acroname_moto)/scarab.launch" />
+
+  <node name="laser" pkg="hokuyo_node" type="hokuyo_node"
+        output="screen" >
+    <param name="port" value="/dev/urg" />
+    <param name="cluster" value="1" />
+    <param name="skip" value="1" />
+    <param name="intensity" value="false" />
+    <param name="min_ang" value="-2.2689" />
+    <param name="max_ang" value="2.2689" />
+    <param name="frame_id" value="/laser"/>
+  </node>
+  <node pkg="tf" type="static_transform_publisher" name="laser_broadcaster"
+        args="0.02 0 0.37 0 0 0 base laser 200" />
+
+  <node pkg="joy" type="joy_node" name="joy_node" respawn="false" />
+  <node name="joy_to_twist" pkg="joy_to_twist" type="joy_to_twist" >
+    <param name="wmax" value="1.0" type="double" />
+    <param name="vmax" value="0.30" type="double" />
+    <remap from="~/twist" to="/motor/cmd_vel" />
+    <remap from="~/joy" to="/joy" />
+  </node>
+
+  <node pkg="gmapping" type="slam_gmapping" name="mapping" 
+        output="screen" >
+    <param name="odom_frame" value="/odom" />
+    <param name="base_frame" value="/base" />
+  </node>
+
+</launch>

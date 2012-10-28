@@ -5,7 +5,7 @@
     <param name="portname" value="acroname"/>
     <param name="frameid" value="odom" />
     
-    <param name="axle_width" value="0.27"/>
+    <param name="axle_width" value="0.260"/>
     <param name="max_wheel_vel" value="0.35"/>
     <param name="min_wheel_vel" value="0.0"/>
     <param name="accel_max" value="1.0" />
