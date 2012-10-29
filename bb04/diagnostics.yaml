@@ -1,0 +1,12 @@
+pub_rate: 1.0
+base_path: ''
+analyzers:
+  powersystem:
+    type: GenericAnalyzer
+    path: Power System
+    startswith: Battery
+
+  laser:
+    type: GenericAnalyzer
+    path: Laser
+    startswith: laser

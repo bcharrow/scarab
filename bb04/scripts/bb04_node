@@ -1,0 +1,260 @@
+#!/usr/bin/env python
+import roslib; roslib.load_manifest('bb04')
+import rospy
+
+import collections
+import pprint
+
+import serial
+
+from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue
+
+def active_bits(num):
+    """
+    Return a list of 1-based indices indicating which bits in num are set to 1
+    """
+    ctr = 1
+    ctrs = []
+    while num:
+        if num & 1:
+            ctrs.append(ctr)
+        num = num >> 1
+        ctr = ctr + 1
+    return ctrs
+
+def parse_checksum(line):
+    line = line.strip()
+    if line[-3] == '%':
+        checksum = line[-2:]
+        line = line[:-3]
+    else:
+        checksum = None
+    
+    return line
+
+def parse_line(line):
+    """
+    Convert a comma separated line to a dictionary
+
+    Skipping the 0th element, adjacent elements are the (key, value) pairs
+    Example line: 'ignored,key1,val1,key2,val2,...'
+    """
+    line = line.strip()
+    line = parse_checksum(line)
+
+    # This will fail to split properly if the message has commas in it
+    
+    split = line.split(',')
+    items = {}
+    for key, val in zip(split[1::2], split[2::2]):
+        items[key] = val
+
+    return items
+
+SysData = collections.namedtuple('SysData', ['mins_left', 'active', 'msg'])
+def parse_sys_line(line):
+    """
+    Parse a BB04 system line and return a SysData
+    """
+    if not line.startswith('$S'):
+        return None
+
+    items = parse_line(line)
+    
+    sys_data = {}
+    sys_data['mins_left'] = int(items['01'], 16)
+    sys_data['active'] = active_bits(int(items['02'], 16))
+    sys_data['msg'] = items['03'] if '03' in items else None
+
+    return SysData(**sys_data)    
+
+
+ControllerData = collections.namedtuple(
+    'ControllerData', ['id', 'present', 'charging', 'supplying', 'charge_power',
+                       'power_no_good', 'charge_inhibited'])
+def parse_ctl_line(line):
+    """
+    Parse a BB04 control line and return a ControllerData
+    """
+    if not line.startswith('$C'):
+        return None
+    
+    items = parse_line(line)
+
+    ctl = {}
+    ctl['id'] = int(line[2], 16)
+
+    conv = lambda s: active_bits(int(s, 16))
+    ctl['present'] = conv(items['01'])
+    ctl['charging'] = conv(items['02'])
+    ctl['supplying'] = conv(items['03'])
+    ctl['charge_power'] = conv(items['05'])
+    ctl['power_no_good'] = conv(items['06'])
+    ctl['charge_inhibited'] = conv(items['07'])
+
+    return ControllerData(**ctl)
+
+
+
+class Battery(object):
+    """
+    State of a battery
+
+    A battery has an ID and belongs to a specific controller.  Its state can be
+    changed via the update() method.
+    """
+
+    # Bitmask -> string for battery status
+    STATUS = [(0x8000, 'OVER_CHARGED_ALARM'),
+              (0x4000, 'TERMINATE_CHARGE_ALARM'),
+              (0x1000, 'OVER_TEMP_ALARM'),
+              (0x0200, 'REMAINING_CAPACITY_ALARM'),
+              (0x0100, 'REMAINING_TIME_ALARM'),
+              (0x0080, 'INITIALIZED'),
+              (0x0040, 'DISCHARGING'),
+              (0x0020, 'FULLY_CHARGED'),
+              (0x0010, 'FULLY_DISCHARGED')]
+
+    # Dictionary mapping bytes to attribute names and constructor, see update()
+    CONVERSIONS = {'08': ('temp_degC', lambda x: int(x, 16) * 0.1 - 273.15),
+                   '09': ('voltage_mV', lambda x: int(x, 16)),
+                   '0A': ('current_mA', lambda x: int(x, 16)),
+                   '0D': ('relativeCharge_pct', lambda x: int(x, 16)),
+                   '13': ('avgTimeToFull_min', lambda x: int(x, 16)),
+                   '16': ('status_msgs',
+                          lambda bits: [msg for code, msg in Battery.STATUS
+                                          if int(bits, 16) & code])
+                   }
+    
+    def __init__(self, controller_id, battery_id, attrs = None):
+        if attrs is None:
+            attrs = {}
+            
+        self._ctrl_id = controller_id
+        self._bat_id = battery_id
+        self._attrs = attrs
+
+    @property
+    def id(self): return self._bat_id
+    
+    def update(self, line):
+        """
+        Update the state of the battery given a battery status line.
+
+        Only only updates the fields the status message contains.
+        """
+        if not line.startswith('$B'):
+            raise Exception('Bad line given to update')
+
+        ctrl_id = int(line[2], 16)
+        if ctrl_id != self._ctrl_id:
+            raise Exception('Bad controller number')
+
+        bat_id = int(line[3], 16)
+        if bat_id != self._bat_id:
+            raise Exception('Bad battery number')
+        
+        items = parse_line(line)
+
+        for code, val in items.iteritems():
+            if code not in Battery.CONVERSIONS:
+                rospy.logdebug("Battery.update(): Unhandled code '%s'" % code)
+                continue
+            key, converter = Battery.CONVERSIONS[code]
+            self._attrs[key] = converter(val)
+
+    def attrs(self):
+        return dict(self._attrs)
+    
+    def __repr__(self):
+        fmt_str = "Battery(controller_id = %s, battery_id = %s, attrs = %s"
+        return fmt_str % (self._ctrl_id, self._bat_id,
+                          pprint.pformat(self._attrs))
+    
+def run():
+    rospy.init_node('bb04_monitor')    
+
+    portname = rospy.get_param('~port', '/dev/bb04')
+    
+    pub = rospy.Publisher('/diagnostics', DiagnosticArray)
+    
+    ser = serial.Serial(portname, 19200, timeout = 1,
+                        parity = serial.PARITY_NONE,
+                        stopbits = serial.STOPBITS_ONE,
+                        bytesize = serial.EIGHTBITS)
+    # Start getting data
+    ser.write('x')
+
+    # Map from (controller, id) to Battery
+    batteries = {}
+    while True:
+        ser.flushInput()
+        lines = ser.readlines()
+    
+        if len(lines) == 0:
+            continue
+
+        sys_data = parse_sys_line(lines[0])
+        if sys_data is None:
+            rospy.logwarn("Problem parsing system line: '%s'" % lines[0])
+            continue
+        control_data = parse_ctl_line(lines[1])
+        if control_data is None:
+            rospy.logwarn("Problem parsing control line: '%s'" % lines[1])
+            continue
+
+        rospy.logdebug(sys_data)
+        rospy.logdebug(control_data)
+
+        for line in lines[2:]:
+            if not line.startswith('$B'):
+                rospy.logwarn("Unexpected line: '%s'" % line)
+                continue
+
+            ctl_id = int(line[2], 16)
+            bat_id = int(line[3], 16)
+            key = (ctl_id, bat_id)
+            if key not in batteries:
+                batteries[key] = Battery(ctl_id, bat_id)
+
+            batteries[key].update(line)
+
+        diags = []
+
+        message = (('%s minutes left' % sys_data.mins_left)
+                   if sys_data.mins_left != 9999 else 'Charging')
+        sys_diag = DiagnosticStatus(
+            name = "Battery Monitor (BB04)",
+            hardware_id = "BB04-%i" % control_data.id,
+            message = message,
+            level = (DiagnosticStatus.OK if sys_data.mins_left > 10
+                     else DiagnosticStatus.WARN))
+        sys_diag.values.extend(KeyValue(key, str(value)) for key, value in
+                               sys_data._asdict().iteritems())
+        sys_diag.values.extend(KeyValue(key, str(value)) for key, value in
+                               control_data._asdict().iteritems())
+
+        diags.append(sys_diag)
+
+        for battery in batteries.values():            
+            if battery.id not in control_data.present:
+                continue
+
+            attrs = battery.attrs()
+            batt_diag = DiagnosticStatus(
+                name = "Battery %s" % battery.id,
+                hardware_id = "Battery %s" % battery.id,
+                message = '%s%% Charged' % (
+                    attrs.setdefault('relativeCharge_pct', '--')),
+                level = DiagnosticStatus.OK)
+            batt_diag.values.extend(KeyValue(key, str(value)) for key, value in
+                                    battery.attrs().items())
+            diags.append(batt_diag)
+        
+        
+        pub.publish(DiagnosticArray(status = diags))
+        
+        rospy.logdebug(pprint.pformat(batteries.values()))
+
+if __name__ == "__main__":
+    run()
