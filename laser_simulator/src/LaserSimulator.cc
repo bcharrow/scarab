@@ -121,10 +121,9 @@ int LaserSimulator::LoadLaserModel(const ros::NodeHandle& n)
   minimum_angle = minimum_angle_deg*M_PI/180;
   maximum_angle = maximum_angle_deg*M_PI/180;
 
-  int number_of_ranges;
   n.getParam("scan_count", number_of_ranges);
   assert(number_of_ranges > 0);
-  angle_increment = (maximum_angle - minimum_angle)/double(number_of_ranges);
+  angle_increment = (maximum_angle - minimum_angle)/double(number_of_ranges - 1);
 
   n.getParam("min_range", minimum_range);
   n.getParam("max_range", maximum_range);

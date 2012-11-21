@@ -44,7 +44,8 @@ public:
   double GetScanTime() { assert(initialized); return scan_time; }
   double GetMinimumRange() { assert(initialized); return minimum_range; }
   double GetMaximumRange() { assert(initialized); return maximum_range; }
-    
+  int GetScanCount() { assert(initialized); return number_of_ranges; }
+
 private:
   bool initialized;
   
@@ -55,6 +56,7 @@ private:
   double scan_time;
   double minimum_range;
   double maximum_range;
+  int number_of_ranges;
 
   std::string frame_id;
 

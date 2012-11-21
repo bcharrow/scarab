@@ -1,4 +1,5 @@
 #include <ros/ros.h>
+#include <boost/thread/mutex.hpp>
 #include <geometry_msgs/Pose.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <nav_msgs/Odometry.h>
@@ -8,11 +9,16 @@
 #include <tf/tf.h>
 
 LaserSimulator sim;
+ros::Publisher pub;
+sensor_msgs::LaserScan msg;
+boost::mutex sim_mutex;
 
-void handle_odometry(const nav_msgs::Odometry::ConstPtr& msg)
+void handle_odometry(const nav_msgs::Odometry::ConstPtr& odom)
 {
-  sim.SetPose(msg->pose.pose);
-  sim.SetFrameID(msg->child_frame_id);
+  boost::mutex::scoped_lock(sim_mutex);
+  msg.header.stamp = ros::Time::now();
+  sim.SetPose(odom->pose.pose);
+  sim.SetFrameID(odom->child_frame_id);
 }
 
 double depth = 0;
@@ -20,13 +26,21 @@ bool map_set = false;
 
 void handle_occupancy_grid(const nav_msgs::OccupancyGrid::ConstPtr& msg)
 {
+  boost::mutex::scoped_lock(sim_mutex);
   sim.LoadOccupancyGrid(*msg, depth);
   map_set = true;
 }
 
 void handle_odom_array(const odometry_aggregator::OdometryArray::ConstPtr& msg)
 {
+  boost::mutex::scoped_lock(sim_mutex);
   sim.UpdateOdometryArray(*msg);
+}
+
+void publish(const ros::TimerEvent&) {
+  boost::mutex::scoped_lock(sim_mutex);
+  sim.GetScan(msg.ranges);
+  pub.publish(msg);
 }
 
 int main(int argc, char **argv)
@@ -38,7 +52,7 @@ int main(int argc, char **argv)
   ros::Subscriber grid_sub = n.subscribe("map", 1, handle_occupancy_grid);
   ros::Subscriber agg_sub = n.subscribe("odom_array", 1, handle_odom_array);
 
-  ros::Publisher pub = n.advertise<sensor_msgs::LaserScan>("scan", 1);
+  pub = n.advertise<sensor_msgs::LaserScan>("scan", 1);
 
   n.param("depth", depth, 0.5);
 
@@ -82,7 +96,6 @@ int main(int argc, char **argv)
       idle.sleep();
     }
 
-  sensor_msgs::LaserScan msg;
   
   std::string frame_id;
   n.param("frame_id", frame_id, std::string("laser"));
@@ -90,24 +103,16 @@ int main(int argc, char **argv)
   msg.angle_min = sim.GetMinimumAngle();
   msg.angle_max = sim.GetMaximumAngle();
   msg.angle_increment = sim.GetAngleIncrement();
-  msg.time_increment = sim.GetTimeIncrement();
-  msg.scan_time = sim.GetScanTime();
   msg.range_min = sim.GetMinimumRange();
   msg.range_max = sim.GetMaximumRange();
-  msg.ranges.resize((msg.angle_max - msg.angle_min)/msg.angle_increment);
+  msg.ranges.resize((msg.angle_max - msg.angle_min)/msg.angle_increment + 1);
   msg.intensities.resize(0);
+  msg.scan_time = 0.001;
+  msg.time_increment = msg.scan_time / sim.GetScanCount();
 
-  ros::Rate r(1.0/msg.scan_time);
-  while (n.ok())
-    {
-      sim.GetScan(msg.ranges);
+  ros::Timer timer = n.createTimer(ros::Duration(sim.GetScanTime()), &publish);
 
-      msg.header.stamp = ros::Time::now();
-      pub.publish(msg);
-     
-      ros::spinOnce();
-      r.sleep();
-    }
+  ros::spin();
 
   return 0;
 }
