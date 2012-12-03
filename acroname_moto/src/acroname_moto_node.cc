@@ -9,7 +9,7 @@
 
 #include "AcronameMotor.h"
 
-#include "DifferentialDriveMsgs/PIDParam.h"
+#include "acroname_moto/PIDParam.h"
 
 #include "nav_msgs/Odometry.h"
 #include "geometry_msgs/Twist.h"
@@ -80,7 +80,7 @@ public:
     odom_pub = node->advertise<nav_msgs::Odometry>("odom", 100);
     debug_pub = node->advertise<acroname_moto::motor_debug>("debug",5);
 
-    tuning_pub = node->advertise<DifferentialDriveMsgs::PIDParam>("tuning_output", 1, true);
+    tuning_pub = node->advertise<acroname_moto::PIDParam>("tuning_output", 1, true);
 
     cmd_vel_sub = node->subscribe("cmd_vel", 1, 
                                   &AcronameMotoDriver::OnTwistCmd, this);
@@ -165,7 +165,7 @@ public:
     motors_.control.SetPWMFreq(left_motor, paramH, paramL);
     motors_.control.SetPWMFreq(right_motor, paramH, paramL);
 
-    DifferentialDriveMsgs::PIDParam param_msg;
+    acroname_moto::PIDParam param_msg;
     param_msg.p = pid_param_p;
     param_msg.i = pid_param_i;
     param_msg.d = pid_param_d;
@@ -190,7 +190,7 @@ public:
     SetVel(input->linear.x, input->angular.z);
   }
 
-  void OnParam(const DifferentialDriveMsgs::PIDParamConstPtr &input) {
+  void OnParam(const acroname_moto::PIDParamConstPtr &input) {
     pid_param_p = input->p;
     pid_param_i = input->i;
     pid_param_d = input->d;
@@ -201,7 +201,7 @@ public:
     motors_.control.SetupPID(right_motor, pid_param_p, pid_param_i, pid_param_d,
                            pid_period);
 
-    DifferentialDriveMsgs::PIDParam param_msg;
+    acroname_moto::PIDParam param_msg;
     param_msg.p = pid_param_p;
     param_msg.i = pid_param_i;
     param_msg.d = pid_param_d;

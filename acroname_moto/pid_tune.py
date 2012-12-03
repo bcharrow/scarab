@@ -6,7 +6,7 @@ import roslib; roslib.load_manifest('acroname_moto')
 import curses
 
 import rospy
-from DifferentialDriveMsgs.msg import PIDParam
+from acroname_moto.msg import PIDParam
 from geometry_msgs.msg import Twist, Vector3
 
 

@@ -7,7 +7,6 @@
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/acroname_moto</url>
   <depend package="roscpp" />
-  <depend package="DifferentialDriveMsgs" />
   <depend package="tf" />
   <depend package="geometry_msgs" />
   <depend package="nav_msgs"/>
