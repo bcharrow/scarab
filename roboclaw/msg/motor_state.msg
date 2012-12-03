@@ -1,0 +1,12 @@
+int32 left_qpps_sp
+int32 left_qpps
+int32 right_qpps_sp
+int32 right_qpps
+float64 left_sp
+float64 left
+float64 right_sp
+float64 right
+float64 v_sp
+float64 v
+float64 w_sp
+float64 w

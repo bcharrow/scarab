@@ -1,0 +1,18 @@
+<package>
+  <description brief="roboclaw">
+
+     roboclaw
+
+  </description>
+  <author>bcharrow</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/roboclaw</url>
+  <depend package="asio-serial-device"/>
+  <depend package="nav_msgs"/>
+  <depend package="tf"/>
+  <depend package="roscpp" />
+
+</package>
+
+
