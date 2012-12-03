@@ -17,7 +17,7 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 #uncomment if you have defined messages
-#rosbuild_genmsg()
+rosbuild_genmsg()
 #uncomment if you have defined services
 #rosbuild_gensrv()
 
@@ -52,3 +52,6 @@ target_link_libraries(LaserSimulator ${ARMADILLO_LIBRARIES} ${LAPACK_LIBRARIES})
 
 rosbuild_add_executable(laser_simulator src/laser_simulator.cc)
 target_link_libraries(laser_simulator LaserSimulator)
+
+rosbuild_add_executable(make_scan_pairs src/make_scan_pairs.cpp)
+target_link_libraries(make_scan_pairs LaserSimulator)

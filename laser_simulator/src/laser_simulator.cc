@@ -16,7 +16,8 @@ boost::mutex sim_mutex;
 void handle_odometry(const nav_msgs::Odometry::ConstPtr& odom)
 {
   boost::mutex::scoped_lock(sim_mutex);
-  msg.header.stamp = ros::Time::now();
+  msg.header.stamp = odom->header.stamp;
+  msg.header.stamp.nsec += 1000;
   sim.SetPose(odom->pose.pose);
   sim.SetFrameID(odom->child_frame_id);
 }

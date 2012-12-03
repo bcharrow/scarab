@@ -36,4 +36,6 @@
     <param name="offset/z" value="0.2"/>
   </node>
 
+  <node name="transformer" pkg="tf" type="static_transform_publisher"
+        args="0 0 0.2 0 0 0 /scarab1/base laser 10" />
 </launch>

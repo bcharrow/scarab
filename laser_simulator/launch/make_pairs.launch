@@ -1,0 +1,21 @@
+<launch>
+  <node pkg="map_server" 
+	name="map" 
+	type="map_server" 
+	output="screen" 
+	args="$(find upenn_maps)/maps/levine_towne_map.yaml"/>
+
+  <node pkg="laser_simulator" name="make_scan_pairs" type="make_scan_pairs"
+        output="screen">
+    <remap from="~map" to="/map"/>
+    <rosparam file="$(find laser_simulator)/config/models.yaml"/>
+    <rosparam file="$(find laser_simulator)/models/UTM_30.yaml"/>
+    <param name="offset/x" value="0"/>
+    <param name="offset/y" value="0"/>
+    <param name="offset/z" value="0.2"/>
+    <param name="dir" value="$(find laser_simulator)" />
+  </node>
+
+  <node name="transformer" pkg="tf" type="static_transform_publisher"
+        args="0 0 0.2 0 0 0 /scarab1/base laser 10" />
+</launch>
