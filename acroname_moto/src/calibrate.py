@@ -37,6 +37,9 @@ class Trial(object):
         t.angular.z = 0
         self.motor_pub.publish(t)
 
+        # Wait for bot to come to a stop
+        rospy.sleep(2.0)
+
         # Record final location
         odom_end = self.odom_pose
         self.data.append((odom_start, odom_end, distance, angle))

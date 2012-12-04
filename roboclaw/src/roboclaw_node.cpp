@@ -23,10 +23,10 @@ public:
     nh_.param("axle_width", axle_width_, 0.3);
     nh_.param("max_wheel_vel", max_wheel_vel_, 0.8);
     nh_.param("min_wheel_vel", min_wheel_vel_, 0.00);
-    nh_.param("accel_max", accel_max_, 0.4);
+    nh_.param("accel_max", accel_max_, 1.0);
     nh_.param("wheel_diam", wheel_diam_, 0.1);
     nh_.param("quad_pulse_per_motor_rev", quad_pulse_per_motor_rev_, 500.0 * 4);
-    nh_.param("motor_to_wheel_ratio", motor_to_wheel_ratio_, 16 * 3.375);
+    nh_.param("motor_to_wheel_ratio", motor_to_wheel_ratio_, 16 * 2.7 * 1.5);
     nh_.param("pid_param_p", pid_p_, 0x9000);
     nh_.param("pid_param_i", pid_i_, 0x2000);
     nh_.param("pid_param_d", pid_d_, 0x0000);
@@ -213,7 +213,7 @@ public:
     node_->param("odom_frame", odom_state.header.frame_id, string("odom"));
     node_->param("base_frame", odom_state.child_frame_id, string("base"));
 
-    node_->param("freq", freq_, 50.0);
+    node_->param("freq", freq_, 30.0);
 
     // Odometry starts at zero
     odom_state.pose.pose.orientation = tf::createQuaternionMsgFromYaw(0.0);
@@ -279,7 +279,7 @@ public:
     ros::Time now = ros::Time::now();
     double dt = (now-last_vel_update).toSec();
 
-    if(dt > 100.0) {
+    if(dt > 10.0) {
       last_vel_update = now;
       return;
     }
