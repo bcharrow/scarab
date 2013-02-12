@@ -440,8 +440,8 @@ AmclNode::getOdomPose(tf::Stamped<tf::Pose>& odom_pose,
                       const ros::Time& t, const std::string& f)
 {
   // Get the robot's pose
-  tf::Stamped<tf::Pose> ident (btTransform(tf::createIdentityQuaternion(),
-                                           btVector3(0,0,0)), t, f);
+  tf::Stamped<tf::Pose> ident (tf::Transform(tf::createIdentityQuaternion(),
+                                             tf::Vector3(0,0,0)), t, f);
   try
   {
     this->tf_->transformPose(odom_frame_id_, ident, odom_pose);
@@ -516,8 +516,8 @@ AmclNode::laserReceived(const sensor_msgs::LaserScanConstPtr& laser_scan)
     lasers_update_.push_back(true);
     laser_index = frame_to_laser_.size();
 
-    tf::Stamped<tf::Pose> ident (btTransform(tf::createIdentityQuaternion(),
-                                             btVector3(0,0,0)),
+    tf::Stamped<tf::Pose> ident (tf::Transform(tf::createIdentityQuaternion(),
+                                               tf::Vector3(0,0,0)),
                                  ros::Time(), laser_scan->header.frame_id);
     tf::Stamped<tf::Pose> laser_pose;
     try
@@ -680,7 +680,7 @@ AmclNode::laserReceived(const sensor_msgs::LaserScanConstPtr& laser_scan)
     geometry_msgs::PoseArray cloud_msg;
     cloud_msg.header.stamp = ros::Time::now();
     cloud_msg.header.frame_id = global_frame_id_;
-    cloud_msg.set_poses_size(set->sample_count);
+    cloud_msg.poses.resize(set->sample_count);
     for(int i=0;i<set->sample_count;i++)
     {
       tf::poseTFToMsg(tf::Pose(tf::createQuaternionFromYaw(set->samples[i].pose.v[2]),
@@ -870,7 +870,7 @@ double
 AmclNode::getYaw(tf::Pose& t)
 {
   double yaw, pitch, roll;
-  btMatrix3x3 mat = t.getBasis();
+  tf::Matrix3x3 mat = t.getBasis();
   mat.getEulerYPR(yaw,pitch,roll);
   return yaw;
 }

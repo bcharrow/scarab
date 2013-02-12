@@ -25,6 +25,7 @@ target_link_libraries(amcl_sensors amcl_map amcl_pf)
 
 rosbuild_add_executable(bin/amcl
                        src/amcl_node.cpp)
+rosbuild_link_boost(bin/amcl signals)
 
 target_link_libraries(bin/amcl amcl_sensors amcl_map amcl_pf)
 

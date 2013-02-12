@@ -30,3 +30,4 @@ rosbuild_genmsg()
 #target_link_libraries(example ${PROJECT_NAME})
 
 rosbuild_add_executable(odometry_aggregator src/odometry_aggregator.cc)
+rosbuild_link_boost(odometry_aggregator signals)
