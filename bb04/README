@@ -1,0 +1,5 @@
+To use minicom with bb04, execute the following:
+  cp minirc.bb04 /etc/minicom/
+  minicom bb04
+
+To activeate the charing LEDs, modify the firmware and set LCD to "off"
