@@ -20,10 +20,10 @@ int main(int argc, char** argv)
     node = &n;
 
     node->param("vspeed", v_speed, 0.6);
-    node->param("wspeed", w_speed, 0.4);
+    node->param("wspeed", w_speed, 0.6);
     node->param("vinc", v_inc, 0.08);
     node->param("winc", w_inc, 0.05);
-    node->param("output", output_topic, std::string("cmd_vel"));
+    node->param("output", output_topic, std::string("/motor/cmd_vel"));
 
     pub = n.advertise<geometry_msgs::Twist>(output_topic, 10);
 

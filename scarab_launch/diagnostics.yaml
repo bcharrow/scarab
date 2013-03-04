@@ -9,4 +9,4 @@ analyzers:
   laser:
     type: GenericAnalyzer
     path: Laser
-    startswith: laser
+    regex: '.*laser.*'

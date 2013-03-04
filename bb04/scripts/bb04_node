@@ -257,4 +257,11 @@ def run():
         rospy.logdebug(pprint.pformat(batteries.values()))
 
 if __name__ == "__main__":
-    run()
+    import select
+    try:
+        run()
+    except select.error, e:
+        if e[0] == 4: # interrupted system call
+            pass
+        else:
+            raise
