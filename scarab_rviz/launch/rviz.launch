@@ -1,0 +1,11 @@
+<launch>
+  <group ns="scarab26">
+    <node pkg="scarab_rviz" type="posestamped_node.py" name="stamped_pose" output="screen" />
+  </group>
+  <group ns="scarab29">
+    <node pkg="scarab_rviz" type="posestamped_node.py" name="stamped_pose" output="screen"/>
+  </group>
+  <group ns="scarab32">
+    <node pkg="scarab_rviz" type="posestamped_node.py" name="stamped_pose" output="screen"/>
+  </group>
+</launch>

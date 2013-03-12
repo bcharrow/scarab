@@ -19,18 +19,19 @@ using namespace std;
 
 class DifferentialDriver {
 public:
-  explicit DifferentialDriver(const ros::NodeHandle &node) : nh_(node) {
+  explicit DifferentialDriver(const ros::NodeHandle &node) :
+    nh_(node), claw_(NULL), ser_(NULL)  {
     nh_.param("axle_width", axle_width_, 0.275);
     nh_.param("max_wheel_vel", max_wheel_vel_, 0.8);
     nh_.param("min_wheel_vel", min_wheel_vel_, 0.00);
     nh_.param("accel_max", accel_max_, 0.6);
     nh_.param("wheel_diam", wheel_diam_, 0.1);
     nh_.param("quad_pulse_per_motor_rev", quad_pulse_per_motor_rev_, 2000.0);
-    nh_.param("motor_to_wheel_ratio", motor_to_wheel_ratio_, 16.0 * 2.375);
-    nh_.param("pid_param_p", pid_p_, 0x9000);
-    nh_.param("pid_param_i", pid_i_, 0x2000);
-    nh_.param("pid_param_d", pid_d_, 0x0000);
-    nh_.param("pid_qpps", pid_qpps_, 500000);
+    nh_.param("motor_to_wheel_ratio", motor_to_wheel_ratio_, 16 * 2.3625);
+    nh_.param("pid_param_p", pid_p_, 0x8000);
+    nh_.param("pid_param_i", pid_i_, 0x0500);
+    nh_.param("pid_param_d", pid_d_, 0x4000);
+    nh_.param("pid_qpps", pid_qpps_, 150000);
     nh_.param("left_sign", left_sign_, -1);
     nh_.param("right_sign", right_sign_, 1);
     nh_.param("portname", portname_, std::string("/dev/roboclaw"));
@@ -41,9 +42,18 @@ public:
     ROS_INFO("qppm: %f", quad_pulse_per_meter_);
     ROS_INFO("Setting up roboclaw_node on port %s with baud %d",
              portname_.c_str(), baud_);
-    ser_.reset(new ASIOSerialDevice(portname_.c_str(), baud_));
-    claw_.reset(new RoboClaw(ser_.get()));
 
+    ASIOSerialDevice* new_ser;
+    try {
+      new_ser = new ASIOSerialDevice(portname_.c_str(), baud_);
+    } catch (boost::system::system_error &e) {
+      ROS_ERROR("Problem restarting device: %s", e.what());
+      ROS_BREAK();
+    }
+
+    ser_.reset(new_ser);
+    claw_.reset(new RoboClaw(ser_.get()));
+    claw_->ResetEncoders(address_);
     // claw_->SetPWM(address_, 0);
     claw_->SetM1Constants(address_, pid_d_, pid_p_, pid_i_, pid_qpps_);
     claw_->SetM2Constants(address_, pid_d_, pid_p_, pid_i_, pid_qpps_);
@@ -55,7 +65,9 @@ public:
 
   ~DifferentialDriver() {
     try {
-      setVel(0.0, 0.0);
+      if (ser_ != NULL) {
+        setVel(0.0, 0.0);
+      }
     } catch (boost::system::system_error &e) {
       ROS_WARN("Problem turning motors off: %s", e.what());
     }
@@ -138,21 +150,24 @@ public:
     int32_t speed;
     bool valid;
     try {
-      speed = claw_->ReadSpeedM1(address_, &status, &valid);
+      speed = claw_->ReadISpeedM1(address_, &status, &valid) * 125;
       if (valid && (status == 0 || status == 1)) {
         state_.left_qpps = speed;
-     } else {
-        ROS_ERROR("Invalid data from motor 1!");
+      } else {
+        ROS_ERROR("Invalid data from motor 1!  Resetting...");
+        resetSerial();
       }
 
-      speed = claw_->ReadSpeedM2(address_, &status, &valid);
+      speed = claw_->ReadISpeedM2(address_, &status, &valid) * 125;
       if (valid && (status == 0 || status == 1)) {
         state_.right_qpps = speed;
       } else {
-        ROS_ERROR("Invalid data from motor 2!");
+        ROS_ERROR("Invalid data from motor 2!  Resetting...");
+        resetSerial();
       }
     } catch (boost::system::system_error &e) {
       ROS_WARN("Problem reading speed: %s", e.what());
+      resetSerial();
       return;
     }
 
@@ -164,6 +179,20 @@ public:
     state_.w = (state_.right - state_.left) / axle_width_;
     // ROS_INFO_STREAM("" << state_);
     pub_.publish(state_);
+  }
+
+  bool resetSerial() {
+    ASIOSerialDevice* new_ser;
+    claw_->setSerial(NULL); 
+    try {
+      new_ser = new ASIOSerialDevice(portname_.c_str(), baud_);
+    } catch (boost::system::system_error &e) {
+      ROS_ERROR("Problem restarting device: %s", e.what());
+      ROS_BREAK();
+    }
+    claw_->setSerial(new_ser);
+    ser_.reset(new_ser);
+    return true;
   }
 
   // Get state as reflected by last calls to setVel() and update()
@@ -252,6 +281,7 @@ public:
       boost::mutex::scoped_lock lock(driver_mutex_);
       driver_->update();
       state = driver_->getState();
+      odom_state.header.stamp = ros::Time::now();
     }
 
     IntegrateOdometry(state);
@@ -261,7 +291,6 @@ public:
     odom_state.pose.pose.orientation = tf::createQuaternionMsgFromYaw(th_);
     odom_state.twist.twist.linear.x = state.v;
     odom_state.twist.twist.angular.z = state.w;
-    odom_state.header.stamp = ros::Time::now();
 
     odom_pub.publish(odom_state);
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+import os
 import time
 import math
 
@@ -115,5 +116,5 @@ def run(name, trials = 1, distance = 0.5):
     print "Odometry Dist. Total Error:  %0.2f" % odom_err_ttl
     
 if __name__ == "__main__":
-    name = '/scarab41'
+    name = rospy.resolve_name(os.getenv('ROS_HOSTNAME'))
     run(name)

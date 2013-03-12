@@ -24,17 +24,23 @@
       <rosparam command="load" file="$(find scarab_launch)/diagnostics.yaml" />
     </node>
 
-    <node pkg="roboclaw" type="roboclaw_node" name="motor">
-      <param name="max_wheel_vel" value="0.3" />
+    <node pkg="roboclaw" type="roboclaw_node" name="motor" output="screen">
+      <param name="max_wheel_vel" value="0.4" />
       <param name="axle_width" value="0.26" />
       <param name="accel_max" value="1.0" />
       <param name="odom_frame" value="odom" />
       <param name="base_frame" value="base" />
       <param name="motor_to_wheel_ratio" value="38" />
-      <param name="freq" value="20" />
+      <param name="freq" value="25" />
     </node>
 
     <node pkg="tf" type="static_transform_publisher" name="transformer"
-          args="0 0 0.2 0 0 0 base laser 10" />
+          args="0 0 0.0 0 0 0 base laser 100" />
   </group>
 </launch>
+
+<!-- {accel_max: 1.0, axle_width: 0.26, base_frame: base, freq: 25, max_wheel_vel: 0.3, -->
+<!--   motor_to_wheel_ratio: 38, odom_frame: odom, pid_param_id: 0, pid_qpps: 500000} -->
+
+      <!-- <param name="pid_qpps" value="100000" /> -->
+
