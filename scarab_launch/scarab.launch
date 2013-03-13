@@ -24,10 +24,9 @@
       <rosparam command="load" file="$(find scarab_launch)/diagnostics.yaml" />
     </node>
 
-    <node pkg="roboclaw" type="roboclaw_node" name="motor" output="screen">
-      <param name="max_wheel_vel" value="0.4" />
+    <node pkg="roboclaw" type="roboclaw_node" name="motor">
       <param name="axle_width" value="0.26" />
-      <param name="accel_max" value="1.0" />
+      <param name="accel_max" value="0.6" />
       <param name="odom_frame" value="odom" />
       <param name="base_frame" value="base" />
       <param name="motor_to_wheel_ratio" value="38" />

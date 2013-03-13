@@ -22,7 +22,7 @@
 
       <param name="initial_pose_x" value="-7.4" if="$(arg init)"/>
       <param name="initial_pose_y" value="4.5"  if="$(arg init)"/>
-      <param name="initial_pose_a" value="0"    if="$(arg init)" />
+      <param name="initial_pose_a" value="1.57" if="$(arg init)" />
       <param name="initial_cov_xx" value="0.3"  if="$(arg init)"/>
       <param name="initial_cov_yy" value="0.3"  if="$(arg init)"/>
       <param name="initial_cov_aa" value="0.25" if="$(arg init)"/>
@@ -45,10 +45,10 @@
 
       <param name="max_particles" value="5000" />
       <param name="min_particles" value="500" />
-      <param name="odom_alpha1" value="0.4" />  <!-- Rot noise from rot  -->
-      <param name="odom_alpha2" value="0.3" />  <!-- Rot noise from trans  -->
-      <param name="odom_alpha3" value="0.3" />  <!-- Trans noise from trans  -->
-      <param name="odom_alpha4" value="0.4" />  <!-- Trans noise from rot  -->
+      <param name="odom_alpha1" value="0.6" />  <!-- Rot noise from rot  -->
+      <param name="odom_alpha2" value="0.5" />  <!-- Rot noise from trans  -->
+      <param name="odom_alpha3" value="0.5" />  <!-- Trans noise from trans  -->
+      <param name="odom_alpha4" value="0.6" />  <!-- Trans noise from rot  -->
       <param name="odom_frame_id" value="odom" />
       <param name="odom_model_type" value="diff" />
       <param name="recovery_alpha_fast" value="0.0" />

@@ -8,13 +8,8 @@ using namespace std;
 //
 // Constructor
 //
-RoboClaw::RoboClaw(ASIOSerialDevice *ser) : ser_(ser) {
-  if (ser_ == NULL || ser_->Active()) {
-    throw invalid_argument("RoboClaw needs non-asynchronous serial device");
-  }
-  ser_->SetReadCallback(boost::bind(&RoboClaw::readCb, this,
-                                    boost::asio::placeholders::error,
-                                    boost::asio::placeholders::bytes_transferred));
+RoboClaw::RoboClaw(ASIOSerialDevice *ser) {
+  setSerial(ser);
 }
 
 //
@@ -22,6 +17,17 @@ RoboClaw::RoboClaw(ASIOSerialDevice *ser) : ser_(ser) {
 //
 RoboClaw::~RoboClaw() {
   
+}
+
+
+void RoboClaw::setSerial(ASIOSerialDevice *ser) {
+  ser_ = ser;
+  if (ser_ == NULL || ser_->Active()) {
+    throw invalid_argument("RoboClaw needs non-asynchronous serial device");
+  }
+  ser_->SetReadCallback(boost::bind(&RoboClaw::readCb, this,
+                                    boost::asio::placeholders::error,
+                                    boost::asio::placeholders::bytes_transferred));
 }
 
 void RoboClaw::write_n(uint8_t cnt, ... )
@@ -61,7 +67,7 @@ void RoboClaw::readCb(const uint8_t *bytes, size_t sz) {
 }
 
 uint8_t RoboClaw::read() {
-  ros::Duration d(1.0);
+  ros::Duration d(0.25);
   ros::Time start = ros::Time::now();
   uint8_t val;
   while (ros::Time::now() - start < d) {

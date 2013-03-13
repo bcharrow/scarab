@@ -124,7 +124,8 @@ public:
   void WriteNVM(uint8_t address);
   void SetPWM(uint8_t address, uint8_t resolution);
 
-  void setSerial(ASIOSerialDevice *ser) { ser_ = ser; }
+  void setSerial(ASIOSerialDevice *ser);
+
 private:
   ASIOSerialDevice *ser_;
   std::deque<uint8_t> read_buf_;

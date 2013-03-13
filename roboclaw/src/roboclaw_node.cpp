@@ -28,9 +28,9 @@ public:
     nh_.param("wheel_diam", wheel_diam_, 0.1);
     nh_.param("quad_pulse_per_motor_rev", quad_pulse_per_motor_rev_, 2000.0);
     nh_.param("motor_to_wheel_ratio", motor_to_wheel_ratio_, 16 * 2.3625);
-    nh_.param("pid_param_p", pid_p_, 0x8000);
-    nh_.param("pid_param_i", pid_i_, 0x0500);
-    nh_.param("pid_param_d", pid_d_, 0x4000);
+    nh_.param("pid_param_p", pid_p_, 0x9000);
+    nh_.param("pid_param_i", pid_i_, 0x0250);
+    nh_.param("pid_param_d", pid_d_, 0x1000);
     nh_.param("pid_qpps", pid_qpps_, 150000);
     nh_.param("left_sign", left_sign_, -1);
     nh_.param("right_sign", right_sign_, 1);
@@ -183,15 +183,15 @@ public:
 
   bool resetSerial() {
     ASIOSerialDevice* new_ser;
-    claw_->setSerial(NULL); 
+    ser_.reset(NULL);
     try {
-      new_ser = new ASIOSerialDevice(portname_.c_str(), baud_);
+      new_ser = new ASIOSerialDevice(portname_, baud_);
     } catch (boost::system::system_error &e) {
       ROS_ERROR("Problem restarting device: %s", e.what());
       ROS_BREAK();
     }
-    claw_->setSerial(new_ser);
     ser_.reset(new_ser);
+    claw_->setSerial(ser_.get());
     return true;
   }
 
@@ -234,28 +234,23 @@ private:
 
 class RoboClawNode {
 public:
-  RoboClawNode(ros::NodeHandle *node) : node_(node) {
-    odom_pub = node_->advertise<nav_msgs::Odometry>("odom", 100);
+  RoboClawNode() : node_("~") {
+    odom_pub = node_.advertise<nav_msgs::Odometry>("odom", 100);
 
-    cmd_vel_sub = node_->subscribe("cmd_vel", 1,
+    cmd_vel_sub = node_.subscribe("cmd_vel", 1,
                                   &RoboClawNode::OnTwistCmd, this);
-    node_->param("odom_frame", odom_state.header.frame_id, string("odom"));
-    node_->param("base_frame", odom_state.child_frame_id, string("base"));
+    node_.param("odom_frame", odom_state.header.frame_id, string("odom"));
+    node_.param("base_frame", odom_state.child_frame_id, string("base"));
 
-    node_->param("freq", freq_, 30.0);
+    node_.param("freq", freq_, 30.0);
 
     // Odometry starts at zero
     odom_state.pose.pose.orientation = tf::createQuaternionMsgFromYaw(0.0);
     x_ = y_ = th_ = 0.0;
+    driver_.reset(new DifferentialDriver(node_));
 
-    driver_.reset(new DifferentialDriver(*node_));
-
-    param_sub = node_->subscribe("tuning_input", 1,
+    param_sub = node_.subscribe("tuning_input", 1,
                                  &DifferentialDriver::setPID, driver_.get());
-  }
-
-  ~RoboClawNode() {
-    driver_->setVel(0.0, 0.0);
   }
 
   void PIDCb(const roboclaw::PIDParam &param) {
@@ -331,7 +326,7 @@ public:
 
   void Spin() {
     ros::Rate r(freq_);
-    while (node_->ok()) {
+    while (node_.ok()) {
       UpdateVelAndPublish();
       r.sleep();
     }
@@ -350,7 +345,7 @@ private:
   nav_msgs::Odometry odom_state;
   double x_, y_, th_;
 
-  ros::NodeHandle *node_;
+  ros::NodeHandle node_;
   ros::Publisher odom_pub;
   ros::Subscriber cmd_vel_sub;
   ros::Subscriber param_sub;
@@ -359,8 +354,7 @@ private:
 
 int main(int argc, char **argv) {
   ros::init(argc, argv, "motor");
-  ros::NodeHandle nh("~");
-  RoboClawNode rcn(&nh);
+  RoboClawNode rcn;
 
   ros::Duration(2.0).sleep();
 
