@@ -10,9 +10,9 @@ using namespace std;
 // #define KD 0x00004000
 // #define qpps 44000
 #define KP 0x00009000
-#define KI 0x00002000
-#define KD 0x00000000
-#define QPPS 1000
+#define KI 0x00000250
+#define KD 0x00001000
+#define QPPS 300000
 // #define qpps 24000
 
 void basic() {
@@ -21,7 +21,7 @@ void basic() {
   uint8_t status;
   bool valid;
   unsigned int baud = 38400U;
-  string port("/dev/roboclaw");
+  string port("/dev/ttyACM0");
   ASIOSerialDevice ser(port, baud);
 
   RoboClaw roboclaw(&ser);
@@ -33,21 +33,24 @@ void basic() {
   // // cout << "Version: " << version;
   // cout << "Enc M1: " << enc1 << endl;
   // return 0;
+  roboclaw.SetPWM(ADDRESS, 0);
   roboclaw.SetM1Constants(ADDRESS,KD,KP,KI,QPPS);
   roboclaw.SetM2Constants(ADDRESS,KD,KP,KI,QPPS);
-  roboclaw.ResetEncoders(ADDRESS);
-  roboclaw.ReadEncM1(ADDRESS, &status, &valid);
+  // roboclaw.ResetEncoders(ADDRESS);
+  // roboclaw.ReadEncM1(ADDRESS, &status, &valid);
+
+  uint32_t desired = QPPS;
+  // roboclaw.ForwardM2(ADDRESS, 127);
+  // roboclaw.ReadError(ADDRESS, &valid);
+  roboclaw.SpeedAccelM2(ADDRESS, desired / 4.0, desired);
+  // roboclaw.ForwardM2(ADDRESS, 10);
+  ros::Time start = ros::Time::now();
   if (valid) {
     printf("%u\n", val);
   }
 
-  uint32_t desired = 70000;
-  // roboclaw.ForwardBackwardM1(ADDRESS, 74);
-  roboclaw.SpeedAccelM2(ADDRESS, desired / 5.0, desired);
-  // roboclaw.ForwardM2(ADDRESS, 10);
-  ros::Time start = ros::Time::now();
   while (ros::ok()) {
-    ros::Duration(0.01).sleep();
+    ros::Duration(0.1).sleep();
 
     try {
       val = roboclaw.ReadEncM2(ADDRESS, &status, &valid);
@@ -78,9 +81,9 @@ void basic() {
         printf("Speed : %i (status = %x) %i\n", val, status, diff);
       }
 
-      if (abs(val  - desired) / (double)desired < 0.05) {
-        break;
-      }
+      // if (abs(val  - desired) / (double)desired < 0.05) {
+      //   break;
+      // }
 
     } catch (boost::system::system_error &e) {
       break;

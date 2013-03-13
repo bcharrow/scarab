@@ -24,14 +24,14 @@ public:
     nh_.param("axle_width", axle_width_, 0.275);
     nh_.param("max_wheel_vel", max_wheel_vel_, 0.8);
     nh_.param("min_wheel_vel", min_wheel_vel_, 0.00);
-    nh_.param("accel_max", accel_max_, 0.6);
+    nh_.param("accel_max", accel_max_, 1.0);
     nh_.param("wheel_diam", wheel_diam_, 0.1);
     nh_.param("quad_pulse_per_motor_rev", quad_pulse_per_motor_rev_, 2000.0);
     nh_.param("motor_to_wheel_ratio", motor_to_wheel_ratio_, 16 * 2.3625);
-    nh_.param("pid_param_p", pid_p_, 0x9000);
+    nh_.param("pid_param_p", pid_p_, 0x11000);
     nh_.param("pid_param_i", pid_i_, 0x0250);
     nh_.param("pid_param_d", pid_d_, 0x1000);
-    nh_.param("pid_qpps", pid_qpps_, 150000);
+    nh_.param("pid_qpps", pid_qpps_, 300000);
     nh_.param("left_sign", left_sign_, -1);
     nh_.param("right_sign", right_sign_, 1);
     nh_.param("portname", portname_, std::string("/dev/roboclaw"));
@@ -54,7 +54,7 @@ public:
     ser_.reset(new_ser);
     claw_.reset(new RoboClaw(ser_.get()));
     claw_->ResetEncoders(address_);
-    // claw_->SetPWM(address_, 0);
+    claw_->SetPWM(address_, 2);
     claw_->SetM1Constants(address_, pid_d_, pid_p_, pid_i_, pid_qpps_);
     claw_->SetM2Constants(address_, pid_d_, pid_p_, pid_i_, pid_qpps_);
 
@@ -130,8 +130,9 @@ public:
     state_.right_qpps_sp =
       static_cast<int32_t>(round(state_.right_sp * quad_pulse_per_meter_));
 
-    ROS_INFO("accel_max_quad %i, left_sp: %i right_sp: %i",
-             accel_max_quad_, state_.left_qpps_sp, state_.right_qpps_sp);
+    ROS_INFO_THROTTLE(1.0, "accel_max_quad %i, left_sp: %i right_sp: %i",
+                      accel_max_quad_, state_.left_qpps_sp,
+                      state_.right_qpps_sp);
 
     try {
       claw_->SpeedAccelM1(address_, accel_max_quad_, state_.left_qpps_sp);
@@ -140,7 +141,7 @@ public:
       ROS_WARN("Problem setting speed/accel: %s", e.what());
       return;
     }
-    ROS_INFO_STREAM("" << state_);
+    ROS_INFO_STREAM_THROTTLE(1.0, "" << state_);
     pub_.publish(state_);
   }
 
@@ -154,7 +155,7 @@ public:
       if (valid && (status == 0 || status == 1)) {
         state_.left_qpps = speed;
       } else {
-        ROS_ERROR("Invalid data from motor 1!  Resetting...");
+        ROS_ERROR_THROTTLE(1.0, "Invalid data from motor 1!  Resetting...");
         resetSerial();
       }
 
@@ -162,11 +163,11 @@ public:
       if (valid && (status == 0 || status == 1)) {
         state_.right_qpps = speed;
       } else {
-        ROS_ERROR("Invalid data from motor 2!  Resetting...");
+        ROS_ERROR_THROTTLE(1.0, "Invalid data from motor 2!  Resetting...");
         resetSerial();
       }
     } catch (boost::system::system_error &e) {
-      ROS_WARN("Problem reading speed: %s", e.what());
+      ROS_WARN_THROTTLE(1.0, "Problem reading speed: %s", e.what());
       resetSerial();
       return;
     }
@@ -192,6 +193,7 @@ public:
     }
     ser_.reset(new_ser);
     claw_->setSerial(ser_.get());
+    ros::Duration(0.5).sleep();
     return true;
   }
 

@@ -6,31 +6,33 @@
   <group ns="$(env ROS_HOSTNAME)" >
     <param name="tf_prefix" value="$(env ROS_HOSTNAME)" />
 
-    <node pkg="hokuyo_node" type="hokuyo_node" name="laser"
-          output="screen">
+    <node name="laser" pkg="hokuyo_node" type="hokuyo_node" output="screen">
       <param name="cluster" value="1" />
       <param name="skip" value="1" />
       <param name="intensity" value="false" />
       <param name="min_ang" value="-2.2689" />
       <param name="max_ang" value="2.2689" />
-      <param name="port" value="/dev/urg" />
+      <param name="port" value="/dev/hokuyo" />
       <param name="frame_id" value="/$(env ROS_HOSTNAME)/laser" />
     </node>
 
+    <node name="laser_throttle" pkg="topic_tools" type="throttle"
+          args="messages /$(env ROS_HOSTNAME)/scan 2.0" />
+
     <node pkg="bb04" type="bb04_node" name="bb04_node" />
 
-    <node pkg="diagnostic_aggregator" type="aggregator_node"
-          name="diagnostic_aggregator" >
-      <rosparam command="load" file="$(find scarab_launch)/diagnostics.yaml" />
-    </node>
+    <!-- <node pkg="diagnostic_aggregator" type="aggregator_node" -->
+    <!--       name="diagnostic_aggregator" > -->
+    <!--   <rosparam command="load" file="$(find scarab_launch)/diagnostics.yaml" /> -->
+    <!-- </node> -->
 
     <node pkg="roboclaw" type="roboclaw_node" name="motor">
-      <param name="axle_width" value="0.26" />
-      <param name="accel_max" value="0.6" />
+      <param name="axle_width" value="0.272" />
+      <param name="accel_max" value="1.0" />
       <param name="odom_frame" value="odom" />
       <param name="base_frame" value="base" />
-      <param name="motor_to_wheel_ratio" value="38" />
-      <param name="freq" value="25" />
+      <param name="motor_to_wheel_ratio" value="40" />
+      <param name="freq" value="37.0" />
     </node>
 
     <node pkg="tf" type="static_transform_publisher" name="transformer"

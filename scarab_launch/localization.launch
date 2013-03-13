@@ -48,7 +48,7 @@
       <param name="odom_alpha1" value="0.6" />  <!-- Rot noise from rot  -->
       <param name="odom_alpha2" value="0.5" />  <!-- Rot noise from trans  -->
       <param name="odom_alpha3" value="0.5" />  <!-- Trans noise from trans  -->
-      <param name="odom_alpha4" value="0.6" />  <!-- Trans noise from rot  -->
+      <param name="odom_alpha4" value="1.0" />  <!-- Trans noise from rot  -->
       <param name="odom_frame_id" value="odom" />
       <param name="odom_model_type" value="diff" />
       <param name="recovery_alpha_fast" value="0.0" />
@@ -57,8 +57,8 @@
 
       <param name="save_pose_rate" value="0.5" />
       <param name="transform_tolerance" value="0.1" />
-      <param name="update_min_a" value="0.1" />
-      <param name="update_min_d" value="0.1" />
+      <param name="update_min_a" value="0.3" />
+      <param name="update_min_d" value="0.25" />
     </node>
   </group>
 </launch>

@@ -61,7 +61,7 @@ class Trial(object):
         print "Starting a rotation trial...",
         sys.stdout.flush()
         t = Twist()
-        t.angular.z = -0.5
+        t.angular.z = -0.75
         duration  = angle / math.fabs(t.angular.z)
 
         self._command(t, duration, 0, angle)
