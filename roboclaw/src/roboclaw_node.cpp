@@ -28,30 +28,21 @@ public:
     nh_.param("wheel_diam", wheel_diam_, 0.1);
     nh_.param("quad_pulse_per_motor_rev", quad_pulse_per_motor_rev_, 2000.0);
     nh_.param("motor_to_wheel_ratio", motor_to_wheel_ratio_, 16 * 2.3625);
-    nh_.param("pid_param_p", pid_p_, 0x11000);
+    nh_.param("pid_param_p", pid_p_, 0x1000);
     nh_.param("pid_param_i", pid_i_, 0x0250);
-    nh_.param("pid_param_d", pid_d_, 0x1000);
+    nh_.param("pid_param_d", pid_d_, 0x0050);
     nh_.param("pid_qpps", pid_qpps_, 300000);
     nh_.param("left_sign", left_sign_, -1);
     nh_.param("right_sign", right_sign_, 1);
     nh_.param("portname", portname_, std::string("/dev/roboclaw"));
-    nh_.param("baud", baud_, 38400);
     nh_.param("address", address_, 0x80);
     double motor_rev_per_meter = motor_to_wheel_ratio_ / (M_PI * wheel_diam_);
     quad_pulse_per_meter_ = quad_pulse_per_motor_rev_ * motor_rev_per_meter;
     ROS_INFO("qppm: %f", quad_pulse_per_meter_);
-    ROS_INFO("Setting up roboclaw_node on port %s with baud %d",
-             portname_.c_str(), baud_);
+    ROS_INFO("Setting up roboclaw_node on port %s", portname_.c_str());
 
-    ASIOSerialDevice* new_ser;
-    try {
-      new_ser = new ASIOSerialDevice(portname_.c_str(), baud_);
-    } catch (boost::system::system_error &e) {
-      ROS_ERROR("Problem restarting device: %s", e.what());
-      ROS_BREAK();
-    }
-
-    ser_.reset(new_ser);
+    ser_.reset(new USBSerial());
+    ser_->Open(portname_.c_str());
     claw_.reset(new RoboClaw(ser_.get()));
     claw_->ResetEncoders(address_);
     claw_->SetPWM(address_, 2);
@@ -61,25 +52,18 @@ public:
     accel_max_quad_ = accel_max_ * quad_pulse_per_meter_;
 
     pub_ = nh_.advertise<roboclaw::motor_state>("motor_state", 5);
+    setVel(0.0, 0.0);
   }
 
   ~DifferentialDriver() {
-    try {
-      if (ser_ != NULL) {
-        setVel(0.0, 0.0);
-      }
-    } catch (boost::system::system_error &e) {
-      ROS_WARN("Problem turning motors off: %s", e.what());
+    if (ser_ != NULL) {
+      setVel(0.0, 0.0);
     }
   }
 
   void setPID(const roboclaw::PIDParam &param) {
-    try {
-      claw_->SetM1Constants(address_, param.d, param.p, param.i, param.qpps);
-      claw_->SetM2Constants(address_, param.d, param.p, param.i, param.qpps);
-    } catch (boost::system::system_error &e) {
-      ROS_WARN("Problem setting PID constants: %s", e.what());
-    }
+    claw_->SetM1Constants(address_, param.d, param.p, param.i, param.qpps);
+    claw_->SetM2Constants(address_, param.d, param.p, param.i, param.qpps);
   }
 
   // Convert linear / angular velocity to left / right motor speeds in meters /
@@ -130,18 +114,9 @@ public:
     state_.right_qpps_sp =
       static_cast<int32_t>(round(state_.right_sp * quad_pulse_per_meter_));
 
-    ROS_INFO_THROTTLE(1.0, "accel_max_quad %i, left_sp: %i right_sp: %i",
-                      accel_max_quad_, state_.left_qpps_sp,
-                      state_.right_qpps_sp);
+    claw_->SpeedAccelM1(address_, accel_max_quad_, state_.left_qpps_sp);
+    claw_->SpeedAccelM2(address_, accel_max_quad_, state_.right_qpps_sp);
 
-    try {
-      claw_->SpeedAccelM1(address_, accel_max_quad_, state_.left_qpps_sp);
-      claw_->SpeedAccelM2(address_, accel_max_quad_, state_.right_qpps_sp);
-    } catch (boost::system::system_error &e) {
-      ROS_WARN("Problem setting speed/accel: %s", e.what());
-      return;
-    }
-    ROS_INFO_STREAM_THROTTLE(1.0, "" << state_);
     pub_.publish(state_);
   }
 
@@ -150,26 +125,21 @@ public:
     uint8_t status;
     int32_t speed;
     bool valid;
-    try {
-      speed = claw_->ReadISpeedM1(address_, &status, &valid) * 125;
-      if (valid && (status == 0 || status == 1)) {
-        state_.left_qpps = speed;
-      } else {
-        ROS_ERROR_THROTTLE(1.0, "Invalid data from motor 1!  Resetting...");
-        resetSerial();
-      }
 
-      speed = claw_->ReadISpeedM2(address_, &status, &valid) * 125;
-      if (valid && (status == 0 || status == 1)) {
-        state_.right_qpps = speed;
-      } else {
-        ROS_ERROR_THROTTLE(1.0, "Invalid data from motor 2!  Resetting...");
-        resetSerial();
-      }
-    } catch (boost::system::system_error &e) {
-      ROS_WARN_THROTTLE(1.0, "Problem reading speed: %s", e.what());
+    speed = claw_->ReadISpeedM1(address_, &status, &valid) * 125;
+    if (valid && (status == 0 || status == 1)) {
+      state_.left_qpps = speed;
+    } else {
+      ROS_ERROR_THROTTLE(1.0, "Invalid data from motor 1!  Resetting...");
       resetSerial();
-      return;
+    }
+
+    speed = claw_->ReadISpeedM2(address_, &status, &valid) * 125;
+    if (valid && (status == 0 || status == 1)) {
+      state_.right_qpps = speed;
+    } else {
+      ROS_ERROR_THROTTLE(1.0, "Invalid data from motor 2!  Resetting...");
+      resetSerial();
     }
 
     // Convert qpps to meters / second
@@ -183,16 +153,8 @@ public:
   }
 
   bool resetSerial() {
-    ASIOSerialDevice* new_ser;
-    ser_.reset(NULL);
-    try {
-      new_ser = new ASIOSerialDevice(portname_, baud_);
-    } catch (boost::system::system_error &e) {
-      ROS_ERROR("Problem restarting device: %s", e.what());
-      ROS_BREAK();
-    }
-    ser_.reset(new_ser);
-    claw_->setSerial(ser_.get());
+    ser_->Close();
+    ser_->Open(portname_.c_str());
     ros::Duration(0.5).sleep();
     return true;
   }
@@ -207,9 +169,8 @@ private:
   ros::Publisher pub_;
 
   boost::scoped_ptr<RoboClaw> claw_;
-  boost::scoped_ptr<ASIOSerialDevice> ser_;
+  boost::scoped_ptr<USBSerial> ser_;
   string portname_;
-  int baud_;
   int address_;
 
   double axle_width_;

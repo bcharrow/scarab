@@ -20,11 +20,11 @@ void basic() {
   int32_t val, prev_val = 0, diff = 0;
   uint8_t status;
   bool valid;
-  unsigned int baud = 38400U;
-  string port("/dev/ttyACM0");
-  ASIOSerialDevice ser(port, baud);
+  string port("/dev/roboclaw");
+  USBSerial serial;
+  serial.Open(port.c_str());
 
-  RoboClaw roboclaw(&ser);
+  RoboClaw roboclaw(&serial);
 
   // string version;
   // roboclaw.ReadVersion(ADDRESS, &version);
@@ -52,40 +52,37 @@ void basic() {
   while (ros::ok()) {
     ros::Duration(0.1).sleep();
 
-    try {
-      val = roboclaw.ReadEncM2(ADDRESS, &status, &valid);
-      diff = val - prev_val;
-      prev_val = val;
+    val = roboclaw.ReadEncM2(ADDRESS, &status, &valid);
+    diff = val - prev_val;
+    prev_val = val;
 
-      if (valid) {
-        printf("Encoder count: %u", val);
-        if (status & 1) {
-          printf(" UNDERFLOW");
-        }
-        if ((status & 2) >> 1) {
-          printf(" BACKWARDS");
-        }
-        if ((status & 4) >> 2) {
-          printf(" OVERFLOW");
-        }
-        printf("\n");
+    if (valid) {
+      printf("Encoder count: %u", val);
+      if (status & 1) {
+        printf(" UNDERFLOW");
       }
-
-      // Stop after 1 revolution
-      // if (val > 2.7 * 1.5 * 16 * 4 * 500) {
-      //   break;
-      // }
-
-      val = roboclaw.ReadSpeedM2(ADDRESS, &status, &valid);
-      if(valid){
-        printf("Speed : %i (status = %x) %i\n", val, status, diff);
+      if ((status & 2) >> 1) {
+        printf(" BACKWARDS");
       }
+      if ((status & 4) >> 2) {
+        printf(" OVERFLOW");
+      }
+      printf("\n");
+    } else {
+      printf("INVALID!\n");
+    }
 
-      // if (abs(val  - desired) / (double)desired < 0.05) {
-      //   break;
-      // }
+    // Stop after 1 revolution
+    // if (val > 2.7 * 1.5 * 16 * 4 * 500) {
+    //   break;
+    // }
 
-    } catch (boost::system::system_error &e) {
+    val = roboclaw.ReadSpeedM2(ADDRESS, &status, &valid);
+    if(valid){
+      printf("Speed : %i (status = %x) %i\n", val, status, diff);
+    }
+
+    if (abs(val  - desired) / (double)desired < 0.05) {
       break;
     }
   }

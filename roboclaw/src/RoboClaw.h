@@ -2,14 +2,37 @@
 #define RoboClaw_h
 
 #include <stdarg.h>
-
-#include <asio_serial_device/ASIOSerialDevice.h>
+#include <stdexcept>
+#include <stdint.h>
+#include <termios.h>
+#include <fcntl.h>
+#include <poll.h>
 
 /******************************************************************************
  * Definitions
  ******************************************************************************/
 
 #define _RC_VERSION 10 // software version of this library
+
+class USBSerial {
+public:
+  class Exception : std::runtime_error {
+  public:
+    Exception(const char *msg) : std::runtime_error(msg) {}
+  };
+
+  USBSerial() : fd_(-1) {}
+  void Open(const char *port);
+  bool IsOpen();
+  void Close();
+  int Write(const unsigned char* data, int len);
+  int Read(char *buffer, int size, int timeout, bool translate);
+private:
+  int Flush();
+  uint8_t read_buf_[256];
+  int buf_start_, buf_end_;
+  int fd_;
+};
 
 class RoboClaw {
   enum {M1FORWARD = 0,
@@ -67,7 +90,7 @@ class RoboClaw {
         WRITENVM = 94};
 public:
   // public methods
-  RoboClaw(ASIOSerialDevice *ser);
+  RoboClaw(USBSerial *ser);
   ~RoboClaw();
 
   void ForwardM1(uint8_t address, uint8_t speed);
@@ -124,15 +147,13 @@ public:
   void WriteNVM(uint8_t address);
   void SetPWM(uint8_t address, uint8_t resolution);
 
-  void setSerial(ASIOSerialDevice *ser);
+  void setSerial(USBSerial *ser);
 
 private:
-  ASIOSerialDevice *ser_;
-  std::deque<uint8_t> read_buf_;
-
+  USBSerial *ser_;
   uint32_t Read4_1(uint8_t address, uint8_t cmd, uint8_t *status,bool *valid);
   uint16_t Read2(uint8_t address,uint8_t cmd,bool *valid);
-  
+
   // Send variable length data to serial device with CRC.  Varargs are
   // interpreted as individual bytes
   void write_n(uint8_t byte, ...);
@@ -140,10 +161,6 @@ private:
   void write(uint8_t byte);
   // Read an individual byte
   uint8_t read();
-  // Callback for read's from ser_.  Copies bytes into read_buf_ eliminating
-  // its previous contents
-  void readCb(const uint8_t *bytes, size_t sz);
-  void checkRead();
 };
 
 #endif

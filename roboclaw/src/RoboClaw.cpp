@@ -5,10 +5,159 @@
 
 using namespace std;
 
+//! Macro for throwing an exception with a message, passing args
+#define SERIAL_EXCEPT(msg, ...)                                         \
+  {                                                                     \
+    char buf[1000];                                                     \
+    snprintf(buf, 1000, msg " (in USBSerial::%s)" , ##__VA_ARGS__, __FUNCTION__); \
+    throw std::runtime_error(buf);                                      \
+  }
+
+void USBSerial::Open(const char *port) {
+  if (IsOpen()) {
+    Close();
+  }
+
+  fd_ = open(port, O_RDWR | O_NONBLOCK | O_NOCTTY);
+  buf_start_ = buf_end_ = 0;
+  if (fd_ == -1) {
+    SERIAL_EXCEPT("Failed to open port: %s. %s (errno = %d)",
+                  port, strerror(errno), errno);
+  }
+
+  try {
+    struct flock fl;
+    fl.l_type = F_WRLCK;
+    fl.l_whence = SEEK_SET;
+    fl.l_start = 0;
+    fl.l_len = 0;
+    fl.l_pid = getpid();
+
+    if (fcntl(fd_, F_SETLK, &fl) != 0) {
+      SERIAL_EXCEPT("Device %s is already locked", port);
+    }
+
+    struct termios newtio;
+    tcgetattr(fd_, &newtio);
+    memset(&newtio.c_cc, 0, sizeof(newtio.c_cc)); // Clear special characters
+    newtio.c_cflag = CS8 | CLOCAL | CREAD;
+    newtio.c_iflag = IGNPAR;
+    newtio.c_oflag = 0;
+    newtio.c_lflag = 0;
+    tcflush(fd_, TCIFLUSH);
+    if (tcsetattr(fd_, TCSANOW, &newtio) < 0) {
+      SERIAL_EXCEPT("Couldn't set serial port attributes: %s", port);
+    }
+
+    usleep(200000);
+    Flush();
+  } catch (std::runtime_error &e) {
+    if (fd_ != -1) {
+      close(fd_);
+    }
+    fd_ = -1;
+    throw e;
+  }
+}
+
+bool USBSerial::IsOpen() {
+  return fd_ != -1;
+}
+
+void USBSerial::Close() {
+  if (IsOpen()) {
+    Flush();
+  }
+  int rv = close(fd_);
+  if (rv != 0) {
+    SERIAL_EXCEPT("Error closing port: %s (%d)", strerror(errno), errno);
+  }
+}
+
+int USBSerial::Flush() {
+  int retval = tcflush(fd_, TCIOFLUSH);
+  if (retval != 0)
+    SERIAL_EXCEPT("tcflush failed");
+  buf_start_ = 0;
+  buf_end_ = 0;
+  return retval;
+}
+
+int USBSerial::Write(const unsigned char *data, int len) {
+  int origflags = fcntl(fd_, F_GETFL, 0);
+  fcntl(fd_, F_SETFL, origflags & ~O_NONBLOCK);
+  // fprintf(stderr, "Writing ");
+  // for (int i = 0; i < len; ++i) {
+  //   fprintf(stderr, "%02x ", data[i]);
+  // }
+  // fprintf(stderr, "\n");
+  ssize_t retval = write(fd_, data, len);
+  int fputserrno = errno;
+  fcntl(fd_, F_SETFL, origflags | O_NONBLOCK);
+  errno = fputserrno;
+  if (retval != -1 ) {
+    return retval;
+  } else {
+    SERIAL_EXCEPT("write() failed: %s (%d)", strerror(errno), errno);
+  }
+}
+
+int USBSerial::Read(char *buf, int len, int timeout, bool translate) {
+  int current = 0;
+  struct pollfd ufd[1];
+  int retval;
+  ufd[0].fd = fd_;
+  ufd[0].events = POLLIN;
+
+  while (true) {
+    if (buf_start_ == buf_end_) {
+      if ((retval = poll(ufd, 1, timeout)) < 0) {
+        SERIAL_EXCEPT("Poll failed %s (%d)", strerror(errno), errno);
+      }
+      else if (retval == 0) {
+        SERIAL_EXCEPT("Timeout reached");
+      }
+      else if (ufd[0].revents & POLLERR) {
+        SERIAL_EXCEPT("Error on socket");
+      }
+      int bytes = read(fd_, read_buf_, sizeof(read_buf_));
+      // fprintf(stderr, "Got %i bytes\n  ", bytes);
+      // for (int i = 0; i < bytes; ++i) {
+      //   fprintf(stderr, " %02x", read_buf_[i]);
+      // }
+      // fprintf(stderr, "\n");
+      buf_start_ = 0;
+      buf_end_ = bytes;
+    }
+
+    while (buf_start_ != buf_end_) {
+      if (translate) {
+        if (current == len - 1) {
+          buf[current] = 0;
+          SERIAL_EXCEPT("Buffer filled without end of line being found");
+        }
+        buf[current] = read_buf_[buf_start_];
+        buf_start_++;
+        if (read_buf_[current++] == '\n') {
+          buf[current] = 0;
+          return current;
+        }
+      } else {
+        buf[current] = read_buf_[buf_start_];
+        buf_start_++;
+        current++;
+        if (current == len) {
+          return current;
+        }
+      }
+    }
+  }
+}
+
 //
 // Constructor
 //
-RoboClaw::RoboClaw(ASIOSerialDevice *ser) {
+RoboClaw::RoboClaw(USBSerial *ser) {
   setSerial(ser);
 }
 
@@ -16,80 +165,53 @@ RoboClaw::RoboClaw(ASIOSerialDevice *ser) {
 // Destructor
 //
 RoboClaw::~RoboClaw() {
-  
+
 }
 
 
-void RoboClaw::setSerial(ASIOSerialDevice *ser) {
+void RoboClaw::setSerial(USBSerial *ser) {
+  if (ser == NULL || !ser->IsOpen()) {
+    throw invalid_argument("RoboClaw needs open USBSerial device");
+  }
   ser_ = ser;
-  if (ser_ == NULL || ser_->Active()) {
-    throw invalid_argument("RoboClaw needs non-asynchronous serial device");
-  }
-  ser_->SetReadCallback(boost::bind(&RoboClaw::readCb, this,
-                                    boost::asio::placeholders::error,
-                                    boost::asio::placeholders::bytes_transferred));
 }
 
-void RoboClaw::write_n(uint8_t cnt, ... )
-{
+void RoboClaw::write_n(uint8_t cnt, ... ) {
+  static unsigned char buff[256];
+  int ind = 0;
   uint8_t crc=0;
-  
-  //send data with crc
+
+  // send data with crc
   va_list marker;
-  va_start( marker, cnt );     /* Initialize variable arguments. */
-  vector<uint8_t> bytes;
+  va_start(marker, cnt);
   // fprintf(stderr, "Sending: ");
-  
-  for(uint8_t index=0;index<cnt;index++) {
+  for(uint8_t index=0; index < cnt; index++) {
     uint8_t data = va_arg(marker, int);
-    // fprintf(stderr, "0x%x", data);
-    
-    crc+=data;
-    bytes.push_back(data);
+    // fprintf(stderr, "%02x ", data);
+    crc += data;
+    buff[ind++] = data;
   }
-  va_end( marker );              /* Reset variable arguments.      */
-  bytes.push_back(crc & 0x7F);
   // fprintf(stderr, "\n");
-  ser_->Write(bytes);
+  va_end(marker);              /* Reset variable arguments.      */
+  buff[ind++] = crc & 0x7F;
+  ser_->Write(buff, cnt + 1);
 }
 
 void RoboClaw::write(uint8_t byte) {
-  // fprintf(stderr, "Sending: %x\n", byte);
-  vector<uint8_t> val;
-  val.push_back(byte);
-  ser_->Write(val);
-}
-
-void RoboClaw::readCb(const uint8_t *bytes, size_t sz) {
-  read_buf_.resize(sz);
-  copy(bytes, bytes + sz, read_buf_.begin());
-  // fprintf(stderr, "Got %zu bytes %zu\n", sz, read_buf_.size());
+  // fprintf(stderr, "Sending: 0x%02x\n", byte);
+  ser_->Write(&byte, 1);
 }
 
 uint8_t RoboClaw::read() {
-  ros::Duration d(0.25);
-  ros::Time start = ros::Time::now();
-  uint8_t val;
-  while (ros::Time::now() - start < d) {
-    if (read_buf_.size() == 0) {
-      // fprintf(stderr, "%zu\n", read_buf_.size());
-      ser_->Read();
-      // fprintf(stderr, "Got data!\n");
-    } else {
-      val = read_buf_.front();
-      read_buf_.pop_front();
-      return val;
-    }
+  char d[1];
+  int rv = ser_->Read(d, sizeof(d), 100, false);
+  if (rv != 1) {
+    // fprintf(stderr, "Rv = %i\n", rv);
+    throw std::runtime_error("RoboClaw::write_n() Didn't get byte from read()");
+  } else {
+    // fprintf(stderr, "Read 0x%02x\n", d[0]);
   }
-  // fprintf(stderr, "Read a byte: %x\n", val);
-  throw boost::system::system_error(boost::asio::error::operation_aborted);
-}
-
-void RoboClaw::checkRead() {
-  if (read_buf_.size() != 0) {
-    fprintf(stderr, "Read buffer not empty!\n");
-    read_buf_.clear();
-  }
+  return static_cast<uint8_t>(d[0]);
 }
 
 void RoboClaw::ForwardM1(uint8_t address, uint8_t speed) {
@@ -149,10 +271,10 @@ void RoboClaw::LeftRightMixed(uint8_t address, uint8_t speed) {
 }
 
 uint32_t RoboClaw::Read4_1(uint8_t address, uint8_t cmd, uint8_t *status, bool *valid) {
-  uint8_t crc;
-  write(address);
-  crc=address;
-  write(cmd);
+  uint8_t send[2] = {address, cmd};
+  ser_->Write(send, 2);
+
+  uint8_t crc = address;
   crc+=cmd;
 
   uint32_t value;
@@ -171,7 +293,7 @@ uint32_t RoboClaw::Read4_1(uint8_t address, uint8_t cmd, uint8_t *status, bool *
   data = read();
   crc+=data;
   value|=(uint32_t)data;
-	
+
   data = read();
   crc+=data;
   if(status)
@@ -180,7 +302,6 @@ uint32_t RoboClaw::Read4_1(uint8_t address, uint8_t cmd, uint8_t *status, bool *
   if(valid)
     *valid = ((crc&0x7F)==data);
 
-  checkRead();  
   return value;
 }
 
@@ -206,13 +327,13 @@ void RoboClaw::ResetEncoders(uint8_t address) {
 
 bool RoboClaw::ReadVersion(uint8_t address, string *version) {
   version->resize(32);
-  
+
   uint8_t crc;
   write(address);
   crc=address;
   write(GETVERSION);
   crc+=GETVERSION;
-	
+
   for(uint8_t i=0;i<32;i++) {
     (*version)[i] = read();
     crc += (*version)[i];
@@ -230,7 +351,7 @@ uint16_t RoboClaw::Read2(uint8_t address,uint8_t cmd,bool *valid) {
   write(cmd);
   crc+=cmd;
 
-  uint16_t value;	
+  uint16_t value;
   uint8_t data = read();
   crc+=data;
   value=(uint16_t)data<<8;
@@ -238,11 +359,11 @@ uint16_t RoboClaw::Read2(uint8_t address,uint8_t cmd,bool *valid) {
   data = read();
   crc+=data;
   value|=(uint16_t)data;
-	
+
   data = read();
   if(valid)
     *valid = ((crc&0x7F)==data);
-		
+
   return value;
 }
 
@@ -387,7 +508,7 @@ uint8_t RoboClaw::ReadError(uint8_t address,bool *valid) {
   crc=address;
   write(GETERROR);
   crc+=GETERROR;
-	
+
   uint8_t value = read();
   crc+=value;
 
@@ -395,7 +516,7 @@ uint8_t RoboClaw::ReadError(uint8_t address,bool *valid) {
     *valid = ((crc&0x7F)==read());
   else
     read();
-		
+
   return value;
 }
 
