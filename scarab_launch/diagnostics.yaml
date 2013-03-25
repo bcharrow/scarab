@@ -1,12 +1,55 @@
 pub_rate: 1.0
-base_path: ''
 analyzers:
-  powersystem:
-    type: GenericAnalyzer
-    path: Power System
-    startswith: Battery
+  Scarab40:
+    type: AnalyzerGroup
+    path: Scarab40
+    analyzers:
+      laser:
+        type: GenericAnalyzer
+        path: Laser
+        regex: 'scarab40.*laser.*'
 
-  laser:
-    type: GenericAnalyzer
-    path: Laser
-    regex: '.*laser.*'
+  Scarab41:
+    type: AnalyzerGroup
+    path: Scarab41
+    analyzers:
+      laser:
+        type: GenericAnalyzer
+        path: Laser
+        regex: 'scarab41.*laser.*'
+
+  Scarab42:
+    type: AnalyzerGroup
+    path: Scarab42
+    analyzers:
+      laser:
+        type: GenericAnalyzer
+        path: Laser
+        regex: 'scarab42.*laser.*'
+
+  Scarab43:
+    type: AnalyzerGroup
+    path: Scarab43
+    analyzers:
+      laser:
+        type: GenericAnalyzer
+        path: Laser
+        regex: 'scarab43.*laser.*'
+
+  Scarab44:
+    type: AnalyzerGroup
+    path: Scarab44
+    analyzers:
+      laser:
+        type: GenericAnalyzer
+        path: Laser
+        regex: 'scarab44.*laser.*'
+
+  Scarab45:
+    type: AnalyzerGroup
+    path: Scarab45
+    analyzers:
+      laser:
+        type: GenericAnalyzer
+        path: Laser
+        regex: 'scarab45.*laser.*'

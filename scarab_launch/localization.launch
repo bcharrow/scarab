@@ -4,6 +4,7 @@
   <include file="$(find scarab_launch)/scarab.launch" />
   
   <group ns="$(env ROS_HOSTNAME)" >
+    <remap from="/tf" to="tf" />
     <param name="tf_prefix" value="$(env ROS_HOSTNAME)" />
 
     <node name="map_server" pkg="map_server" type="map_server" output="screen"
@@ -44,11 +45,11 @@
       <param name="laser_z_short" value="0.05" />
 
       <param name="max_particles" value="5000" />
-      <param name="min_particles" value="500" />
-      <param name="odom_alpha1" value="0.6" />  <!-- Rot noise from rot  -->
-      <param name="odom_alpha2" value="0.5" />  <!-- Rot noise from trans  -->
-      <param name="odom_alpha3" value="0.5" />  <!-- Trans noise from trans  -->
-      <param name="odom_alpha4" value="1.0" />  <!-- Trans noise from rot  -->
+      <param name="min_particles" value="600" />
+      <param name="odom_alpha1" value="0.4" />  <!-- Rot noise from rot  -->
+      <param name="odom_alpha2" value="0.3" />  <!-- Rot noise from trans  -->
+      <param name="odom_alpha3" value="0.3" />  <!-- Trans noise from trans  -->
+      <param name="odom_alpha4" value="0.4" />  <!-- Trans noise from rot  -->
       <param name="odom_frame_id" value="odom" />
       <param name="odom_model_type" value="diff" />
       <param name="recovery_alpha_fast" value="0.0" />
