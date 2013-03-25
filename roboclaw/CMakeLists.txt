@@ -39,3 +39,5 @@ target_link_libraries(enc_demo roboclaw)
 
 rosbuild_add_executable(roboclaw_node src/roboclaw_node.cpp)
 target_link_libraries(roboclaw_node roboclaw)
+
+rosbuild_add_executable(usb_reset src/usb_reset.c)
