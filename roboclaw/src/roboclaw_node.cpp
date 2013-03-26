@@ -20,7 +20,7 @@ using namespace std;
 class DifferentialDriver {
 public:
   explicit DifferentialDriver(const ros::NodeHandle &node) :
-    nh_(node), claw_(NULL), ser_(NULL)  {
+    nh_(node), claw_(NULL), ser_(NULL), serial_errs_(0)  {
     nh_.param("axle_width", axle_width_, 0.275);
     nh_.param("max_wheel_vel", max_wheel_vel_, 0.8);
     nh_.param("min_wheel_vel", min_wheel_vel_, 0.00);
@@ -38,16 +38,12 @@ public:
     nh_.param("address", address_, 0x80);
     double motor_rev_per_meter = motor_to_wheel_ratio_ / (M_PI * wheel_diam_);
     quad_pulse_per_meter_ = quad_pulse_per_motor_rev_ * motor_rev_per_meter;
-    ROS_INFO("qppm: %f", quad_pulse_per_meter_);
-    ROS_INFO("Setting up roboclaw_node on port %s", portname_.c_str());
+    ROS_DEBUG("qppm: %f", quad_pulse_per_meter_);
 
     ser_.reset(new USBSerial());
-    ser_->Open(portname_.c_str());
+    openUsb();
     claw_.reset(new RoboClaw(ser_.get()));
-    claw_->ResetEncoders(address_);
-    claw_->SetPWM(address_, 2);
-    claw_->SetM1Constants(address_, pid_d_, pid_p_, pid_i_, pid_qpps_);
-    claw_->SetM2Constants(address_, pid_d_, pid_p_, pid_i_, pid_qpps_);
+    setupClaw();
 
     accel_max_quad_ = accel_max_ * quad_pulse_per_meter_;
 
@@ -56,14 +52,14 @@ public:
   }
 
   ~DifferentialDriver() {
-    if (ser_ != NULL) {
+    if (claw_ != NULL) {
       setVel(0.0, 0.0);
     }
   }
 
-  void setPID(const roboclaw::PIDParam &param) {
-    claw_->SetM1Constants(address_, param.d, param.p, param.i, param.qpps);
-    claw_->SetM2Constants(address_, param.d, param.p, param.i, param.qpps);
+  void setupClaw() {
+    claw_->SetM1Constants(address_, pid_d_, pid_p_, pid_i_, pid_qpps_);
+    claw_->SetM2Constants(address_, pid_d_, pid_p_, pid_i_, pid_qpps_);
   }
 
   // Convert linear / angular velocity to left / right motor speeds in meters /
@@ -114,8 +110,21 @@ public:
     state_.right_qpps_sp =
       static_cast<int32_t>(round(state_.right_sp * quad_pulse_per_meter_));
 
-    claw_->SpeedAccelM1(address_, accel_max_quad_, state_.left_qpps_sp);
-    claw_->SpeedAccelM2(address_, accel_max_quad_, state_.right_qpps_sp);
+    try {
+      claw_->SpeedAccelM1(address_, accel_max_quad_, state_.left_qpps_sp);
+    } catch (USBSerial::Exception &e) {
+      ROS_WARN("Problem with SpeecAccel on motor 1 (error=%s)", e.what());
+      serialError();
+      return;
+    }
+
+    try {
+      claw_->SpeedAccelM2(address_, accel_max_quad_, state_.right_qpps_sp);
+    } catch (USBSerial::Exception &e) {
+      ROS_WARN("Problem with SpeecAccel on motor 2 (error=%s)", e.what());
+      serialError();
+      return;
+    }
 
     pub_.publish(state_);
   }
@@ -126,20 +135,39 @@ public:
     int32_t speed;
     bool valid;
 
-    speed = claw_->ReadISpeedM1(address_, &status, &valid) * 125;
+    try {
+      speed = claw_->ReadISpeedM1(address_, &status, &valid) * 125;
+    } catch (USBSerial::Exception &e) {
+      ROS_WARN("Problem reading motor 1 speed (error=%s)", e.what());
+      serialError();
+      return;
+    }
+
+    // When using USB roboclaw it seems data is rarely, if ever, invalid.
+    // Instead it looks like the device sends -EPROTO=-71 and the cdc_acm
+    // driver eats that and doesn't update the file descriptor we're talking to
     if (valid && (status == 0 || status == 1)) {
       state_.left_qpps = speed;
     } else {
-      ROS_ERROR_THROTTLE(1.0, "Invalid data from motor 1!  Resetting...");
-      resetSerial();
+      ROS_WARN("Invalid data from motor 1");
+      serialError();
+      return;
     }
 
-    speed = claw_->ReadISpeedM2(address_, &status, &valid) * 125;
+    try {
+      speed = claw_->ReadISpeedM2(address_, &status, &valid) * 125;
+    } catch(USBSerial::Exception &e) {
+      ROS_WARN("Problem reading motor 2 speed (error=%s)", e.what());
+      serialError();
+      return;
+    }
+
     if (valid && (status == 0 || status == 1)) {
       state_.right_qpps = speed;
     } else {
-      ROS_ERROR_THROTTLE(1.0, "Invalid data from motor 2!  Resetting...");
-      resetSerial();
+      ROS_WARN("Invalid data from motor 2");
+      serialError();
+      return;
     }
 
     // Convert qpps to meters / second
@@ -152,11 +180,40 @@ public:
     pub_.publish(state_);
   }
 
-  bool resetSerial() {
-    ser_->Close();
-    ser_->Open(portname_.c_str());
-    ros::Duration(0.5).sleep();
-    return true;
+  void serialError() {
+    serial_errs_ += 1;
+    if (serial_errs_ == 5) {
+      ROS_ERROR("Several errors from roboclaw, restarting");
+      roboclaw_restart_usb();
+      openUsb();
+      setupClaw();
+      serial_errs_ = 0;
+    }
+  }
+
+  void openUsb() {
+    ROS_INFO("Connecting to %s...", portname_.c_str());
+    ros::Time start = ros::Time::now();
+    double notify_every = 10.0;
+    double check_every = 0.25;
+    std::string last_msg;
+    while (ros::ok()) {
+      try {
+        ser_->Open(portname_.c_str());
+        ROS_INFO("Connected to %s", portname_.c_str());
+        break;
+      } catch (USBSerial::Exception &e) {
+        last_msg = e.what();
+      }
+      ros::Duration(check_every).sleep();
+      double dur = (ros::Time::now() - start).toSec();
+      if (dur > notify_every) {
+        ROS_WARN_THROTTLE(notify_every,
+                          "Haven't connected to %s in %.2f seconds."
+                          "  Last error=\n%s",
+                          portname_.c_str(), dur, last_msg.c_str());
+      }
+    }
   }
 
   // Get state as reflected by last calls to setVel() and update()
@@ -172,6 +229,7 @@ private:
   boost::scoped_ptr<USBSerial> ser_;
   string portname_;
   int address_;
+  int serial_errs_;
 
   double axle_width_;
   double wheel_diam_;
@@ -212,15 +270,6 @@ public:
     x_ = y_ = th_ = 0.0;
     driver_.reset(new DifferentialDriver(node_));
 
-    param_sub = node_.subscribe("tuning_input", 1,
-                                 &DifferentialDriver::setPID, driver_.get());
-  }
-
-  void PIDCb(const roboclaw::PIDParam &param) {
-    {
-      boost::mutex::scoped_lock lock(driver_mutex_);
-      driver_->setPID(param);
-    }
   }
 
   // Thread safe way of setting velocity
@@ -318,8 +367,6 @@ private:
 int main(int argc, char **argv) {
   ros::init(argc, argv, "motor");
   RoboClawNode rcn;
-
-  ros::Duration(2.0).sleep();
 
   boost::thread motor_thread(&RoboClawNode::Spin, &rcn);
   ros::spin();

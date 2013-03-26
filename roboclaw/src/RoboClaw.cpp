@@ -10,7 +10,7 @@ using namespace std;
   {                                                                     \
     char buf[1000];                                                     \
     snprintf(buf, 1000, msg " (in USBSerial::%s)" , ##__VA_ARGS__, __FUNCTION__); \
-    throw std::runtime_error(buf);                                      \
+    throw USBSerial::Exception(buf);                                    \
   }
 
 void USBSerial::Open(const char *port) {
@@ -51,7 +51,7 @@ void USBSerial::Open(const char *port) {
 
     usleep(200000);
     Flush();
-  } catch (std::runtime_error &e) {
+  } catch (USBSerial::Exception &e) {
     if (fd_ != -1) {
       close(fd_);
     }
@@ -66,7 +66,11 @@ bool USBSerial::IsOpen() {
 
 void USBSerial::Close() {
   if (IsOpen()) {
-    Flush();
+    try {
+      Flush();
+    } catch (USBSerial::Exception &e) {
+      ROS_WARN("While closing, error while flushing=%s", e.what());
+    }
   }
   int rv = close(fd_);
   if (rv != 0) {
@@ -77,7 +81,7 @@ void USBSerial::Close() {
 int USBSerial::Flush() {
   int retval = tcflush(fd_, TCIOFLUSH);
   if (retval != 0)
-    SERIAL_EXCEPT("tcflush failed");
+    SERIAL_EXCEPT("tcflush failed %i", retval);
   buf_start_ = 0;
   buf_end_ = 0;
   return retval;
@@ -111,7 +115,7 @@ int USBSerial::Read(char *buf, int len, int timeout, bool translate) {
 
   while (true) {
     if (buf_start_ == buf_end_) {
-      if ((retval = poll(ufd, 1, timeout)) < 0) {
+      if ((retval = poll(ufd, 50, timeout)) < 0) {
         SERIAL_EXCEPT("Poll failed %s (%d)", strerror(errno), errno);
       }
       else if (retval == 0) {
@@ -152,6 +156,50 @@ int USBSerial::Read(char *buf, int len, int timeout, bool translate) {
       }
     }
   }
+}
+
+int roboclaw_restart_usb() {
+  const int16_t ROBOCLAW_PRODUCT = 0x2404;
+  const int16_t ROBOCLAW_VENDOR = 0x3eb;
+
+  libusb_init(NULL);
+  libusb_device **list;
+  ssize_t cnt = libusb_get_device_list(NULL, &list);
+  if (cnt < 0) {
+    ROS_WARN("Couldn't get device list: %s\n", libusb_error_name(cnt));
+    return -1;
+  }
+
+  size_t problems = 0;
+  int err = 0;
+  for (int i = 0; i < cnt; i++) {
+    libusb_device *device = list[i];
+    struct libusb_device_descriptor desc;
+
+    if (libusb_get_device_descriptor(device, &desc) != 0) {
+      ROS_WARN("Couldn't get descriptor: %s", libusb_error_name(cnt));
+      continue;
+    }
+
+    if (desc.idProduct == ROBOCLAW_PRODUCT &&
+        desc.idVendor == ROBOCLAW_VENDOR) {
+      libusb_device_handle *handle;
+      if ((err = libusb_open(device, &handle)) != 0) {
+        ROS_WARN("Couldn't open device: %s\n", libusb_error_name(err));
+        problems |= 1;
+      } else {
+        if ((err = libusb_reset_device(handle)) != 0) {
+          ROS_WARN("Couldn't reset device: %s\n", libusb_error_name(err));
+          problems |= 1;
+        } else {
+          libusb_close(handle);
+        }
+      }
+    }
+  }
+  libusb_free_device_list(list, 1);
+  libusb_close(NULL);
+  return problems;
 }
 
 //

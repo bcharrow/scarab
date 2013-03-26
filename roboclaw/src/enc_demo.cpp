@@ -39,9 +39,10 @@ void basic() {
   // roboclaw.ResetEncoders(ADDRESS);
   // roboclaw.ReadEncM1(ADDRESS, &status, &valid);
 
-  uint32_t desired = QPPS;
+  uint32_t desired = QPPS / 2.0;
   // roboclaw.ForwardM2(ADDRESS, 127);
   // roboclaw.ReadError(ADDRESS, &valid);
+  roboclaw.SpeedAccelM1(ADDRESS, desired / 4.0, desired);
   roboclaw.SpeedAccelM2(ADDRESS, desired / 4.0, desired);
   // roboclaw.ForwardM2(ADDRESS, 10);
   ros::Time start = ros::Time::now();
@@ -82,9 +83,9 @@ void basic() {
       printf("Speed : %i (status = %x) %i\n", val, status, diff);
     }
 
-    if (abs(val  - desired) / (double)desired < 0.05) {
-      break;
-    }
+    // if (abs(val  - desired) / (double)desired < 0.05) {
+    //   break;
+    // }
   }
   ros::Duration total = ros::Time::now() - start;
   cout << total << endl;

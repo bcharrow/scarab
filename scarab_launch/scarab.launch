@@ -39,7 +39,8 @@
     <!-- <node name="battery_diagnostics" pkg="topic_tools" type="throttle" -->
     <!--       args="messages /$(env ROS_HOSTNAME)/battery_diagnostics $(arg diag_rate) /diagnostics "/> -->
 
-    <node pkg="roboclaw" type="roboclaw_node" name="motor">
+    <node pkg="roboclaw" type="roboclaw_node" name="motor" respawn="false"
+          output="screen">
       <param name="axle_width" value="0.272" />
       <param name="accel_max" value="0.8" />
       <param name="odom_frame" value="odom" />

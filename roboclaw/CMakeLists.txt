@@ -29,15 +29,15 @@ rosbuild_genmsg()
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
 
-rosbuild_add_boost_directories()
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(LIBUSB1 libusb-1.0 REQUIRED)
+include_directories(${LIBUSB1_INCLUDE_DIRS})
 
 rosbuild_add_library(roboclaw src/RoboClaw.cpp)
-rosbuild_link_boost(roboclaw system)
+target_link_libraries(roboclaw ${LIBUSB1_LDFLAGS})
 
 rosbuild_add_executable(enc_demo src/enc_demo.cpp)
 target_link_libraries(enc_demo roboclaw)
 
 rosbuild_add_executable(roboclaw_node src/roboclaw_node.cpp)
 target_link_libraries(roboclaw_node roboclaw)
-
-rosbuild_add_executable(usb_reset src/usb_reset.c)

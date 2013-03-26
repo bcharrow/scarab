@@ -7,6 +7,7 @@
 #include <termios.h>
 #include <fcntl.h>
 #include <poll.h>
+#include <libusb.h>
 
 /******************************************************************************
  * Definitions
@@ -16,7 +17,7 @@
 
 class USBSerial {
 public:
-  class Exception : std::runtime_error {
+  class Exception : public std::runtime_error {
   public:
     Exception(const char *msg) : std::runtime_error(msg) {}
   };
@@ -33,6 +34,13 @@ private:
   int buf_start_, buf_end_;
   int fd_;
 };
+
+/**
+ * Restart all USB Roboclaw devices
+ *
+ * @return 1 if an error occured and 0 otherwise
+ */
+int roboclaw_restart_usb();
 
 class RoboClaw {
   enum {M1FORWARD = 0,
