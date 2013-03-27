@@ -41,23 +41,9 @@
 
     <node pkg="roboclaw" type="roboclaw_node" name="motor" respawn="false"
           output="screen">
-      <param name="axle_width" value="0.272" />
-      <param name="accel_max" value="0.8" />
-      <param name="odom_frame" value="odom" />
-      <param name="base_frame" value="base" />
-      <param name="motor_to_wheel_ratio" value="40" />
-      <param name="freq" value="20.0" />
     </node>
-
     <node name="odom_throttle" pkg="topic_tools" type="throttle"
           args="messages /$(env ROS_HOSTNAME)/motor/odom 2.0" />
+
   </group>
 </launch>
-
-<!-- {accel_max: 1.0, axle_width: 0.26, base_frame: base, freq: 25, max_wheel_vel: 0.3, -->
-<!--   motor_to_wheel_ratio: 38, odom_frame: odom, pid_param_id: 0, pid_qpps: 500000} -->
-
-      <!-- <param name="pid_qpps" value="100000" /> -->
-
-<!-- export VAL=44; rxplot /scarab$VAL/motor/motor_state/left_qpps_sp,/scarab$VAL/motor/motor_state/left_qpps  /scarab$VAL/motor/motor_state/right_qpps_sp,/scarab$VAL/motor/motor_state/right_qpps /scarab$VAL/motor/motor_state/v,/scarab$VAL/motor/motor_state/v_sp -->
-<!-- plotting topics /scarab44/motor/motor_state/left_qpps_sp, /scarab44/motor/motor_state/left_qpps, /scarab44/motor/motor_state/right_qpps_sp, /scarab44/motor/motor_state/right_qpps, /scarab44/motor/motor_state/v, /scarab44/motor/motor_state/v_sp -->

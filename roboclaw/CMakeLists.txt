@@ -41,3 +41,7 @@ target_link_libraries(enc_demo roboclaw)
 
 rosbuild_add_executable(roboclaw_node src/roboclaw_node.cpp)
 target_link_libraries(roboclaw_node roboclaw)
+
+rosbuild_find_ros_package(dynamic_reconfigure)
+include(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
+gencfg()

@@ -8,6 +8,9 @@
 _*.py
 *.swp
 .exrc
+*.cfgc
+*.gv
+*.pdf
 ROS_NOBUILD
 
 .build_version

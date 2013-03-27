@@ -10,8 +10,9 @@
 #include "nav_msgs/Odometry.h"
 #include "geometry_msgs/Twist.h"
 #include "tf/transform_broadcaster.h"
+#include "dynamic_reconfigure/server.h"
 
-#include "roboclaw/PIDParam.h"
+#include "roboclaw/RoboclawConfig.h"
 #include "roboclaw/motor_state.h"
 #include "RoboClaw.h"
 
@@ -21,16 +22,16 @@ class DifferentialDriver {
 public:
   explicit DifferentialDriver(const ros::NodeHandle &node) :
     nh_(node), claw_(NULL), ser_(NULL), serial_errs_(0)  {
-    nh_.param("axle_width", axle_width_, 0.275);
+    nh_.param("axle_width", axle_width_, 0.255);
     nh_.param("max_wheel_vel", max_wheel_vel_, 0.8);
     nh_.param("min_wheel_vel", min_wheel_vel_, 0.00);
     nh_.param("accel_max", accel_max_, 1.0);
     nh_.param("wheel_diam", wheel_diam_, 0.1);
     nh_.param("quad_pulse_per_motor_rev", quad_pulse_per_motor_rev_, 2000.0);
-    nh_.param("motor_to_wheel_ratio", motor_to_wheel_ratio_, 16 * 2.3625);
-    nh_.param("pid_param_p", pid_p_, 0x1000);
+    nh_.param("motor_to_wheel_ratio", motor_to_wheel_ratio_, 40.0);
+    nh_.param("pid_param_p", pid_p_, 15000);
     nh_.param("pid_param_i", pid_i_, 0x0250);
-    nh_.param("pid_param_d", pid_d_, 0x0050);
+    nh_.param("pid_param_d", pid_d_, 500);
     nh_.param("pid_qpps", pid_qpps_, 300000);
     nh_.param("left_sign", left_sign_, -1);
     nh_.param("right_sign", right_sign_, 1);
@@ -38,14 +39,12 @@ public:
     nh_.param("address", address_, 0x80);
     double motor_rev_per_meter = motor_to_wheel_ratio_ / (M_PI * wheel_diam_);
     quad_pulse_per_meter_ = quad_pulse_per_motor_rev_ * motor_rev_per_meter;
-    ROS_DEBUG("qppm: %f", quad_pulse_per_meter_);
+    accel_max_quad_ = accel_max_ * quad_pulse_per_meter_;
 
     ser_.reset(new USBSerial());
     openUsb();
     claw_.reset(new RoboClaw(ser_.get()));
     setupClaw();
-
-    accel_max_quad_ = accel_max_ * quad_pulse_per_meter_;
 
     pub_ = nh_.advertise<roboclaw::motor_state>("motor_state", 5);
     setVel(0.0, 0.0);
@@ -58,8 +57,34 @@ public:
   }
 
   void setupClaw() {
+    ROS_INFO("Setting PID params: P=%i I=%i D=%i QPPS=%i",
+             pid_p_, pid_i_, pid_d_, pid_qpps_);
     claw_->SetM1Constants(address_, pid_d_, pid_p_, pid_i_, pid_qpps_);
     claw_->SetM2Constants(address_, pid_d_, pid_p_, pid_i_, pid_qpps_);
+  }
+
+  void ReconfigureCallback(roboclaw::RoboclawConfig &config, uint32_t level) {
+    if (config.pid_p != pid_p_ || config.pid_i != pid_i_ ||
+        config.pid_d != pid_d_ || config.pid_qpps != pid_qpps_) {
+      pid_p_ = config.pid_p;
+      pid_i_ = config.pid_i;
+      pid_d_ = config.pid_d;
+      pid_qpps_ = config.pid_qpps;
+      setupClaw();
+    }
+
+    ROS_INFO("Updating wheel & motor params");
+    quad_pulse_per_motor_rev_ = config.quad_pulse_per_motor_rev;
+    motor_to_wheel_ratio_ = config.motor_to_wheel_ratio;
+    wheel_diam_ = config.wheel_diam;
+    accel_max_ = config.accel_max;
+    min_wheel_vel_ = config.min_wheel_vel;
+    max_wheel_vel_ = config.max_wheel_vel;
+    axle_width_ = config.axle_width;
+
+    double motor_rev_per_meter = motor_to_wheel_ratio_ / (M_PI * wheel_diam_);
+    quad_pulse_per_meter_ = quad_pulse_per_motor_rev_ * motor_rev_per_meter;
+    accel_max_quad_ = accel_max_ * quad_pulse_per_meter_;
   }
 
   // Convert linear / angular velocity to left / right motor speeds in meters /
@@ -256,10 +281,10 @@ private:
 class RoboClawNode {
 public:
   RoboClawNode() : node_("~") {
-    odom_pub = node_.advertise<nav_msgs::Odometry>("odom", 100);
+    boost::mutex::scoped_lock lock(driver_mutex_);
 
-    cmd_vel_sub = node_.subscribe("cmd_vel", 1,
-                                  &RoboClawNode::OnTwistCmd, this);
+    driver_.reset(new DifferentialDriver(node_));
+
     node_.param("odom_frame", odom_state.header.frame_id, string("odom"));
     node_.param("base_frame", odom_state.child_frame_id, string("base"));
 
@@ -268,11 +293,15 @@ public:
     // Odometry starts at zero
     odom_state.pose.pose.orientation = tf::createQuaternionMsgFromYaw(0.0);
     x_ = y_ = th_ = 0.0;
-    driver_.reset(new DifferentialDriver(node_));
 
+    odom_pub = node_.advertise<nav_msgs::Odometry>("odom", 100);
+
+    cmd_vel_sub = node_.subscribe("cmd_vel", 1,
+                                  &RoboClawNode::OnTwistCmd, this);
   }
 
   // Thread safe way of setting velocity
+  // Doesn't need to hold state_mutex_
   void OnTwistCmd(const geometry_msgs::TwistConstPtr &input)  {
     ROS_DEBUG("Got cmd_vel: %2.2f %2.2f", input->linear.x, input->angular.z);
     {
@@ -282,6 +311,7 @@ public:
   }
 
   // Thread safe way of updating odometry estimate and publishing state
+  // Assumes state_mutex_ is held
   void UpdateVelAndPublish() {
     roboclaw::motor_state state;
     {
@@ -311,6 +341,7 @@ public:
   }
 
   // Integrate odometry given motor's current speed
+  // Assumes state_mutex_ is held
   void IntegrateOdometry(const roboclaw::motor_state &state) {
     ros::Time now = ros::Time::now();
     double dt = (now-last_vel_update).toSec();
@@ -336,10 +367,40 @@ public:
     last_vel_update = now;
   }
 
+  void ReconfigureCallback(roboclaw::RoboclawConfig &config, uint32_t level) {
+    {
+      boost::mutex::scoped_lock lock(state_mutex_);
+      if (odom_state.header.frame_id != config.odom_frame) {
+        ROS_INFO("Setting odom_frame to %s", config.odom_frame.c_str());
+        odom_state.header.frame_id = config.odom_frame;
+      }
+
+      if (odom_state.child_frame_id != config.base_frame) {
+        ROS_INFO("Setting base_frame to %s", config.base_frame.c_str());
+        odom_state.child_frame_id = config.base_frame;
+      }
+      freq_ = config.freq;
+    }
+
+    {
+      boost::mutex::scoped_lock lock(driver_mutex_);
+      driver_->ReconfigureCallback(config, level);
+    }
+  }
+
   void Spin() {
-    ros::Rate r(freq_);
+    double curr_freq = freq_;
+    ros::Rate r(curr_freq);
     while (node_.ok()) {
-      UpdateVelAndPublish();
+      {
+        boost::mutex::scoped_lock lock(state_mutex_);
+        if (curr_freq != freq_) {
+          ROS_INFO("Updating rate to %.3fhz", freq_);
+          curr_freq = freq_;
+          r = ros::Rate(curr_freq);
+        }
+        UpdateVelAndPublish();
+      }
       r.sleep();
     }
   }
@@ -349,6 +410,7 @@ private:
   boost::scoped_ptr<DifferentialDriver> driver_;
   boost::mutex driver_mutex_; // Guards access to motors
 
+  boost::mutex state_mutex_; // Guards access to my state
   // How frequently to read speed and update odometry
   double freq_;
 
@@ -367,6 +429,9 @@ private:
 int main(int argc, char **argv) {
   ros::init(argc, argv, "motor");
   RoboClawNode rcn;
+
+  dynamic_reconfigure::Server<roboclaw::RoboclawConfig> server;
+  server.setCallback(boost::bind(&RoboClawNode::ReconfigureCallback, &rcn, _1, _2));
 
   boost::thread motor_thread(&RoboClawNode::Spin, &rcn);
   ros::spin();
