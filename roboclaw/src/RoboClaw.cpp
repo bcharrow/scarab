@@ -88,6 +88,8 @@ int USBSerial::Flush() {
 }
 
 int USBSerial::Write(const unsigned char *data, int len) {
+  // TODO: Because this is synchronous, if the device behaves weirdly we can
+  // hang here
   int origflags = fcntl(fd_, F_GETFL, 0);
   fcntl(fd_, F_SETFL, origflags & ~O_NONBLOCK);
   // fprintf(stderr, "Writing ");
@@ -115,23 +117,22 @@ int USBSerial::Read(char *buf, int len, int timeout, bool translate) {
 
   while (true) {
     if (buf_start_ == buf_end_) {
-      if ((retval = poll(ufd, 50, timeout)) < 0) {
+      if ((retval = poll(ufd, 1, timeout)) < 0) {
         SERIAL_EXCEPT("Poll failed %s (%d)", strerror(errno), errno);
-      }
-      else if (retval == 0) {
+      } else if (retval == 0) {
         SERIAL_EXCEPT("Timeout reached");
-      }
-      else if (ufd[0].revents & POLLERR) {
+      } else if (ufd[0].revents & POLLERR) {
         SERIAL_EXCEPT("Error on socket");
+      } else if (ufd[0].revents & POLLIN) {
+        int bytes = read(fd_, read_buf_, sizeof(read_buf_));
+        buf_start_ = 0;
+        buf_end_ = bytes;
+        if (buf_end_ == 0) {
+          SERIAL_EXCEPT("Read 0 bytes");
+        }
+      } else {
+        SERIAL_EXCEPT("Unhandled case!");
       }
-      int bytes = read(fd_, read_buf_, sizeof(read_buf_));
-      // fprintf(stderr, "Got %i bytes\n  ", bytes);
-      // for (int i = 0; i < bytes; ++i) {
-      //   fprintf(stderr, " %02x", read_buf_[i]);
-      // }
-      // fprintf(stderr, "\n");
-      buf_start_ = 0;
-      buf_end_ = bytes;
     }
 
     while (buf_start_ != buf_end_) {
