@@ -6,7 +6,6 @@
 #include <nav_msgs/OccupancyGrid.h>
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/LaserScan.h>
-#include <odometry_aggregator/OdometryArray.h>
 #include <LaserSimulator.h>
 #include <tf/tf.h>
 
@@ -69,7 +68,7 @@ void sim_pairs(rosbag::Bag *bag) {
   n.param("offset/pitch", pitch, 0.0);
   n.param("offset/yaw", yaw, 0.0);
 
-  btQuaternion quat;
+  tf::Quaternion quat;
   quat.setEuler(yaw, pitch, roll);
   quat.normalize();
 

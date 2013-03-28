@@ -4,7 +4,6 @@
 #include <nav_msgs/OccupancyGrid.h>
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/LaserScan.h>
-#include <odometry_aggregator/OdometryArray.h>
 #include <LaserSimulator.h>
 #include <tf/tf.h>
 
@@ -32,12 +31,6 @@ void handle_occupancy_grid(const nav_msgs::OccupancyGrid::ConstPtr& msg)
   map_set = true;
 }
 
-void handle_odom_array(const odometry_aggregator::OdometryArray::ConstPtr& msg)
-{
-  boost::mutex::scoped_lock(sim_mutex);
-  sim.UpdateOdometryArray(*msg);
-}
-
 void publish(const ros::TimerEvent&) {
   boost::mutex::scoped_lock(sim_mutex);
   sim.GetScan(msg.ranges);
@@ -51,7 +44,6 @@ int main(int argc, char **argv)
 
   ros::Subscriber odom_sub = n.subscribe("odom", 1, handle_odometry);
   ros::Subscriber grid_sub = n.subscribe("map", 1, handle_occupancy_grid);
-  ros::Subscriber agg_sub = n.subscribe("odom_array", 1, handle_odom_array);
 
   pub = n.advertise<sensor_msgs::LaserScan>("scan", 1);
 
@@ -66,7 +58,7 @@ int main(int argc, char **argv)
   n.param("offset/pitch", pitch, 0.0);
   n.param("offset/yaw", yaw, 0.0);
 
-  btQuaternion quat;
+  tf::Quaternion quat;
   quat.setEuler(yaw, pitch, roll);
   quat.normalize();
 

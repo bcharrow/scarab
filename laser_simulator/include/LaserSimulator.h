@@ -7,7 +7,6 @@
 #include <ros/ros.h>
 #include <geometry_msgs/Pose.h>
 #include <nav_msgs/OccupancyGrid.h>
-#include <odometry_aggregator/OdometryArray.h>
 
 #include <CGAL/AABB_tree.h>
 #include <CGAL/AABB_traits.h>
@@ -32,7 +31,6 @@ public:
   void SetPose(const geometry_msgs::Pose& pose);
   void SetFrameID(const std::string& frame_id);
   void LoadOccupancyGrid(const nav_msgs::OccupancyGrid& map, double depth);
-  void UpdateOdometryArray(const odometry_aggregator::OdometryArray& odom_array);
   int LoadLaserModel(const ros::NodeHandle& n);
   void GetScan(std::vector<float>& ranges);
   void SetLaserOffset(const geometry_msgs::Pose& offset);

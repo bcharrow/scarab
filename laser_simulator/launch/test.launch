@@ -17,13 +17,6 @@
     <param name="initial0" value="-7.4 4.4 0.00"/>
   </node>
 
-  <!-- <node pkg="odometry_aggregator" name="aggregator" type="odometry_aggregator" -->
-  <!--       output="screen"> -->
-  <!--   <param name="count" value="1"/> -->
-  <!--   <param name="rate" value="1"/> -->
-  <!--   <remap from="~robot1/odom" to="/scarab1/odom"/> -->
-  <!-- </node> -->
-
   <node pkg="laser_simulator" name="laser_simulator" type="laser_simulator"
         output="screen">
     <remap from="~map" to="/map"/>

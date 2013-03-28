@@ -1,9 +1,0 @@
-<stack>
-  <description brief="scarab">scarab</description>
-  <author>Maintained by Nathan Michael</author>
-  <license>BSD</license>  
-  <review status="unreviewed" notes=""/>
-  <url>http://ros.org/wiki/scarab</url>
-  <depend stack="ros" />
-  <depend stack="rvo" />
-</stack>

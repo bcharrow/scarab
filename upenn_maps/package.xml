@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<package>
+  <name>upenn_maps</name>
+  <version>0.0.0</version>
+  <description>The upenn_maps package</description>
+
+  <maintainer email="bcharrow@seas.upenn.edu">bcharrow</maintainer>
+  <license>TODO</license>
+  <buildtool_depend>catkin</buildtool_depend>
+</package>
