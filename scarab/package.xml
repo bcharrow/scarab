@@ -16,6 +16,7 @@
   <run_depend>roboclaw</run_depend>
   <run_depend>scarab_launch</run_depend>
   <run_depend>upenn_maps</run_depend>
+  <run_depend>mesh80211s</run_depend>
 
   <export>
     <metapackage/>

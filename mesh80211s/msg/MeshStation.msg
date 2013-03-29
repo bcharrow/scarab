@@ -1,0 +1,12 @@
+string mac
+string device
+uint32 inactive_time
+uint32 rx_bytes
+uint32 rx_packets
+uint32 tx_bytes
+uint32 tx_packets
+int32 signal
+uint16 tx_bitrate
+uint16 llid
+uint16 plid
+string plink
