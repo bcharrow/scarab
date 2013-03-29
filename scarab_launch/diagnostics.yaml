@@ -8,6 +8,10 @@ analyzers:
         type: GenericAnalyzer
         path: Laser
         regex: 'scarab40.*laser.*'
+      batteries:
+        type: GenericAnalyzer
+        path: Batteries
+        regex: 'scarab40.*Battery.*'
 
   Scarab41:
     type: AnalyzerGroup
@@ -17,6 +21,10 @@ analyzers:
         type: GenericAnalyzer
         path: Laser
         regex: 'scarab41.*laser.*'
+      batteries:
+        type: GenericAnalyzer
+        path: Batteries
+        regex: 'scarab41.*Battery.*'
 
   Scarab42:
     type: AnalyzerGroup
@@ -26,6 +34,10 @@ analyzers:
         type: GenericAnalyzer
         path: Laser
         regex: 'scarab42.*laser.*'
+      batteries:
+        type: GenericAnalyzer
+        path: Batteries
+        regex: 'scarab42.*Battery.*'
 
   Scarab43:
     type: AnalyzerGroup
@@ -35,6 +47,10 @@ analyzers:
         type: GenericAnalyzer
         path: Laser
         regex: 'scarab43.*laser.*'
+      batteries:
+        type: GenericAnalyzer
+        path: Batteries
+        regex: 'scarab43.*Battery.*'
 
   Scarab44:
     type: AnalyzerGroup
@@ -44,6 +60,10 @@ analyzers:
         type: GenericAnalyzer
         path: Laser
         regex: 'scarab44.*laser.*'
+      batteries:
+        type: GenericAnalyzer
+        path: Batteries
+        regex: 'scarab44.*Battery.*'
 
   Scarab45:
     type: AnalyzerGroup
@@ -53,3 +73,7 @@ analyzers:
         type: GenericAnalyzer
         path: Laser
         regex: 'scarab45.*laser.*'
+      batteries:
+        type: GenericAnalyzer
+        path: Batteries
+        regex: 'scarab45.*Battery.*'

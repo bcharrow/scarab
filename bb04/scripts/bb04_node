@@ -29,7 +29,7 @@ def parse_checksum(line):
         line = line[:-3]
     else:
         checksum = None
-    
+
     return line
 
 def parse_line(line):
@@ -43,7 +43,7 @@ def parse_line(line):
     line = parse_checksum(line)
 
     # This will fail to split properly if the message has commas in it
-    
+
     split = line.split(',')
     items = {}
     for key, val in zip(split[1::2], split[2::2]):
@@ -60,13 +60,13 @@ def parse_sys_line(line):
         return None
 
     items = parse_line(line)
-    
+
     sys_data = {}
     sys_data['mins_left'] = int(items['01'], 16)
     sys_data['active'] = active_bits(int(items['02'], 16))
     sys_data['msg'] = items['03'] if '03' in items else None
 
-    return SysData(**sys_data)    
+    return SysData(**sys_data)
 
 
 ControllerData = collections.namedtuple(
@@ -78,7 +78,7 @@ def parse_ctl_line(line):
     """
     if not line.startswith('$C'):
         return None
-    
+
     items = parse_line(line)
 
     ctl = {}
@@ -93,6 +93,7 @@ def parse_ctl_line(line):
     ctl['charge_inhibited'] = conv(items['07'])
 
     return ControllerData(**ctl)
+
 
 
 
@@ -116,27 +117,56 @@ class Battery(object):
               (0x0010, 'FULLY_DISCHARGED')]
 
     # Dictionary mapping bytes to attribute names and constructor, see update()
-    CONVERSIONS = {'08': ('temp_degC', lambda x: int(x, 16) * 0.1 - 273.15),
-                   '09': ('voltage_mV', lambda x: int(x, 16)),
-                   '0A': ('current_mA', lambda x: int(x, 16)),
-                   '0D': ('relativeCharge_pct', lambda x: int(x, 16)),
-                   '13': ('avgTimeToFull_min', lambda x: int(x, 16)),
-                   '16': ('status_msgs',
-                          lambda bits: [msg for code, msg in Battery.STATUS
-                                          if int(bits, 16) & code])
-                   }
-    
+    fromhex = lambda x: int(x, 16)
+    ident = lambda x: x
+    CONVERSIONS = {
+        '00': ("Manufacturer access", ident),
+        '01': ("Remaining Capacity Alarm", ident),
+        '02': ("Remaining Time Alarm (min)", fromhex),
+        '03': ("Battery Mode", fromhex),
+        '04': ("At Rate (mA)", fromhex),
+        '05': ("At Rate Time To Full (min)", fromhex),
+        '06': ("At Rate Time To Empty (min)", fromhex),
+        '07': ("At Rate OK", lambda: bool(fromhex(x))),
+        '08': ('Temperature (deg C)', lambda x: int(x, 16) * 0.1 - 273.15),
+        '09': ('Voltage (mV)', fromhex),
+        '0A': ('Current (mA)', fromhex),
+        '0B': ("Average Current (mA)", fromhex),
+        '0C': ("Max Error (%)", fromhex),
+        '0D': ('Relative State of Charge (%)', fromhex),
+        '0E': ("Absolute State of Charge (%)", fromhex),
+        '0F': ("Remaining Capacity (mAh)", fromhex),
+        '10': ("Full Charge Capacity (mAh)", fromhex),
+        '11': ("Run Time To Empty (min)", fromhex),
+        '12': ("Avg. Time To Empty (min)", fromhex),
+        '13': ('Avg. Time to Full (min)', fromhex),
+        '16': ('Status', lambda bits: [msg for code, msg in Battery.STATUS
+                                       if int(bits, 16) & code]),
+        '17': ('Cycle count (cycle)', fromhex),
+        '18': ("Design Capacity (mAh)", fromhex),
+        '19': ("Design Voltage (mV)", fromhex),
+        '1a': ("Specification Info", ident),
+        '1b': ("Manufacture Date", ident),
+        '1c': ("Serial Number", fromhex),
+        '20': ("Manufacture Name", ident),
+        '21': ("Device Name", ident),
+        '22': ("Device Chemistry", ident),
+        '23': ("Manufacture Data", ident)
+        }
+
     def __init__(self, controller_id, battery_id, attrs = None):
         if attrs is None:
             attrs = {}
-            
+            for code, (attr, func) in Battery.CONVERSIONS.iteritems():
+                attrs[attr] = '--'
+
         self._ctrl_id = controller_id
         self._bat_id = battery_id
         self._attrs = attrs
 
     @property
     def id(self): return self._bat_id
-    
+
     def update(self, line):
         """
         Update the state of the battery given a battery status line.
@@ -153,7 +183,7 @@ class Battery(object):
         bat_id = int(line[3], 16)
         if bat_id != self._bat_id:
             raise Exception('Bad battery number')
-        
+
         items = parse_line(line)
 
         for code, val in items.iteritems():
@@ -165,19 +195,19 @@ class Battery(object):
 
     def attrs(self):
         return dict(self._attrs)
-    
+
     def __repr__(self):
         fmt_str = "Battery(controller_id = %s, battery_id = %s, attrs = %s"
         return fmt_str % (self._ctrl_id, self._bat_id,
                           pprint.pformat(self._attrs))
-    
+
 def run():
-    rospy.init_node('bb04_monitor')    
+    rospy.init_node('bb04_monitor')
 
     portname = rospy.get_param('~port', '/dev/bb04')
-    
+
     pub = rospy.Publisher('/diagnostics', DiagnosticArray)
-    
+
     ser = serial.Serial(portname, 19200, timeout = 1,
                         parity = serial.PARITY_NONE,
                         stopbits = serial.STOPBITS_ONE,
@@ -185,22 +215,24 @@ def run():
     # Start getting data
     ser.write('x')
 
+    namespace = rospy.get_namespace()[1:]
+
     # Map from (controller, id) to Battery
     batteries = {}
     while True:
         ser.flushInput()
         lines = ser.readlines()
-    
+
         if len(lines) == 0:
             continue
 
         sys_data = parse_sys_line(lines[0])
         if sys_data is None:
-            rospy.logwarn("Problem parsing system line: '%s'" % lines[0])
+            rospy.loginfo("IBPS: Problem parsing system line: '%s'" % lines[0])
             continue
         control_data = parse_ctl_line(lines[1])
         if control_data is None:
-            rospy.logwarn("Problem parsing control line: '%s'" % lines[1])
+            rospy.loginfo("IBPS: Problem parsing control line: '%s'" % lines[1])
             continue
 
         rospy.logdebug(sys_data)
@@ -224,8 +256,8 @@ def run():
         message = (('%s minutes left' % sys_data.mins_left)
                    if sys_data.mins_left != 9999 else 'Charging')
         sys_diag = DiagnosticStatus(
-            name = "Battery Monitor (BB04)",
-            hardware_id = "BB04-%i" % control_data.id,
+            name = "%sBattery Monitor" % namespace,
+            hardware_id = "%sBB04-%i" % (namespace, control_data.id),
             message = message,
             level = (DiagnosticStatus.OK if sys_data.mins_left > 10
                      else DiagnosticStatus.WARN))
@@ -236,24 +268,26 @@ def run():
 
         diags.append(sys_diag)
 
-        for battery in batteries.values():            
+        for battery in batteries.values():
             if battery.id not in control_data.present:
                 continue
 
             attrs = battery.attrs()
+            if 'REMAINING_TIME_ALARM' in attrs.setdefault('Status'):
+                bat_level = DiagnosticStatus.WARN
+            else:
+                bat_level = DiagnosticStatus.OK
+
             batt_diag = DiagnosticStatus(
-                name = "Battery %s" % battery.id,
-                hardware_id = "Battery %s" % battery.id,
-                message = '%s%% Charged' % (
-                    attrs.setdefault('relativeCharge_pct', '--')),
-                level = DiagnosticStatus.OK)
+                name = "%sBattery %s" % (namespace, battery.id),
+                hardware_id = "%sBattery %s" % (namespace, battery.id),
+                message = '%s%% Charged' % attrs['Relative State of Charge (%)'],
+                level = bat_level)
             batt_diag.values.extend(KeyValue(key, str(value)) for key, value in
                                     battery.attrs().items())
             diags.append(batt_diag)
-        
-        
+
         pub.publish(DiagnosticArray(status = diags))
-        
         rospy.logdebug(pprint.pformat(batteries.values()))
 
 if __name__ == "__main__":
