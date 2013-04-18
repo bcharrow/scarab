@@ -5,11 +5,11 @@ analyzers:
     path: Scarab40
     analyzers:
       laser:
-        type: GenericAnalyzer
+        type: diagnostic_aggregator/GenericAnalyzer
         path: Laser
         regex: 'scarab40.*laser.*'
       batteries:
-        type: GenericAnalyzer
+        type: diagnostic_aggregator/GenericAnalyzer
         path: Batteries
         regex: 'scarab40.*Battery.*'
 
@@ -18,11 +18,11 @@ analyzers:
     path: Scarab41
     analyzers:
       laser:
-        type: GenericAnalyzer
+        type: diagnostic_aggregator/GenericAnalyzer
         path: Laser
         regex: 'scarab41.*laser.*'
       batteries:
-        type: GenericAnalyzer
+        type: diagnostic_aggregator/GenericAnalyzer
         path: Batteries
         regex: 'scarab41.*Battery.*'
 
@@ -31,11 +31,11 @@ analyzers:
     path: Scarab42
     analyzers:
       laser:
-        type: GenericAnalyzer
+        type: diagnostic_aggregator/GenericAnalyzer
         path: Laser
         regex: 'scarab42.*laser.*'
       batteries:
-        type: GenericAnalyzer
+        type: diagnostic_aggregator/GenericAnalyzer
         path: Batteries
         regex: 'scarab42.*Battery.*'
 
@@ -44,11 +44,11 @@ analyzers:
     path: Scarab43
     analyzers:
       laser:
-        type: GenericAnalyzer
+        type: diagnostic_aggregator/GenericAnalyzer
         path: Laser
         regex: 'scarab43.*laser.*'
       batteries:
-        type: GenericAnalyzer
+        type: diagnostic_aggregator/GenericAnalyzer
         path: Batteries
         regex: 'scarab43.*Battery.*'
 
@@ -57,11 +57,11 @@ analyzers:
     path: Scarab44
     analyzers:
       laser:
-        type: GenericAnalyzer
+        type: diagnostic_aggregator/GenericAnalyzer
         path: Laser
         regex: 'scarab44.*laser.*'
       batteries:
-        type: GenericAnalyzer
+        type: diagnostic_aggregator/GenericAnalyzer
         path: Batteries
         regex: 'scarab44.*Battery.*'
 
@@ -70,10 +70,10 @@ analyzers:
     path: Scarab45
     analyzers:
       laser:
-        type: GenericAnalyzer
+        type: diagnostic_aggregator/GenericAnalyzer
         path: Laser
         regex: 'scarab45.*laser.*'
       batteries:
-        type: GenericAnalyzer
+        type: diagnostic_aggregator/GenericAnalyzer
         path: Batteries
         regex: 'scarab45.*Battery.*'

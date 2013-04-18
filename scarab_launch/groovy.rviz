@@ -79,7 +79,7 @@ Visualization Manager:
           Min Intensity: 0
           Name: Scan
           Position Transformer: XYZ
-          Queue Size: 1
+          Queue Size: 10
           Selectable: true
           Size (Pixels): 3
           Size (m): 0.08
@@ -132,7 +132,7 @@ Visualization Manager:
           Min Intensity: 0
           Name: Scan
           Position Transformer: XYZ
-          Queue Size: 1
+          Queue Size: 10
           Selectable: true
           Size (Pixels): 3
           Size (m): 0.08
@@ -185,7 +185,7 @@ Visualization Manager:
           Min Intensity: 0
           Name: Scan
           Position Transformer: XYZ
-          Queue Size: 1
+          Queue Size: 10
           Selectable: true
           Size (Pixels): 3
           Size (m): 0.08
@@ -238,7 +238,7 @@ Visualization Manager:
           Min Intensity: 0
           Name: Scan
           Position Transformer: XYZ
-          Queue Size: 1
+          Queue Size: 10
           Selectable: true
           Size (Pixels): 3
           Size (m): 0.08
@@ -291,7 +291,7 @@ Visualization Manager:
           Min Intensity: 0
           Name: Scan
           Position Transformer: XYZ
-          Queue Size: 1
+          Queue Size: 10
           Selectable: true
           Size (Pixels): 3
           Size (m): 0.08
@@ -344,7 +344,7 @@ Visualization Manager:
           Min Intensity: 0
           Name: Scan
           Position Transformer: XYZ
-          Queue Size: 1
+          Queue Size: 10
           Selectable: true
           Size (Pixels): 3
           Size (m): 0.08

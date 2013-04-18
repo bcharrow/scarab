@@ -6,7 +6,7 @@
   <arg name="diag_rate" default="0.4" />
 
   <node name="tf_throttle_$(env ROS_HOSTNAME)" pkg="topic_tools" type="throttle"
-        args="bytes /$(env ROS_HOSTNAME)/tf 1024 1.0 /tf" />
+        args="bytes /$(env ROS_HOSTNAME)/tf 1024 0.5 /tf" />
 
   <group ns="$(env ROS_HOSTNAME)" >
     <param name="tf_prefix" value="$(env ROS_HOSTNAME)" />

@@ -330,14 +330,6 @@ public:
     odom_state.twist.twist.angular.z = state.w;
 
     odom_pub.publish(odom_state);
-
-    tf::Transform transform;
-    transform.setOrigin(tf::Vector3(x_, y_, 0));
-    transform.setRotation(tf::createQuaternionFromYaw(th_));
-    broadcaster.sendTransform(tf::StampedTransform(transform,
-                                                   ros::Time(odom_state.header.stamp),
-                                                   odom_state.header.frame_id,
-                                                   odom_state.child_frame_id));
   }
 
   // Integrate odometry given motor's current speed
@@ -367,6 +359,18 @@ public:
     last_vel_update = now;
   }
 
+  void broadcastTf() {
+    boost::mutex::scoped_lock lock(state_mutex_);
+
+    tf::Transform transform;
+    transform.setOrigin(tf::Vector3(x_, y_, 0));
+    transform.setRotation(tf::createQuaternionFromYaw(th_));
+    broadcaster.sendTransform(tf::StampedTransform(transform,
+                                                   ros::Time(odom_state.header.stamp),
+                                                   odom_state.header.frame_id,
+                                                   odom_state.child_frame_id));
+  }
+
   void ReconfigureCallback(roboclaw::RoboclawConfig &config, uint32_t level) {
     {
       boost::mutex::scoped_lock lock(state_mutex_);
@@ -390,6 +394,10 @@ public:
 
   void Spin() {
     double curr_freq = freq_;
+    ros::Timer tf_timer =
+      node_.createTimer(ros::Duration(0.1),
+                        boost::bind(&RoboClawNode::broadcastTf, this));
+
     ros::Rate r(curr_freq);
     while (node_.ok()) {
       {
