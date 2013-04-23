@@ -3,9 +3,9 @@
   <arg name="init" default="false" />
   <include file="$(find scarab_launch)/scarab.launch" />
   
-  <group ns="$(env ROS_HOSTNAME)" >
+  <group ns="$(env ROS_NAMESPACE)" >
     <remap from="/tf" to="tf" />
-    <param name="tf_prefix" value="$(env ROS_HOSTNAME)" />
+    <param name="tf_prefix" value="$(env ROS_NAMESPACE)" />
 
     <node name="map_server" pkg="map_server" type="map_server" output="screen"
           args="$(find upenn_maps)/maps/levine_towne_map.yaml">

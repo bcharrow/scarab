@@ -122,5 +122,5 @@ def run(name, trials = 1, distance = 0.75):
     print "Odometry Dist. Total Error:  %0.2f" % odom_err_ttl
 
 if __name__ == "__main__":
-    name = rospy.resolve_name(os.getenv('ROS_HOSTNAME'))
+    name = rospy.resolve_name(os.getenv('ROS_NAMESPACE'))
     run(name)

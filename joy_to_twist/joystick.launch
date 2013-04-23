@@ -1,12 +1,12 @@
 <launch>
-  <include file="$(find acroname_moto)/scarabs.xml" />
-  <include file="$(find acroname_moto)/remote.launch" />
-  <node name="joy" pkg="joy" type="joy_node" />
-  <node name="joy_to_twist" pkg="joy_to_twist" type="joy_to_twist" >
-    <param name="wmax" value="5.0" type="double" />
-    <param name="vmax" value="5.0" type="double" /> 
-    <remap from="~/twist" to="/motor/cmd_vel" />
-    <remap from="~/joy" to="/joy" />
-  </node>
-  
+  <group ns="$(env ROS_NAMESPACE)">
+    <node name="joy" pkg="joy" type="joy_node" />
+    <node name="joy_to_twist" pkg="joy_to_twist" type="joy_to_twist"
+          output="screen" >
+      <param name="wmax" value="0.6" type="double" />
+      <param name="vmax" value="0.20" type="double" />
+      <remap from="~/twist" to="motor/cmd_vel" />
+      <remap from="~/joy" to="joy" />
+    </node>
+  </group>
 </launch>
