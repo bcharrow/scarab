@@ -5,14 +5,19 @@
   -->
   <arg name="diag_rate" default="0.4" />
 
-  <node name="tf_throttle_$(env ROS_NAMESPACE)" pkg="topic_tools" type="throttle"
-        args="bytes /$(env ROS_NAMESPACE)/tf 1024 0.5 /tf" />
-
   <group ns="$(env ROS_NAMESPACE)" >
+    <node name="tf_throttle_$(env ROS_NAMESPACE)" pkg="tf_throttle" type="tf_throttle"
+          output="screen" args="/$(env ROS_NAMESPACE)/tf 5 /tf" >
+      <param name="republish_time" value="0.0" />
+      <param name="use_diff" value="false" />
+      <param name="angular_change_threshold" value="0.1" />
+      <param name="linear_change_threshold" value="0.3" />
+    </node>
+    
     <param name="tf_prefix" value="/$(env ROS_NAMESPACE)" />
     <remap from="/tf" to="tf" />
     <node pkg="tf" type="static_transform_publisher" name="transformer"
-          args="0 0 0.0 0 0 0 base laser 500" />
+          args="0.0 0.0 0.0 0.0 0.0 0.0 base laser 500" />
 
     <node name="laser" pkg="hokuyo_node" type="hokuyo_node" output="screen">
       <param name="cluster" value="1" />
