@@ -15,6 +15,7 @@
 #include "roboclaw/RoboclawConfig.h"
 #include "roboclaw/motor_state.h"
 #include "RoboClaw.h"
+#include "pid.h"
 
 using namespace std;
 
@@ -22,17 +23,21 @@ class DifferentialDriver {
 public:
   explicit DifferentialDriver(const ros::NodeHandle &node) :
     nh_(node), claw_(NULL), ser_(NULL), serial_errs_(0)  {
-    nh_.param("axle_width", axle_width_, 0.255);
+    nh_.param("axle_width", axle_width_, 0.28);
     nh_.param("max_wheel_vel", max_wheel_vel_, 0.8);
     nh_.param("min_wheel_vel", min_wheel_vel_, 0.00);
     nh_.param("accel_max", accel_max_, 1.0);
-    nh_.param("wheel_diam", wheel_diam_, 0.1);
+    nh_.param("wheel_diam", wheel_diam_, 0.085);
     nh_.param("quad_pulse_per_motor_rev", quad_pulse_per_motor_rev_, 2000.0);
-    nh_.param("motor_to_wheel_ratio", motor_to_wheel_ratio_, 40.0);
-    nh_.param("pid_param_p", pid_p_, 15000);
-    nh_.param("pid_param_i", pid_i_, 0x0250);
-    nh_.param("pid_param_d", pid_d_, 500);
-    nh_.param("pid_qpps", pid_qpps_, 300000);
+    nh_.param("motor_to_wheel_ratio", motor_to_wheel_ratio_, 33.0);
+    nh_.param("pid_p", pid_p_, 0.9);
+    nh_.param("pid_i", pid_i_, 3.0);
+    nh_.param("pid_d", pid_d_, 0.1);
+    nh_.param("pid_iclamp", pid_iclamp_, 500.0);
+    if (pid_iclamp_ < 0.0 || pid_p_ < 0.0 || pid_i_ < 0.0 || pid_d_ < 0.0) {
+      ROS_ERROR("PID parameters must be non-negative");
+      ROS_BREAK();
+    }
     nh_.param("left_sign", left_sign_, -1);
     nh_.param("right_sign", right_sign_, 1);
     nh_.param("portname", portname_, std::string("/dev/roboclaw"));
@@ -48,28 +53,37 @@ public:
 
     pub_ = nh_.advertise<roboclaw::motor_state>("motor_state", 5);
     setVel(0.0, 0.0);
+
+    duty_per_qpps_ = 512.0 / 300000;
   }
 
   ~DifferentialDriver() {
     if (claw_ != NULL) {
-      setVel(0.0, 0.0);
+      claw_->DutyM1(address_, 0);
+      claw_->DutyM2(address_, 0);
     }
   }
 
   void setupClaw() {
-    ROS_INFO("Setting PID params: P=%i I=%i D=%i QPPS=%i",
-             pid_p_, pid_i_, pid_d_, pid_qpps_);
-    claw_->SetM1Constants(address_, pid_d_, pid_p_, pid_i_, pid_qpps_);
-    claw_->SetM2Constants(address_, pid_d_, pid_p_, pid_i_, pid_qpps_);
+    ROS_INFO("Setting PID params: P=%f I=%f D=%f ICLAMP=%f",
+             pid_p_, pid_i_, pid_d_, pid_iclamp_);
+    last_cmd_time_ = ros::Time();
+    pid_left_.initPid(pid_p_, pid_i_, pid_d_, pid_iclamp_, -pid_iclamp_);
+    pid_right_.initPid(pid_p_, pid_i_, pid_d_, pid_iclamp_, -pid_iclamp_);
   }
 
   void ReconfigureCallback(roboclaw::RoboclawConfig &config, uint32_t level) {
     if (config.pid_p != pid_p_ || config.pid_i != pid_i_ ||
-        config.pid_d != pid_d_ || config.pid_qpps != pid_qpps_) {
+        config.pid_d != pid_d_ || config.pid_iclamp != pid_iclamp_) {
       pid_p_ = config.pid_p;
       pid_i_ = config.pid_i;
       pid_d_ = config.pid_d;
-      pid_qpps_ = config.pid_qpps;
+      if (config.pid_iclamp <= 1e-3 || pid_i_ < 1e-3) {
+        pid_iclamp_ = 0.0;
+        pid_i_ = 0.0;
+      } else {
+        pid_iclamp_ = config.pid_iclamp;
+      }
       setupClaw();
     }
 
@@ -124,6 +138,24 @@ public:
 
   // Command motors to a given linear and angular velocity
   void setVel(double v, double w) {
+    double wmag = abs(w);
+    double vmag = abs(v);
+    if (vmag < 0.1) {
+      if (wmag < 0.15) {
+        w = 0.0;
+      } else if (wmag < 0.5) {
+        w = copysign(0.5, w);
+      }
+    }
+
+    // Reset error terms if large change in velocities or stopping.
+    // TODO: these thresholds should be ros params
+    if (abs(state_.v_sp - v) > 0.1 || abs(state_.w_sp - w) > 0.3 ||
+        (vmag < 0.01 && wmag < 0.01)) {
+      pid_left_.reset();
+      pid_right_.reset();
+    }
+
     state_.v_sp = v;
     state_.w_sp = w;
 
@@ -135,21 +167,8 @@ public:
     state_.right_qpps_sp =
       static_cast<int32_t>(round(state_.right_sp * quad_pulse_per_meter_));
 
-    try {
-      claw_->SpeedAccelM1(address_, accel_max_quad_, state_.left_qpps_sp);
-    } catch (USBSerial::Exception &e) {
-      ROS_WARN("Problem with SpeecAccel on motor 1 (error=%s)", e.what());
-      serialError();
-      return;
-    }
-
-    try {
-      claw_->SpeedAccelM2(address_, accel_max_quad_, state_.right_qpps_sp);
-    } catch (USBSerial::Exception &e) {
-      ROS_WARN("Problem with SpeecAccel on motor 2 (error=%s)", e.what());
-      serialError();
-      return;
-    }
+    state_.left_duty_sp = state_.left_qpps_sp * duty_per_qpps_;
+    state_.right_duty_sp = state_.right_qpps_sp * duty_per_qpps_;
 
     pub_.publish(state_);
   }
@@ -201,6 +220,60 @@ public:
 
     state_.v = (state_.right + state_.left) / 2.0;
     state_.w = (state_.right - state_.left) / axle_width_;
+
+    // Determine new control input for motors
+    double prev_left = state_.left_duty;
+    double prev_right = state_.right_duty;
+    if (last_cmd_time_ != ros::Time()) {
+      double left_error_duty = (state_.left_qpps_sp - state_.left_qpps) *
+        duty_per_qpps_;
+      double right_error_duty = (state_.right_qpps_sp - state_.right_qpps) *
+        duty_per_qpps_;
+
+      ros::Duration dur = ros::Time::now() - last_cmd_time_;
+
+      double left_duty, right_duty;
+      left_duty = pid_left_.updatePid(left_error_duty, dur);
+      right_duty = pid_right_.updatePid(right_error_duty, dur);
+
+      state_.left_duty = state_.left_duty_sp - left_duty;
+      state_.right_duty = state_.right_duty_sp - right_duty;
+
+      pid_left_.getCurrentPIDErrors(&state_.left_pid_pe, &state_.left_pid_ie,
+                                    &state_.left_pid_de);
+      pid_right_.getCurrentPIDErrors(&state_.right_pid_pe,
+                                     &state_.right_pid_ie,
+                                     &state_.right_pid_de);
+    }
+    if (state_.left_qpps_sp == 0) {
+      state_.left_duty = 0;
+    }
+    if (state_.right_qpps_sp == 0) {
+      state_.right_duty = 0;
+    }
+    if (abs(state_.left_duty) > 500.0) {
+      state_.left_duty = copysign(500.0, state_.left_duty);
+    }
+    if (abs(state_.right_duty) > 500.0) {
+      state_.right_duty = copysign(500.0, state_.right_duty);
+    }
+
+    double dlimit = 20;
+    double left_diff = state_.left_duty - prev_left;
+    if (abs(left_diff) > dlimit) {
+      state_.left_duty = prev_left + copysign(dlimit, left_diff);
+    }
+
+    double right_diff = state_.right_duty - prev_right;
+    if (abs(right_diff) > dlimit) {
+      state_.right_duty = prev_right + copysign(dlimit, right_diff);
+    }
+
+
+    claw_->DutyM1(address_, state_.left_duty);
+    claw_->DutyM2(address_, state_.right_duty);
+    last_cmd_time_ = ros::Time::now();
+
     // ROS_INFO_STREAM("" << state_);
     pub_.publish(state_);
   }
@@ -265,7 +338,7 @@ private:
   double accel_max_;
   // Quad pulse per second when motor is at 100%
   int pid_qpps_;
-  int pid_p_, pid_i_, pid_d_;
+  double pid_p_, pid_i_, pid_d_, pid_iclamp_;
   // +1 if positive means forward, -1 if positive means backwards
   int left_sign_, right_sign_;
   // Static values computed based on params
@@ -275,6 +348,13 @@ private:
   uint32_t accel_max_quad_;
   // Current state of motors
   roboclaw::motor_state state_;
+
+  Pid pid_left_, pid_right_;
+  ros::Time last_cmd_time_;
+  ros::Time last_d_time_;
+  double duty_per_qpps_;
+  double set_duty_left_, set_duty_right_;
+  double d_error_;
 };
 
 
@@ -343,17 +423,14 @@ public:
       return;
     }
 
-    // cosine/sine taylor-expanded integrated expression
-    double dx,dy,dth;
-    dx = state.v * (dt - (state.w*state.w) * (dt*dt*dt) / 6.0);
-    dy = state.v * (state.w*dt*dt/2.0
-                    -(state.w*state.w*state.w)*
-                    (dt*dt*dt*dt)/24.0);
+    double dx, dy, dth;
+    dx = state.v * dt * cos(th_);
+    dy = state.v * dt * sin(th_);
     dth = state.w * dt;
 
     // now add to the current estimate
-    x_ += dx*cos(th_) - dy*sin(th_);
-    y_ += dx*sin(th_) + dy*cos(th_);
+    x_ += dx;
+    y_ += dy;
     th_ += dth;
 
     last_vel_update = now;
@@ -395,7 +472,7 @@ public:
   void Spin() {
     double curr_freq = freq_;
     ros::Timer tf_timer =
-      node_.createTimer(ros::Duration(0.1),
+      node_.createTimer(ros::Duration(0.05),
                         boost::bind(&RoboClawNode::broadcastTf, this));
 
     ros::Rate r(curr_freq);

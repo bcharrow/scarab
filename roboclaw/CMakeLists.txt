@@ -17,7 +17,7 @@ catkin_package(CATKIN_DEPENDS
 
 include_directories(${catkin_INCLUDE_DIRS})
 
-add_library(roboclaw src/RoboClaw.cpp)
+add_library(roboclaw src/RoboClaw.cpp src/pid.cpp)
 target_link_libraries(roboclaw ${LIBUSB1_LDFLAGS} ${roscpp_LIBRARIES})
 
 add_executable(roboclaw_enc_demo src/enc_demo.cpp)

@@ -1,3 +1,7 @@
+float64 left_duty_sp
+float64 left_duty
+float64 right_duty_sp
+float64 right_duty
 int32 left_qpps_sp
 int32 left_qpps
 int32 right_qpps_sp
@@ -10,3 +14,9 @@ float64 v_sp
 float64 v
 float64 w_sp
 float64 w
+float64 left_pid_pe
+float64 left_pid_ie
+float64 left_pid_de
+float64 right_pid_pe
+float64 right_pid_ie
+float64 right_pid_de
