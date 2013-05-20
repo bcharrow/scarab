@@ -38,6 +38,18 @@ public:
       ROS_ERROR("PID parameters must be non-negative");
       ROS_BREAK();
     }
+    nh_.param("pid_error_reset_v_step_threshold",
+              pid_error_reset_v_step_threshold_, 0.1);
+    nh_.param("pid_error_reset_w_step_threshold",
+              pid_error_reset_w_step_threshold_, 0.3);
+    nh_.param("pid_error_reset_min_v", pid_error_reset_min_v_, 0.01);
+    nh_.param("pid_error_reset_min_w", pid_error_reset_min_w_, 0.01);
+    if (pid_error_reset_v_step_threshold_ < 0.0 ||
+        pid_error_reset_w_step_threshold_ < 0.0 ||
+        pid_error_reset_min_v_ < 0.0 || pid_error_reset_min_w_ < 0.0) {
+      ROS_ERROR("PID error reset thresholds must be non-negative");
+      ROS_BREAK();
+    }
     nh_.param("left_sign", left_sign_, -1);
     nh_.param("right_sign", right_sign_, 1);
     nh_.param("portname", portname_, std::string("/dev/roboclaw"));
@@ -99,6 +111,11 @@ public:
     double motor_rev_per_meter = motor_to_wheel_ratio_ / (M_PI * wheel_diam_);
     quad_pulse_per_meter_ = quad_pulse_per_motor_rev_ * motor_rev_per_meter;
     accel_max_quad_ = accel_max_ * quad_pulse_per_meter_;
+
+    pid_error_reset_v_step_threshold_ = config.pid_error_reset_v_step_threshold;
+    pid_error_reset_w_step_threshold_ = config.pid_error_reset_w_step_threshold;
+    pid_error_reset_min_v_ = config.pid_error_reset_min_v;
+    pid_error_reset_min_w_ = config.pid_error_reset_min_w;
   }
 
   // Convert linear / angular velocity to left / right motor speeds in meters /
@@ -138,8 +155,8 @@ public:
 
   // Command motors to a given linear and angular velocity
   void setVel(double v, double w) {
-    double wmag = abs(w);
-    double vmag = abs(v);
+    double wmag = fabs(w);
+    double vmag = fabs(v);
     if (vmag < 0.1) {
       if (wmag < 0.15) {
         w = 0.0;
@@ -149,9 +166,9 @@ public:
     }
 
     // Reset error terms if large change in velocities or stopping.
-    // TODO: these thresholds should be ros params
-    if (abs(state_.v_sp - v) > 0.1 || abs(state_.w_sp - w) > 0.3 ||
-        (vmag < 0.01 && wmag < 0.01)) {
+    if (fabs(state_.v_sp - v) > pid_error_reset_v_step_threshold_ || 
+        fabs(state_.w_sp - w) > pid_error_reset_w_step_threshold_ ||
+        (vmag < pid_error_reset_min_v_ && wmag < pid_error_reset_min_w_)) {
       pid_left_.reset();
       pid_right_.reset();
     }
@@ -355,6 +372,12 @@ private:
   double duty_per_qpps_;
   double set_duty_left_, set_duty_right_;
   double d_error_;
+
+  // Threshold values for resetting the PID error terms
+  double pid_error_reset_v_step_threshold_;
+  double pid_error_reset_w_step_threshold_;
+  double pid_error_reset_min_v_;
+  double pid_error_reset_min_w_;
 };
 
 
