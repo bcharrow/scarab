@@ -4,7 +4,8 @@
   <version>0.0.0</version>
   <description>The mesh80211s package</description>
   <maintainer email="bcharrow@seas.upenn.edu">bcharrow</maintainer>
-  <license>BSD</license>
+  <author>Nathan Michael</author>
+  <license>GPLv3</license>
 
   <buildtool_depend>catkin</buildtool_depend>
 
