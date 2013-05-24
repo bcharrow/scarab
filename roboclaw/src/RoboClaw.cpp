@@ -521,11 +521,42 @@ bool RoboClaw::ReadBuffers(uint8_t address, uint8_t &depth1, uint8_t &depth2) {
   return valid;
 }
 
-bool RoboClaw::ReadCurrents(uint8_t address, uint8_t &current1, uint8_t &current2) {
+uint32_t RoboClaw::Read4(uint8_t address, uint8_t cmd, bool *valid) {
+  uint8_t send[2] = {address, cmd};
+  ser_->Write(send, 2);
+
+  uint8_t crc = address;
+  crc+=cmd;
+
+  uint32_t value;
+  uint8_t data = read();
+  crc+=data;
+  value=(uint32_t)data<<24;
+
+  data = read();
+  crc+=data;
+  value|=(uint32_t)data<<16;
+
+  data = read();
+  crc+=data;
+  value|=(uint32_t)data<<8;
+
+  data = read();
+  crc+=data;
+  value|=(uint32_t)data;
+
+  data = read();
+  if(valid)
+    *valid = ((crc&0x7F)==data);
+
+  return value;
+}
+
+bool RoboClaw::ReadCurrents(uint8_t address, int16_t &current1, int16_t &current2) {
   bool valid;
-  uint16_t value = Read2(address,GETCURRENTS,&valid);
+  uint32_t value = Read4(address,GETCURRENTS,&valid);
   if(valid) {
-    current1 = value>>8;
+    current1 = value>>16;
     current2 = value;
   }
   return valid;

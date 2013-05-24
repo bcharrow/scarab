@@ -145,7 +145,7 @@ public:
   void SpeedAccelDistanceM2(uint8_t address, uint32_t accel, uint32_t speed, uint32_t distance, uint8_t flag=0);
   void SpeedAccelDistanceM1M2(uint8_t address, uint32_t accel, uint32_t speed1, uint32_t distance1, uint32_t speed2, uint32_t distance2, uint8_t flag=0);
   bool ReadBuffers(uint8_t address, uint8_t &depth1, uint8_t &depth2);
-  bool ReadCurrents(uint8_t address, uint8_t &current1, uint8_t &current2);
+  bool ReadCurrents(uint8_t address, int16_t &current1, int16_t &current2);
   void SpeedAccelM1M2_2(uint8_t address, uint32_t accel1, uint32_t speed1, uint32_t accel2, uint32_t speed2);
   void SpeedAccelDistanceM1M2_2(uint8_t address, uint32_t accel1, uint32_t speed1, uint32_t distance1, uint32_t accel2, uint32_t speed2, uint32_t distance2, uint8_t flag=0);
   void DutyAccelM1(uint8_t address, uint16_t duty, uint16_t accel);
@@ -159,8 +159,9 @@ public:
 
 private:
   USBSerial *ser_;
-  uint32_t Read4_1(uint8_t address, uint8_t cmd, uint8_t *status,bool *valid);
-  uint16_t Read2(uint8_t address,uint8_t cmd,bool *valid);
+  uint32_t Read4(uint8_t address, uint8_t cmd, bool *valid);
+  uint32_t Read4_1(uint8_t address, uint8_t cmd, uint8_t *status, bool *valid);
+  uint16_t Read2(uint8_t address, uint8_t cmd, bool *valid);
 
   // Send variable length data to serial device with CRC.  Varargs are
   // interpreted as individual bytes

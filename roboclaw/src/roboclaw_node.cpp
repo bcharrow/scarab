@@ -23,40 +23,35 @@ class DifferentialDriver {
 public:
   explicit DifferentialDriver(const ros::NodeHandle &node) :
     nh_(node), claw_(NULL), ser_(NULL), serial_errs_(0)  {
-    nh_.param("axle_width", axle_width_, 0.28);
+    // Robot kinematics
+    nh_.param("axle_width", axle_width_, 0.255); // 0.28
+    nh_.param("wheel_diam", wheel_diam_, 0.10); // 0.085
+    nh_.param("quad_pulse_per_motor_rev", quad_pulse_per_motor_rev_, 2000.0);
+    nh_.param("motor_to_wheel_ratio", motor_to_wheel_ratio_, 38.35); // 33.0
+    double motor_rev_per_meter = motor_to_wheel_ratio_ / (M_PI * wheel_diam_);
+    quad_pulse_per_meter_ = quad_pulse_per_motor_rev_ * motor_rev_per_meter;
+
+    // Controller
     nh_.param("max_wheel_vel", max_wheel_vel_, 0.8);
     nh_.param("min_wheel_vel", min_wheel_vel_, 0.00);
     nh_.param("accel_max", accel_max_, 1.0);
-    nh_.param("wheel_diam", wheel_diam_, 0.085);
-    nh_.param("quad_pulse_per_motor_rev", quad_pulse_per_motor_rev_, 2000.0);
-    nh_.param("motor_to_wheel_ratio", motor_to_wheel_ratio_, 33.0);
+    accel_max_quad_ = accel_max_ * quad_pulse_per_meter_;
     nh_.param("pid_p", pid_p_, 0.9);
     nh_.param("pid_i", pid_i_, 3.0);
     nh_.param("pid_d", pid_d_, 0.1);
     nh_.param("pid_iclamp", pid_iclamp_, 500.0);
-    if (pid_iclamp_ < 0.0 || pid_p_ < 0.0 || pid_i_ < 0.0 || pid_d_ < 0.0) {
-      ROS_ERROR("PID parameters must be non-negative");
-      ROS_BREAK();
-    }
     nh_.param("pid_error_reset_v_step_threshold",
               pid_error_reset_v_step_threshold_, 0.1);
     nh_.param("pid_error_reset_w_step_threshold",
               pid_error_reset_w_step_threshold_, 0.3);
     nh_.param("pid_error_reset_min_v", pid_error_reset_min_v_, 0.01);
     nh_.param("pid_error_reset_min_w", pid_error_reset_min_w_, 0.01);
-    if (pid_error_reset_v_step_threshold_ < 0.0 ||
-        pid_error_reset_w_step_threshold_ < 0.0 ||
-        pid_error_reset_min_v_ < 0.0 || pid_error_reset_min_w_ < 0.0) {
-      ROS_ERROR("PID error reset thresholds must be non-negative");
-      ROS_BREAK();
-    }
+
+    // Hardware parameters
     nh_.param("left_sign", left_sign_, -1);
     nh_.param("right_sign", right_sign_, 1);
     nh_.param("portname", portname_, std::string("/dev/roboclaw"));
     nh_.param("address", address_, 0x80);
-    double motor_rev_per_meter = motor_to_wheel_ratio_ / (M_PI * wheel_diam_);
-    quad_pulse_per_meter_ = quad_pulse_per_motor_rev_ * motor_rev_per_meter;
-    accel_max_quad_ = accel_max_ * quad_pulse_per_meter_;
 
     ser_.reset(new USBSerial());
     openUsb();
@@ -71,20 +66,25 @@ public:
 
   ~DifferentialDriver() {
     if (claw_ != NULL) {
-      claw_->DutyM1(address_, 0);
-      claw_->DutyM2(address_, 0);
+      claw_->DutyM1M2(address_, 0, 0);
     }
   }
 
   void setupClaw() {
     ROS_INFO("Setting PID params: P=%f I=%f D=%f ICLAMP=%f",
              pid_p_, pid_i_, pid_d_, pid_iclamp_);
+    if (pid_iclamp_ < 0.0 || pid_p_ < 0.0 || pid_i_ < 0.0 || pid_d_ < 0.0) {
+      ROS_ERROR("PID parameters must be non-negative");
+      ROS_BREAK();
+    }
     last_cmd_time_ = ros::Time();
     pid_left_.initPid(pid_p_, pid_i_, pid_d_, pid_iclamp_, -pid_iclamp_);
     pid_right_.initPid(pid_p_, pid_i_, pid_d_, pid_iclamp_, -pid_iclamp_);
   }
 
   void ReconfigureCallback(roboclaw::RoboclawConfig &config, uint32_t level) {
+    ROS_INFO("Updating RoboClaw params");
+    // Pid
     if (config.pid_p != pid_p_ || config.pid_i != pid_i_ ||
         config.pid_d != pid_d_ || config.pid_iclamp != pid_iclamp_) {
       pid_p_ = config.pid_p;
@@ -99,23 +99,25 @@ public:
       setupClaw();
     }
 
-    ROS_INFO("Updating wheel & motor params");
-    quad_pulse_per_motor_rev_ = config.quad_pulse_per_motor_rev;
+    // Kinematics
     motor_to_wheel_ratio_ = config.motor_to_wheel_ratio;
     wheel_diam_ = config.wheel_diam;
+    axle_width_ = config.axle_width;
+    quad_pulse_per_motor_rev_ = config.quad_pulse_per_motor_rev;
+
+    // Controller
     accel_max_ = config.accel_max;
     min_wheel_vel_ = config.min_wheel_vel;
     max_wheel_vel_ = config.max_wheel_vel;
-    axle_width_ = config.axle_width;
-
-    double motor_rev_per_meter = motor_to_wheel_ratio_ / (M_PI * wheel_diam_);
-    quad_pulse_per_meter_ = quad_pulse_per_motor_rev_ * motor_rev_per_meter;
-    accel_max_quad_ = accel_max_ * quad_pulse_per_meter_;
 
     pid_error_reset_v_step_threshold_ = config.pid_error_reset_v_step_threshold;
     pid_error_reset_w_step_threshold_ = config.pid_error_reset_w_step_threshold;
     pid_error_reset_min_v_ = config.pid_error_reset_min_v;
     pid_error_reset_min_w_ = config.pid_error_reset_min_w;
+
+    double motor_rev_per_meter = motor_to_wheel_ratio_ / (M_PI * wheel_diam_);
+    quad_pulse_per_meter_ = quad_pulse_per_motor_rev_ * motor_rev_per_meter;
+    accel_max_quad_ = accel_max_ * quad_pulse_per_meter_;
   }
 
   // Convert linear / angular velocity to left / right motor speeds in meters /
@@ -148,22 +150,20 @@ public:
     } if (fabs(*right_mps) < min_wheel_vel_) {
       *right_mps = 0.0;
     }
-
-    *right_mps *= right_sign_;
-    *left_mps *= left_sign_;
   }
 
   // Command motors to a given linear and angular velocity
-  void setVel(double v, double w) {
+  void setVel(double v, double w, bool publish = false) {
     double wmag = fabs(w);
     double vmag = fabs(v);
+    /* Limit slow turning when you have no forward velocity
     if (vmag < 0.1) {
       if (wmag < 0.15) {
         w = 0.0;
       } else if (wmag < 0.5) {
         w = copysign(0.5, w);
       }
-    }
+    }*/
 
     // Reset error terms if large change in velocities or stopping.
     if (fabs(state_.v_sp - v) > pid_error_reset_v_step_threshold_ || 
@@ -177,21 +177,22 @@ public:
     state_.w_sp = w;
 
     vwToWheelSpeed(v, w, &state_.left_sp, &state_.right_sp);
-
     // Convert speeds to quad pulses per second
     state_.left_qpps_sp =
       static_cast<int32_t>(round(state_.left_sp * quad_pulse_per_meter_));
     state_.right_qpps_sp =
       static_cast<int32_t>(round(state_.right_sp * quad_pulse_per_meter_));
 
+    // Compute kinematic feedforward control input
     state_.left_duty_sp = state_.left_qpps_sp * duty_per_qpps_;
     state_.right_duty_sp = state_.right_qpps_sp * duty_per_qpps_;
 
-    pub_.publish(state_);
+    if (publish) {
+      pub_.publish(state_);
+    }
   }
 
-  // Read actual speed of motors and update state
-  void update() {
+  void readMotorState() {
     uint8_t status;
     int32_t speed;
     bool valid;
@@ -208,7 +209,7 @@ public:
     // Instead it looks like the device sends -EPROTO=-71 and the cdc_acm
     // driver eats that and doesn't update the file descriptor we're talking to
     if (valid && (status == 0 || status == 1)) {
-      state_.left_qpps = speed;
+      state_.left_qpps = left_sign_ * speed;
     } else {
       ROS_WARN("Invalid data from motor 1");
       serialError();
@@ -224,7 +225,7 @@ public:
     }
 
     if (valid && (status == 0 || status == 1)) {
-      state_.right_qpps = speed;
+      state_.right_qpps = right_sign_ * speed;
     } else {
       ROS_WARN("Invalid data from motor 2");
       serialError();
@@ -232,11 +233,16 @@ public:
     }
 
     // Convert qpps to meters / second
-    state_.right = right_sign_ * state_.right_qpps / quad_pulse_per_meter_;
-    state_.left = left_sign_ * state_.left_qpps / quad_pulse_per_meter_;
+    state_.right = state_.right_qpps / quad_pulse_per_meter_;
+    state_.left = state_.left_qpps / quad_pulse_per_meter_;
 
     state_.v = (state_.right + state_.left) / 2.0;
     state_.w = (state_.right - state_.left) / axle_width_;
+  }
+
+  // Read actual speed of motors and update state
+  void update() {
+    readMotorState();
 
     // Determine new control input for motors
     double prev_left = state_.left_duty;
@@ -286,9 +292,8 @@ public:
       state_.right_duty = prev_right + copysign(dlimit, right_diff);
     }
 
-
-    claw_->DutyM1(address_, state_.left_duty);
-    claw_->DutyM2(address_, state_.right_duty);
+    claw_->DutyM1M2(address_, left_sign_*state_.left_duty,
+                              right_sign_*state_.right_duty);
     last_cmd_time_ = ros::Time::now();
 
     // ROS_INFO_STREAM("" << state_);
@@ -409,7 +414,7 @@ public:
     ROS_DEBUG("Got cmd_vel: %2.2f %2.2f", input->linear.x, input->angular.z);
     {
       boost::mutex::scoped_lock lock(driver_mutex_);
-      driver_->setVel(input->linear.x, input->angular.z);
+      driver_->setVel(input->linear.x, input->angular.z, true);
     }
   }
 
