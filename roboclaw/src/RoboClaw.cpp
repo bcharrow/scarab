@@ -472,7 +472,7 @@ void RoboClaw::SpeedM2(uint8_t address, uint32_t speed) {
 }
 
 void RoboClaw::SpeedM1M2(uint8_t address, uint32_t speed1, uint32_t speed2) {
-  write_n(10,address,M1SPEED,SetDWORDval(speed1),SetDWORDval(speed2));
+  write_n(10,address,MIXEDSPEED,SetDWORDval(speed1),SetDWORDval(speed2));
 }
 
 void RoboClaw::SpeedAccelM1(uint8_t address, uint32_t accel, uint32_t speed) {
@@ -484,7 +484,7 @@ void RoboClaw::SpeedAccelM2(uint8_t address, uint32_t accel, uint32_t speed) {
 }
 
 void RoboClaw::SpeedAccelM1M2(uint8_t address, uint32_t accel, uint32_t speed1, uint32_t speed2) {
-  write_n(10,address,MIXEDSPEEDACCEL,SetDWORDval(accel),SetDWORDval(speed1),SetDWORDval(speed2));
+  write_n(14,address,MIXEDSPEEDACCEL,SetDWORDval(accel),SetDWORDval(speed1),SetDWORDval(speed2));
 }
 
 void RoboClaw::SpeedDistanceM1(uint8_t address, uint32_t speed, uint32_t distance, uint8_t flag) {
@@ -508,7 +508,7 @@ void RoboClaw::SpeedAccelDistanceM2(uint8_t address, uint32_t accel, uint32_t sp
 }
 
 void RoboClaw::SpeedAccelDistanceM1M2(uint8_t address, uint32_t accel, uint32_t speed1, uint32_t distance1, uint32_t speed2, uint32_t distance2, uint8_t flag) {
-  write_n(23,address,M1SPEEDACCELDIST,SetDWORDval(accel),SetDWORDval(speed1),SetDWORDval(distance1),SetDWORDval(speed2),SetDWORDval(distance2),flag);
+  write_n(23,address,MIXEDSPEEDACCELDIST,SetDWORDval(accel),SetDWORDval(speed1),SetDWORDval(distance1),SetDWORDval(speed2),SetDWORDval(distance2),flag);
 }
 
 bool RoboClaw::ReadBuffers(uint8_t address, uint8_t &depth1, uint8_t &depth2) {
@@ -580,6 +580,57 @@ void RoboClaw::DutyAccelM2(uint8_t address, uint16_t duty, uint16_t accel) {
 
 void RoboClaw::DutyAccelM1M2(uint8_t address, uint16_t duty1, uint16_t accel1, uint16_t duty2, uint16_t accel2) {
   write_n(10,address,MIXEDDUTY,SetWORDval(duty1),SetWORDval(accel1),SetWORDval(duty2),SetWORDval(accel2));
+}
+
+uint32_t RoboClaw::Read_uint32(uint8_t &crc) {
+  uint32_t value;
+  uint8_t data = read();
+  crc+=data;
+  value=(uint32_t)data<<24;
+
+  data = read();
+  crc+=data;
+  value|=(uint32_t)data<<16;
+
+  data = read();
+  crc+=data;
+  value|=(uint32_t)data<<8;
+
+  data = read();
+  crc+=data;
+  value|=(uint32_t)data;
+  
+  return value;
+}
+
+bool RoboClaw::ReadPIDM1(uint8_t address, uint32_t &p, uint32_t &i, uint32_t &d, uint32_t &qpps) {
+  uint8_t crc;
+  write(address);
+  crc=address;
+  write(GETM1PID);
+  crc+=GETM1PID;
+
+  p = Read_uint32(crc);
+  i = Read_uint32(crc);
+  d = Read_uint32(crc);
+  qpps = Read_uint32(crc);
+
+  return ((crc&0x7F)==read());
+}
+
+bool RoboClaw::ReadPIDM2(uint8_t address, uint32_t &p, uint32_t &i, uint32_t &d, uint32_t &qpps) {
+  uint8_t crc;
+  write(address);
+  crc=address;
+  write(GETM2PID);
+  crc+=GETM2PID;
+
+  p = Read_uint32(crc);
+  i = Read_uint32(crc);
+  d = Read_uint32(crc);
+  qpps = Read_uint32(crc);
+
+  return ((crc&0x7F)==read());
 }
 
 uint8_t RoboClaw::ReadError(uint8_t address,bool *valid) {

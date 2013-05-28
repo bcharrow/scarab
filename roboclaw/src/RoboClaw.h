@@ -94,6 +94,8 @@ class RoboClaw {
         M1DUTYACCEL = 52,
         M2DUTYACCEL = 53,
         MIXEDDUTYACCEL = 54,
+        GETM1PID = 55,
+        GETM2PID = 56,
         GETERROR = 90,
         WRITENVM = 94};
 public:
@@ -151,6 +153,8 @@ public:
   void DutyAccelM1(uint8_t address, uint16_t duty, uint16_t accel);
   void DutyAccelM2(uint8_t address, uint16_t duty, uint16_t accel);
   void DutyAccelM1M2(uint8_t address, uint16_t duty1, uint16_t accel1, uint16_t duty2, uint16_t accel2);
+  bool ReadPIDM1(uint8_t address, uint32_t &p, uint32_t &i, uint32_t &d, uint32_t &qpps);
+  bool ReadPIDM2(uint8_t address, uint32_t &p, uint32_t &i, uint32_t &d, uint32_t &qpps);
   uint8_t ReadError(uint8_t address,bool *valid=NULL);
   void WriteNVM(uint8_t address);
   void SetPWM(uint8_t address, uint8_t resolution);
@@ -162,6 +166,7 @@ private:
   uint32_t Read4(uint8_t address, uint8_t cmd, bool *valid);
   uint32_t Read4_1(uint8_t address, uint8_t cmd, uint8_t *status, bool *valid);
   uint16_t Read2(uint8_t address, uint8_t cmd, bool *valid);
+  uint32_t Read_uint32(uint8_t &crc);
 
   // Send variable length data to serial device with CRC.  Varargs are
   // interpreted as individual bytes
