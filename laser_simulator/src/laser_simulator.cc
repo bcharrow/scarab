@@ -23,6 +23,7 @@
 #include <nav_msgs/OccupancyGrid.h>
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/LaserScan.h>
+#include <pose_aggregator/PoseStampedNamedArray.h>
 #include <LaserSimulator.h>
 #include <tf/tf.h>
 
@@ -50,6 +51,12 @@ void handle_occupancy_grid(const nav_msgs::OccupancyGrid::ConstPtr& msg)
   map_set = true;
 }
 
+void handle_pose_array(const pose_aggregator::PoseStampedNamedArray::ConstPtr& msg)
+{
+  boost::mutex::scoped_lock(sim_mutex);
+  sim.UpdatePoseArray(*msg);
+} 
+
 void publish(const ros::TimerEvent&) {
   boost::mutex::scoped_lock(sim_mutex);
   sim.GetScan(msg.ranges);
@@ -63,6 +70,7 @@ int main(int argc, char **argv)
 
   ros::Subscriber odom_sub = n.subscribe("odom", 1, handle_odometry);
   ros::Subscriber grid_sub = n.subscribe("map", 1, handle_occupancy_grid);
+  ros::Subscriber agg_sub = n.subscribe("pose_array", 1, handle_pose_array); 
 
   pub = n.advertise<sensor_msgs::LaserScan>("scan", 1);
 

@@ -158,6 +158,7 @@ int LaserSimulator::LoadLaserModel(const ros::NodeHandle& n)
       XmlRpc::XmlRpcValue t;
       
       n.getParam("types", t);
+      
       if (t.getType() != XmlRpc::XmlRpcValue::TypeArray) 
         {
           ROS_ERROR("types parameter needs to be an array");
@@ -390,74 +391,74 @@ void LaserSimulator::GetScan(std::vector<float>& ranges)
   return;
 }
 
-// void LaserSimulator::UpdateOdometryArray(const odometry_aggregator::OdometryArray& odom_array)
-// {
-//   std::list<Triangle> dynamic_triangles;
+void LaserSimulator::UpdatePoseArray(const pose_aggregator::PoseStampedNamedArray& pose_array)
+{
+  std::list<Triangle> dynamic_triangles;
 
-//   for (unsigned int i = 0; i < odom_array.array.size(); ++i)
-//     {
-//       if (odom_array.array[i].child_frame_id == frame_id)
-//         continue;
+  for (unsigned int i = 0; i < pose_array.poses.size(); ++i)
+  {
+    if (pose_array.poses[i].child_frame_id == frame_id)
+      continue;
 
-//       if (models.count(odom_array.array[i].child_frame_id) == 0)
-//         {
-//           printf("%s: Unknown model in odom_array message (%s) - skipping\n",
-//                  ros::this_node::getName().c_str(), 
-//                  odom_array.array[i].child_frame_id.c_str());
-//           continue;
-//         }
+    if (models.count(pose_array.poses[i].child_frame_id) == 0)
+      {
+        printf("%s: Unknown model in odom_array message (%s) - skipping\n",
+               ros::this_node::getName().c_str(), 
+               pose_array.poses[i].child_frame_id.c_str());
+        continue;
+      }
 
-//       double x_delta = 0.5*models[odom_array.array[i].child_frame_id]->xdim;
-//       double y_delta = 0.5*models[odom_array.array[i].child_frame_id]->ydim;
-//       double z_delta = 0.5*models[odom_array.array[i].child_frame_id]->zdim;
+    double x_delta = 0.5*models[pose_array.poses[i].child_frame_id]->xdim;
+    double y_delta = 0.5*models[pose_array.poses[i].child_frame_id]->ydim;
+    double z_delta = 0.5*models[pose_array.poses[i].child_frame_id]->zdim;
 
-//       double center_x = odom_array.array[i].pose.pose.position.x;
-//       double center_y = odom_array.array[i].pose.pose.position.y;
-//       double center_z = odom_array.array[i].pose.pose.position.z;
+    double center_x = pose_array.poses[i].pose.position.x;
+    double center_y = pose_array.poses[i].pose.position.y;
+    double center_z = pose_array.poses[i].pose.position.z;
 
-//       double dxm = center_x - x_delta;
-//       double dxp = center_x + x_delta;
+    double dxm = center_x - x_delta;
+    double dxp = center_x + x_delta;
 
-//       double dym = center_y - y_delta;
-//       double dyp = center_y + y_delta;
+    double dym = center_y - y_delta;
+    double dyp = center_y + y_delta;
 
-//       double dzm = center_z - z_delta;
-//       double dzp = center_z + z_delta;
-      
-//       Point face_1_1(dxm, dyp, dzm);
-//       Point face_1_2(dxm, dym, dzm);
-//       Point face_1_3(dxm, dym, dzp);
-//       Point face_1_4(dxm, dyp, dzp);
-            
-//       dynamic_triangles.push_back(Triangle(face_1_1, face_1_3, face_1_4));
-//       dynamic_triangles.push_back(Triangle(face_1_1, face_1_2, face_1_3));
+    double dzm = center_z - z_delta;
+    double dzp = center_z + z_delta;
 
-//       Point face_2_1(dxm, dym, dzm);
-//       Point face_2_2(dxp, dym, dzm);
-//       Point face_2_3(dxp, dym, dzp);
-//       Point face_2_4(dxm, dym, dzp);
-            
-//       dynamic_triangles.push_back(Triangle(face_2_1, face_2_3, face_2_4));
-//       dynamic_triangles.push_back(Triangle(face_2_1, face_2_2, face_2_3));
+    Point face_1_1(dxm, dyp, dzm);
+    Point face_1_2(dxm, dym, dzm);
+    Point face_1_3(dxm, dym, dzp);
+    Point face_1_4(dxm, dyp, dzp);
 
-//       Point face_3_1(dxp, dym, dzm);
-//       Point face_3_2(dxp, dyp, dzm);
-//       Point face_3_3(dxp, dyp, dzp);
-//       Point face_3_4(dxp, dym, dzp);
-      
-//       dynamic_triangles.push_back(Triangle(face_3_1, face_3_3, face_3_4));
-//       dynamic_triangles.push_back(Triangle(face_3_1, face_3_2, face_3_3));
+    dynamic_triangles.push_back(Triangle(face_1_1, face_1_3, face_1_4));
+    dynamic_triangles.push_back(Triangle(face_1_1, face_1_2, face_1_3));
 
-//       Point face_4_1(dxp, dyp, dzm);
-//       Point face_4_2(dxm, dyp, dzm);
-//       Point face_4_3(dxm, dyp, dzp);
-//       Point face_4_4(dxp, dyp, dzp);
-            
-//       dynamic_triangles.push_back(Triangle(face_4_1, face_4_3, face_4_4));
-//       dynamic_triangles.push_back(Triangle(face_4_1, face_4_2, face_4_3));      
-//     }
+    Point face_2_1(dxm, dym, dzm);
+    Point face_2_2(dxp, dym, dzm);
+    Point face_2_3(dxp, dym, dzp);
+    Point face_2_4(dxm, dym, dzp);
 
-//   dynamic_tree.clear();
-//   if (dynamic_triangles.size() > 0)
-//     dynamic_tree.rebuild(dynamic_triangles.begin(), dynamic_triangles.end());   
-// }
+    dynamic_triangles.push_back(Triangle(face_2_1, face_2_3, face_2_4));
+    dynamic_triangles.push_back(Triangle(face_2_1, face_2_2, face_2_3));
+
+    Point face_3_1(dxp, dym, dzm);
+    Point face_3_2(dxp, dyp, dzm);
+    Point face_3_3(dxp, dyp, dzp);
+    Point face_3_4(dxp, dym, dzp);
+
+    dynamic_triangles.push_back(Triangle(face_3_1, face_3_3, face_3_4));
+    dynamic_triangles.push_back(Triangle(face_3_1, face_3_2, face_3_3));
+
+    Point face_4_1(dxp, dyp, dzm);
+    Point face_4_2(dxm, dyp, dzm);
+    Point face_4_3(dxm, dyp, dzp);
+    Point face_4_4(dxp, dyp, dzp);
+
+    dynamic_triangles.push_back(Triangle(face_4_1, face_4_3, face_4_4));
+    dynamic_triangles.push_back(Triangle(face_4_1, face_4_2, face_4_3));      
+  }
+
+  dynamic_tree.clear();
+  if (dynamic_triangles.size() > 0)
+    dynamic_tree.rebuild(dynamic_triangles.begin(), dynamic_triangles.end());   
+}

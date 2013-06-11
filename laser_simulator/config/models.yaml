@@ -1,6 +1,10 @@
 types:
-  - {id: "scarab", xdim: 0.2, ydim: 0.2, zdim: 0.5}
+  - {id: "scarab", xdim: 0.05, ydim: 0.05, zdim: 0.5}
 
 models:
-  - {id: "scarab1/base", type: "scarab"}
-  - {id: "scarab2/base", type: "scarab"}
+  - {id: "scarab40/base", type: "scarab"}
+  - {id: "scarab41/base", type: "scarab"}
+  - {id: "scarab42/base", type: "scarab"}
+  - {id: "scarab43/base", type: "scarab"}
+  - {id: "scarab44/base", type: "scarab"}
+  - {id: "scarab45/base", type: "scarab"}
