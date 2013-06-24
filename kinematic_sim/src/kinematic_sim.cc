@@ -29,8 +29,8 @@ private:
 
   double freq_, publish_freq_;
 
-  string odom_frame_id;
   string base_frame_id;
+  string odom_frame_id;
 
   ros::NodeHandle *node_;
   ros::Publisher odom_pub;
@@ -58,15 +58,24 @@ public:
     this->name = name;
     odom_pub = node_->advertise<nav_msgs::Odometry>("/"+name+"/odom", 100);
     amcl_pose_pub = 
-      node_->advertise<geometry_msgs::PoseWithCovarianceStamped>("/"+name+"/amcl_pose", 100);
+      node_->advertise<geometry_msgs::PoseWithCovarianceStamped>("/"+name+"/gt_pose", 100);
     cmd_vel_sub = node_->subscribe("/"+name+"/cmd_vel", 1, 
 				   &KinematicSimAgent::OnVelCmd, this);
 
-    odom_frame_id = name+string("/base");
-    base_frame_id = string("/map");
+    node_->param(string("base_frame_id"), base_frame_id, string("/base_link"));
+    node_->param(string("odom_frame_id"), odom_frame_id, string("/odom"));
 
-    state.header.frame_id = base_frame_id;
-    state.child_frame_id = odom_frame_id;
+    // ensure that frame id begins with / character
+    if (base_frame_id.compare(0, 1, "/", 1) != 0)
+      base_frame_id = string("/") + base_frame_id;
+    if (odom_frame_id.compare(0, 1, "/", 1) != 0)
+      odom_frame_id = string("/") + odom_frame_id;
+
+    base_frame_id = name + base_frame_id;
+    odom_frame_id = name + odom_frame_id;
+
+    state.header.frame_id = odom_frame_id;
+    state.child_frame_id = base_frame_id;
 
     node_->param("freq", freq_, 50.0);
     node_->param("publish_freq", publish_freq_, 10.0);
@@ -207,10 +216,10 @@ public:
     transform.setOrigin(tf::Vector3(this->x, this->y, 0));
     transform.setRotation(tf::createQuaternionFromYaw(this->th));
     broadcaster.sendTransform(tf::StampedTransform(transform, ros::Time(state.header.stamp), 
-                                                   base_frame_id, odom_frame_id));
+                                                   odom_frame_id, base_frame_id ));
 
     amcl_pose.header.stamp = ros::Time::now();
-    amcl_pose.header.frame_id = base_frame_id;
+    amcl_pose.header.frame_id = odom_frame_id;
 
     amcl_pose.pose.pose.position.x = this->x;
     amcl_pose.pose.pose.position.y = this->y;
