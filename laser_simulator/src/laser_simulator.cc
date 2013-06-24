@@ -44,17 +44,17 @@ void handle_odometry(const nav_msgs::Odometry::ConstPtr& odom)
 double depth = 0;
 bool map_set = false;
 
-void handle_occupancy_grid(const nav_msgs::OccupancyGrid::ConstPtr& msg)
+void handle_occupancy_grid(const nav_msgs::OccupancyGrid::ConstPtr& grid)
 {
   boost::mutex::scoped_lock(sim_mutex);
-  sim.LoadOccupancyGrid(*msg, depth);
+  sim.LoadOccupancyGrid(*grid, depth);
   map_set = true;
 }
 
-void handle_pose_array(const pose_aggregator::PoseStampedNamedArray::ConstPtr& msg)
+void handle_pose_array(const pose_aggregator::PoseStampedNamedArray::ConstPtr& pose)
 {
   boost::mutex::scoped_lock(sim_mutex);
-  sim.UpdatePoseArray(*msg);
+  sim.UpdatePoseArray(*pose);
 } 
 
 void publish(const ros::TimerEvent&) {
@@ -125,7 +125,8 @@ int main(int argc, char **argv)
   msg.angle_increment = sim.GetAngleIncrement();
   msg.range_min = sim.GetMinimumRange();
   msg.range_max = sim.GetMaximumRange();
-  msg.ranges.resize((msg.angle_max - msg.angle_min)/msg.angle_increment + 1);
+  msg.ranges.resize((msg.angle_max - msg.angle_min)
+                         /msg.angle_increment + 1);
   msg.intensities.resize(0);
   msg.scan_time = 0.001;
   msg.time_increment = msg.scan_time / sim.GetScanCount();
