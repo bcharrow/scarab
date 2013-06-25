@@ -19,7 +19,9 @@ class Stripper(object):
         pose = pose_msg.pose.pose
         msg = geometry_msgs.msg.PoseStamped(header = pose_msg.header,
                                             pose = pose)
-        msg.header.frame_id = '/map'
+        msg.header.frame_id = pose_msg.header.frame_id
+        if (msg.header.frame_id[0] != '/'):
+          msg.header.frame_id = "/" + msg.header.frame_id
         self._pub.publish(msg)
 
 def main():

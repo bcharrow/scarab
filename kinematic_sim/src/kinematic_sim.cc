@@ -32,24 +32,29 @@ private:
 
   string base_frame_id;
   string odom_frame_id;
+  string global_frame_id;
 
   ros::NodeHandle *node_;
   ros::Publisher odom_pub;
+  ros::Publisher gt_odom_pub;
   ros::Publisher amcl_pose_pub;
+  ros::Publisher gt_pose_pub;
   ros::Subscriber cmd_vel_sub;
   ros::Subscriber initialpose_sub;
 
   tf::TransformBroadcaster broadcaster;
-
 
   boost::recursive_mutex state_lock_;
   boost::recursive_mutex vw_lock_;
   string name;
 
 public:
-  double x, y, th, v, w;
+  double x, y, th, v, w; // odom position
+  double x_gt, y_gt, th_gt; // global position
   nav_msgs::Odometry state;
+  nav_msgs::Odometry gt_state;
   geometry_msgs::PoseWithCovarianceStamped amcl_pose;
+  geometry_msgs::PoseStamped gt_pose;
 
   // Constructor; need that
   KinematicSimAgent(ros::NodeHandle *node, const string &name="", 
@@ -58,8 +63,11 @@ public:
     this->node_ = node;
     this->name = name;
     odom_pub = node_->advertise<nav_msgs::Odometry>("/"+name+"/odom", 100);
+    gt_odom_pub = node_->advertise<nav_msgs::Odometry>("/"+name+"/gt_odom", 100);
     amcl_pose_pub = 
-      node_->advertise<geometry_msgs::PoseWithCovarianceStamped>("/"+name+"/gt_pose", 100);
+      node_->advertise<geometry_msgs::PoseWithCovarianceStamped>("/"+name+"/amcl_pose", 100);
+    gt_pose_pub =
+      node_->advertise<geometry_msgs::PoseStamped>("/"+name+"/gt_pose", 100);
     cmd_vel_sub = node_->subscribe("/"+name+"/cmd_vel", 1, 
 				   &KinematicSimAgent::OnVelCmd, this);
 	  initialpose_sub = node_->subscribe("/"+name+"/initialpose", 1, 
@@ -67,6 +75,7 @@ public:
 
     node_->param(string("base_frame_id"), base_frame_id, string("/base_link"));
     node_->param(string("odom_frame_id"), odom_frame_id, string("/odom"));
+    node_->param(string("global_frame_id"), global_frame_id, string("/map"));
 
     // ensure that frame id begins with / character
     if (base_frame_id.compare(0, 1, "/", 1) != 0)
@@ -79,6 +88,8 @@ public:
 
     state.header.frame_id = odom_frame_id;
     state.child_frame_id = base_frame_id;
+    gt_state.header.frame_id = global_frame_id;
+    gt_state.child_frame_id = base_frame_id;
 
     node_->param("freq", freq_, 50.0);
     node_->param("publish_freq", publish_freq_, 10.0);
@@ -96,9 +107,25 @@ public:
     state.twist.twist.angular.y = 0.0;
     state.twist.twist.angular.z = 0.0;
 
+    gt_state.pose.pose.position.x = 0.0;
+    gt_state.pose.pose.position.y = 0.0;
+    gt_state.pose.pose.position.z = 0.0;
+    gt_state.pose.pose.orientation = tf::createQuaternionMsgFromYaw(0.0);
+
+    gt_state.twist.twist.linear.x = 0.0;
+    gt_state.twist.twist.linear.y = 0.0;
+    gt_state.twist.twist.linear.z = 0.0;
+    gt_state.twist.twist.angular.x = 0.0;
+    gt_state.twist.twist.angular.y = 0.0;
+    gt_state.twist.twist.angular.z = 0.0;
+
     this->x = _x;
     this->y = _y;
     this->th = _th;
+
+    this->x_gt = _x;
+    this->y_gt = _y;
+    this->th_gt = _th;
 
     this->last_t=ros::WallTime::now().toSec();
 
@@ -169,6 +196,10 @@ public:
       this->y += dx*sin(this->th) + dy*cos(this->th);
       this->th += dth;
 
+      this->x_gt += dx*cos(this->th_gt) - dy*sin(this->th_gt);
+      this->y_gt += dx*sin(this->th_gt) + dy*cos(this->th_gt);
+      this->th_gt += dth;
+
       if(isnan(this->x)) {
 	ROS_ERROR("[Integrate] X is nan?!?");
 	ROS_ERROR_STREAM("[Integrate] [" << this->name << "] " << dx << ", " << dy << ", " << dth);
@@ -189,15 +220,26 @@ public:
     state.pose.pose.position.x = this->x; 
     state.pose.pose.position.y = this->y;
     state.pose.pose.orientation = tf::createQuaternionMsgFromYaw(this->th);
+
+    gt_state.pose.pose.position.x = this->x_gt;
+    gt_state.pose.pose.position.y = this->y_gt;
+    gt_state.pose.pose.orientation = tf::createQuaternionMsgFromYaw(this->th_gt);
     {
       boost::recursive_mutex::scoped_lock vwlock(vw_lock_);
       state.twist.twist.linear.x = this->v;
       state.twist.twist.angular.z = this->w;
+
+      gt_state.twist.twist.linear.x = this->v;
+      gt_state.twist.twist.angular.z = this->w;
     }
 
     state.header.stamp = ros::Time::now();
+    gt_state.header.stamp = ros::Time::now();
 
-    odom_pub.publish(state);
+    if (odom_pub.getNumSubscribers())
+      odom_pub.publish(state);
+    if (gt_odom_pub.getNumSubscribers())
+      gt_odom_pub.publish(gt_state);
 
     if(isnan(this->x)) {
       ROS_ERROR("X is nan?!?");
@@ -227,7 +269,17 @@ public:
     amcl_pose.pose.pose.position.x = this->x;
     amcl_pose.pose.pose.position.y = this->y;
     amcl_pose.pose.pose.orientation = tf::createQuaternionMsgFromYaw(this->th);
-    amcl_pose_pub.publish(amcl_pose);
+    if (amcl_pose_pub.getNumSubscribers())
+      amcl_pose_pub.publish(amcl_pose);
+
+    gt_pose.header.stamp = ros::Time::now();
+    gt_pose.header.frame_id = global_frame_id;
+
+    gt_pose.pose.position.x = this->x_gt;
+    gt_pose.pose.position.y = this->y_gt;
+    gt_pose.pose.orientation = tf::createQuaternionMsgFromYaw(this->th_gt);
+    if (gt_pose_pub.getNumSubscribers())
+      gt_pose_pub.publish(gt_pose);
   }
 
   void OnVelCmd(const geometry_msgs::TwistConstPtr &input) 
@@ -247,9 +299,9 @@ public:
     tf::Quaternion q;
     tf::quaternionMsgToTF(input->pose.pose.orientation, q);
 
-    this->x = input->pose.pose.position.x;
-    this->y = input->pose.pose.position.y;
-    this->th = tf::getYaw(q);
+    this->x_gt = input->pose.pose.position.x;
+    this->y_gt = input->pose.pose.position.y;
+    this->th_gt = tf::getYaw(q);
   }
 };
 
