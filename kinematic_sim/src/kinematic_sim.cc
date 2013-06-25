@@ -12,6 +12,7 @@
 #include "geometry_msgs/Twist.h"
 #include "geometry_msgs/PoseWithCovarianceStamped.h"
 #include "tf/transform_broadcaster.h"
+#include "tf/transform_datatypes.h"
 
 using namespace std;
 
@@ -36,7 +37,7 @@ private:
   ros::Publisher odom_pub;
   ros::Publisher amcl_pose_pub;
   ros::Subscriber cmd_vel_sub;
-
+  ros::Subscriber initialpose_sub;
 
   tf::TransformBroadcaster broadcaster;
 
@@ -61,6 +62,8 @@ public:
       node_->advertise<geometry_msgs::PoseWithCovarianceStamped>("/"+name+"/gt_pose", 100);
     cmd_vel_sub = node_->subscribe("/"+name+"/cmd_vel", 1, 
 				   &KinematicSimAgent::OnVelCmd, this);
+	  initialpose_sub = node_->subscribe("/"+name+"/initialpose", 1, 
+				   &KinematicSimAgent::OnInitialPose, this);
 
     node_->param(string("base_frame_id"), base_frame_id, string("/base_link"));
     node_->param(string("odom_frame_id"), odom_frame_id, string("/odom"));
@@ -237,6 +240,17 @@ public:
     this->w = input->angular.z;
   }
 
+  void OnInitialPose(const geometry_msgs::PoseWithCovarianceStampedConstPtr &input) 
+  {
+    ROS_DEBUG_STREAM("Recieved inital pose: " << input->pose.pose);
+
+    tf::Quaternion q;
+    tf::quaternionMsgToTF(input->pose.pose.orientation, q);
+
+    this->x = input->pose.pose.position.x;
+    this->y = input->pose.pose.position.y;
+    this->th = tf::getYaw(q);
+  }
 };
 
 void AgentIntegrate(KinematicSimAgent *agent)
