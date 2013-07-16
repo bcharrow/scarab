@@ -57,21 +57,21 @@ public:
   geometry_msgs::PoseStamped gt_pose;
 
   // Constructor; need that
-  KinematicSimAgent(ros::NodeHandle *node, const string &name="", 
-		    double _x=0.0, double _y=0.0, double _th=0.0)
+  KinematicSimAgent(ros::NodeHandle *node, const string &name="",
+        double _x=0.0, double _y=0.0, double _th=0.0)
   {
     this->node_ = node;
     this->name = name;
     odom_pub = node_->advertise<nav_msgs::Odometry>("/"+name+"/odom", 100);
     gt_odom_pub = node_->advertise<nav_msgs::Odometry>("/"+name+"/gt_odom", 100);
-    amcl_pose_pub = 
+    amcl_pose_pub =
       node_->advertise<geometry_msgs::PoseWithCovarianceStamped>("/"+name+"/amcl_pose", 100);
     gt_pose_pub =
       node_->advertise<geometry_msgs::PoseStamped>("/"+name+"/gt_pose", 100);
-    cmd_vel_sub = node_->subscribe("/"+name+"/cmd_vel", 1, 
-				   &KinematicSimAgent::OnVelCmd, this);
-	  initialpose_sub = node_->subscribe("/"+name+"/initialpose", 1, 
-				   &KinematicSimAgent::OnInitialPose, this);
+    cmd_vel_sub = node_->subscribe("/"+name+"/cmd_vel", 1,
+           &KinematicSimAgent::OnVelCmd, this);
+    initialpose_sub = node_->subscribe("/"+name+"/initialpose", 1,
+           &KinematicSimAgent::OnInitialPose, this);
 
     node_->param(string("base_frame_id"), base_frame_id, string("/base_link"));
     node_->param(string("odom_frame_id"), odom_frame_id, string("/odom"));
@@ -83,8 +83,8 @@ public:
     if (odom_frame_id.compare(0, 1, "/", 1) != 0)
       odom_frame_id = string("/") + odom_frame_id;
 
-    base_frame_id = name + base_frame_id;
-    odom_frame_id = name + odom_frame_id;
+    base_frame_id = "/" + name + base_frame_id;
+    odom_frame_id = "/" + name + odom_frame_id;
 
     state.header.frame_id = odom_frame_id;
     state.child_frame_id = base_frame_id;
@@ -93,7 +93,7 @@ public:
 
     node_->param("freq", freq_, 50.0);
     node_->param("publish_freq", publish_freq_, 10.0);
-    
+
     // odometry starts at zero
     state.pose.pose.position.x = 0.0;
     state.pose.pose.position.y = 0.0;
@@ -143,7 +143,7 @@ public:
     while(node_->ok())
       {
         PublishPosition();
-	rpub.sleep();
+  rpub.sleep();
       }
 
     return true;
@@ -155,8 +155,8 @@ public:
     ros::Rate r(this->freq_);
     while(node_->ok())
       {
-	IntegrateOdometry();
-	r.sleep();
+  IntegrateOdometry();
+  r.sleep();
       }
 
     return true;
@@ -187,9 +187,9 @@ public:
       boost::recursive_mutex::scoped_lock lock(state_lock_);
 
       if(isnan(this->x)) {
-	ROS_ERROR("[Integrate0] X is nan?!?");
-	ROS_ERROR_STREAM("[Integrate0] [" << this->name << "] " << v << ", " << w);
-	this->x = -1.0;
+  ROS_ERROR("[Integrate0] X is nan?!?");
+  ROS_ERROR_STREAM("[Integrate0] [" << this->name << "] " << v << ", " << w);
+  this->x = -1.0;
       }
 
       this->x += dx*cos(this->th) - dy*sin(this->th);
@@ -201,9 +201,9 @@ public:
       this->th_gt += dth;
 
       if(isnan(this->x)) {
-	ROS_ERROR("[Integrate] X is nan?!?");
-	ROS_ERROR_STREAM("[Integrate] [" << this->name << "] " << dx << ", " << dy << ", " << dth);
-	this->x = -1.0;
+  ROS_ERROR("[Integrate] X is nan?!?");
+  ROS_ERROR_STREAM("[Integrate] [" << this->name << "] " << dx << ", " << dy << ", " << dth);
+  this->x = -1.0;
       }
     }
 
@@ -217,7 +217,7 @@ public:
 
     //ROS_INFO_STREAM("[" << this->name << "] " << x << ", " << y << ", " << th);
 
-    state.pose.pose.position.x = this->x; 
+    state.pose.pose.position.x = this->x;
     state.pose.pose.position.y = this->y;
     state.pose.pose.orientation = tf::createQuaternionMsgFromYaw(this->th);
 
@@ -260,7 +260,7 @@ public:
     tf::Transform transform;
     transform.setOrigin(tf::Vector3(this->x, this->y, 0));
     transform.setRotation(tf::createQuaternionFromYaw(this->th));
-    broadcaster.sendTransform(tf::StampedTransform(transform, ros::Time(state.header.stamp), 
+    broadcaster.sendTransform(tf::StampedTransform(transform, ros::Time(state.header.stamp),
                                                    odom_frame_id, base_frame_id ));
 
     amcl_pose.header.stamp = ros::Time::now();
@@ -282,7 +282,7 @@ public:
       gt_pose_pub.publish(gt_pose);
   }
 
-  void OnVelCmd(const geometry_msgs::TwistConstPtr &input) 
+  void OnVelCmd(const geometry_msgs::TwistConstPtr &input)
   {
     ROS_DEBUG("Recieved velocity command: %f %f", input->linear.x, input->angular.z);
 
@@ -292,7 +292,7 @@ public:
     this->w = input->angular.z;
   }
 
-  void OnInitialPose(const geometry_msgs::PoseWithCovarianceStampedConstPtr &input) 
+  void OnInitialPose(const geometry_msgs::PoseWithCovarianceStampedConstPtr &input)
   {
     ROS_DEBUG_STREAM("Recieved inital pose: " << input->pose.pose);
 
@@ -324,14 +324,14 @@ private:
 
 public:
   ~KinematicSim()
-  { 
+  {
     for(map<string, KinematicSimAgent*>::iterator i=agents.begin();
-	i != agents.end();
-	++i)
+  i != agents.end();
+  ++i)
       {
-	delete integrate_threads[i->first];
-	delete publish_threads[i->first];
-	delete i->second;
+  delete integrate_threads[i->first];
+  delete publish_threads[i->first];
+  delete i->second;
       }
   }
 
@@ -362,22 +362,22 @@ public:
   void start()
   {
     for(map<string, KinematicSimAgent*>::iterator i=agents.begin();
-	i != agents.end();
-	++i)
+  i != agents.end();
+  ++i)
       {
-	integrate_threads.insert(make_pair(i->first, new boost::thread(AgentIntegrate, i->second)));
-	publish_threads.insert(make_pair(i->first, new boost::thread(AgentPublish, i->second)));
+  integrate_threads.insert(make_pair(i->first, new boost::thread(AgentIntegrate, i->second)));
+  publish_threads.insert(make_pair(i->first, new boost::thread(AgentPublish, i->second)));
       }
   }
 
   void stop()
   {
     for(map<string, KinematicSimAgent*>::iterator i=agents.begin();
-	i != agents.end();
-	++i)
+  i != agents.end();
+  ++i)
       {
-	integrate_threads[i->first]->join();
-	publish_threads[i->first]->join();
+  integrate_threads[i->first]->join();
+  publish_threads[i->first]->join();
       }
   }
 };
