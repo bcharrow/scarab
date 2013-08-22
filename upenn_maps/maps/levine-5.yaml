@@ -1,6 +1,7 @@
-image: levine_towne_nav.pgm
+image: levine-5.pgm
 resolution: 0.050000
-origin: [-12.55, -17.63, 0.0000]
+origin: [-14.20, -9.65, 0.0]
 negate: 0
 occupied_thresh: 0.65
 free_thresh: 0.196
+
