@@ -11,4 +11,4 @@ include_directories(${catkin_INCLUDE_DIRS})
 
 add_executable(pose_aggregator src/pose_aggregator_node.cpp)
 target_link_libraries(pose_aggregator ${catkin_LIBRARIES})
-
+add_dependencies(pose_aggregator ${PROJECT_NAME}_gencpp)
