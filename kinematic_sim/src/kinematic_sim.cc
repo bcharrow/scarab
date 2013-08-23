@@ -33,6 +33,7 @@ private:
   string base_frame_id;
   string odom_frame_id;
   string global_frame_id;
+  bool pub_global_frame_;
 
   ros::NodeHandle *node_;
   ros::Publisher odom_pub;
@@ -76,6 +77,7 @@ public:
     node_->param(string("base_frame_id"), base_frame_id, string("/base_link"));
     node_->param(string("odom_frame_id"), odom_frame_id, string("/odom"));
     node_->param(string("global_frame_id"), global_frame_id, string("/map"));
+    node_->param("pub_global_frame", pub_global_frame_, false);
 
     // ensure that frame id begins with / character
     if (base_frame_id.compare(0, 1, "/", 1) != 0)
@@ -262,6 +264,10 @@ public:
     transform.setRotation(tf::createQuaternionFromYaw(this->th));
     broadcaster.sendTransform(tf::StampedTransform(transform, ros::Time(state.header.stamp),
                                                    odom_frame_id, base_frame_id ));
+    if (pub_global_frame_) {
+      broadcaster.sendTransform(tf::StampedTransform(tf::Transform::getIdentity(), ros::Time(state.header.stamp),
+                                                     global_frame_id, odom_frame_id));
+    }
 
     amcl_pose.header.stamp = ros::Time::now();
     amcl_pose.header.frame_id = odom_frame_id;
