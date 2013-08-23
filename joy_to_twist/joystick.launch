@@ -5,7 +5,7 @@
           output="screen" >
       <param name="wmax" value="0.6" type="double" />
       <param name="vmax" value="0.20" type="double" />
-      <remap from="~/twist" to="motor/cmd_vel" />
+      <remap from="~/twist" to="cmd_vel" />
       <remap from="~/joy" to="joy" />
     </node>
   </group>

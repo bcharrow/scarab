@@ -17,7 +17,7 @@ from collections import namedtuple
 class Trial(object):
     def __init__(self, robot):
         robot_odom = robot + '/motor/odom'
-        motor_topic = robot + '/motor/cmd_vel'
+        motor_topic = robot + '/cmd_vel'
         print "Waiting for %s" % (robot_odom)
         self.handle_odom_pose(rospy.wait_for_message(robot_odom, Odometry))
         rospy.Subscriber(robot_odom, Odometry, self.handle_odom_pose)

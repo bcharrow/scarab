@@ -388,21 +388,21 @@ private:
 
 class RoboClawNode {
 public:
-  RoboClawNode() : node_("~") {
+  RoboClawNode() : priv_node_("~") {
     boost::mutex::scoped_lock lock(driver_mutex_);
 
-    driver_.reset(new DifferentialDriver(node_));
+    driver_.reset(new DifferentialDriver(priv_node_));
 
-    node_.param("odom_frame", odom_state.header.frame_id, string("odom"));
-    node_.param("base_frame", odom_state.child_frame_id, string("base"));
+    priv_node_.param("odom_frame", odom_state.header.frame_id, string("odom"));
+    priv_node_.param("base_frame", odom_state.child_frame_id, string("base"));
 
-    node_.param("freq", freq_, 30.0);
+    priv_node_.param("freq", freq_, 30.0);
 
     // Odometry starts at zero
     odom_state.pose.pose.orientation = tf::createQuaternionMsgFromYaw(0.0);
     x_ = y_ = th_ = 0.0;
 
-    odom_pub = node_.advertise<nav_msgs::Odometry>("odom", 100);
+    odom_pub = priv_node_.advertise<nav_msgs::Odometry>("odom", 100);
 
     cmd_vel_sub = node_.subscribe("cmd_vel", 1,
                                   &RoboClawNode::OnTwistCmd, this);
@@ -500,11 +500,11 @@ public:
   void Spin() {
     double curr_freq = freq_;
     ros::Timer tf_timer =
-      node_.createTimer(ros::Duration(0.05),
+      priv_node_.createTimer(ros::Duration(0.05),
                         boost::bind(&RoboClawNode::broadcastTf, this));
 
     ros::Rate r(curr_freq);
-    while (node_.ok()) {
+    while (priv_node_.ok()) {
       {
         boost::mutex::scoped_lock lock(state_mutex_);
         if (curr_freq != freq_) {
@@ -532,7 +532,7 @@ private:
   nav_msgs::Odometry odom_state;
   double x_, y_, th_;
 
-  ros::NodeHandle node_;
+  ros::NodeHandle node_, priv_node_;
   ros::Publisher odom_pub;
   ros::Subscriber cmd_vel_sub;
   ros::Subscriber param_sub;
