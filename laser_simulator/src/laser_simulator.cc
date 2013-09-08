@@ -55,7 +55,7 @@ void handle_pose_array(const pose_aggregator::PoseStampedNamedArray::ConstPtr& p
 {
   boost::mutex::scoped_lock(sim_mutex);
   sim.UpdatePoseArray(*pose);
-} 
+}
 
 void publish(const ros::TimerEvent&) {
   boost::mutex::scoped_lock(sim_mutex);
@@ -70,7 +70,7 @@ int main(int argc, char **argv)
 
   ros::Subscriber odom_sub = n.subscribe("odom", 1, handle_odometry);
   ros::Subscriber grid_sub = n.subscribe("map", 1, handle_occupancy_grid);
-  ros::Subscriber agg_sub = n.subscribe("pose_array", 1, handle_pose_array); 
+  ros::Subscriber agg_sub = n.subscribe("pose_array", 1, handle_pose_array);
 
   pub = n.advertise<sensor_msgs::LaserScan>("scan", 1);
 
@@ -98,7 +98,14 @@ int main(int argc, char **argv)
 
   if (sim.LoadLaserModel(n) != 0)
     {
-      ROS_ERROR("%s: failed to load laser model", 
+      ROS_ERROR("%s: failed to load laser model",
+                ros::this_node::getName().c_str());
+      return -1;
+    }
+
+  if (sim.LoadDynamicModels(n) != 0)
+    {
+      ROS_ERROR("%s: failed to load dynamic models",
                 ros::this_node::getName().c_str());
       return -1;
     }
@@ -107,16 +114,16 @@ int main(int argc, char **argv)
   while (n.ok())
     {
       if (map_set)
-        break;     
+        break;
       else
-        ROS_DEBUG("%s: waiting for map", 
+        ROS_DEBUG("%s: waiting for map",
                   ros::this_node::getName().c_str());
 
       ros::spinOnce();
       idle.sleep();
     }
 
-  
+
   std::string frame_id;
   n.param("frame_id", frame_id, std::string("laser"));
   msg.header.frame_id = frame_id;

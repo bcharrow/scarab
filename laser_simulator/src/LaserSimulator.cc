@@ -24,8 +24,7 @@
 
 LaserSimulator::LaserSimulator()
 {
-  initialized = false;
-
+  occupied_threshold = 0;
   return;
 }
 
@@ -53,9 +52,11 @@ void LaserSimulator::SetLaserOffset(const geometry_msgs::Pose& offset_)
   offset = offset_;
 }
 
-void LaserSimulator::LoadOccupancyGrid(const nav_msgs::OccupancyGrid& map, 
+void LaserSimulator::LoadOccupancyGrid(const nav_msgs::OccupancyGrid& map,
                                        double depth)
 {
+  triangles.clear();
+
   double x = map.info.origin.position.x;
   double y = map.info.origin.position.y;
   double z = map.info.origin.position.z;
@@ -69,16 +70,16 @@ void LaserSimulator::LoadOccupancyGrid(const nav_msgs::OccupancyGrid& map,
   for (unsigned int i = 0; i < map.info.height; i++)
     for (unsigned int j = 0; j < map.info.width; j++, ++k)
       {
-        if (*k > 0)
+        if (*k > occupied_threshold)
           {
             double center_x = x + j*resolution + delta;
             double center_y = y + i*resolution + delta;
-            
+
             Point face_1_1(center_x - delta, center_y + delta, z);
             Point face_1_2(center_x - delta, center_y - delta, z);
             Point face_1_3(center_x - delta, center_y - delta, z + depth);
             Point face_1_4(center_x - delta, center_y + delta, z + depth);
-            
+
             triangles.push_back(Triangle(face_1_1, face_1_3, face_1_4));
             triangles.push_back(Triangle(face_1_1, face_1_2, face_1_3));
 
@@ -86,7 +87,7 @@ void LaserSimulator::LoadOccupancyGrid(const nav_msgs::OccupancyGrid& map,
             Point face_2_2(center_x + delta, center_y - delta, z);
             Point face_2_3(center_x + delta, center_y - delta, z + depth);
             Point face_2_4(center_x - delta, center_y - delta, z + depth);
-            
+
             triangles.push_back(Triangle(face_2_1, face_2_3, face_2_4));
             triangles.push_back(Triangle(face_2_1, face_2_2, face_2_3));
 
@@ -94,7 +95,7 @@ void LaserSimulator::LoadOccupancyGrid(const nav_msgs::OccupancyGrid& map,
             Point face_3_2(center_x + delta, center_y + delta, z);
             Point face_3_3(center_x + delta, center_y + delta, z + depth);
             Point face_3_4(center_x + delta, center_y - delta, z + depth);
-            
+
             triangles.push_back(Triangle(face_3_1, face_3_3, face_3_4));
             triangles.push_back(Triangle(face_3_1, face_3_2, face_3_3));
 
@@ -102,19 +103,19 @@ void LaserSimulator::LoadOccupancyGrid(const nav_msgs::OccupancyGrid& map,
             Point face_4_2(center_x - delta, center_y + delta, z);
             Point face_4_3(center_x - delta, center_y + delta, z + depth);
             Point face_4_4(center_x + delta, center_y + delta, z + depth);
-            
+
             triangles.push_back(Triangle(face_4_1, face_4_3, face_4_4));
             triangles.push_back(Triangle(face_4_1, face_4_2, face_4_3));
           }
       }
   tree.rebuild(triangles.begin(), triangles.end());
-  
+
   return;
 }
 
 int param_exit(const std::string& error)
 {
-  ROS_WARN("%s: Unable to find parameter: %s", 
+  ROS_WARN("%s: Unable to find parameter: %s",
            ros::this_node::getName().c_str(), error.c_str());
 
   return -1;
@@ -127,7 +128,7 @@ int LaserSimulator::LoadLaserModel(const ros::NodeHandle& n)
   if (!n.hasParam("rate")) return param_exit("rate");
   if (!n.hasParam("scan_count")) return param_exit("scan_count");
   if (!n.hasParam("min_range")) return param_exit("min_range");
-  if (!n.hasParam("max_range")) return param_exit("max_range");  
+  if (!n.hasParam("max_range")) return param_exit("max_range");
 
   double minimum_angle_deg, maximum_angle_deg, scan_rate, scan_count;
   n.getParam("min_angle_deg", minimum_angle_deg);
@@ -151,51 +152,58 @@ int LaserSimulator::LoadLaserModel(const ros::NodeHandle& n)
     scan_points.push_back(std::make_pair<float, float>(maximum_range*cos(minimum_angle + i*angle_increment),
                                                        maximum_range*sin(minimum_angle + i*angle_increment)));
 
+  initialized = true;
+
+  return 0;
+}
+
+int LaserSimulator::LoadDynamicModels(const ros::NodeHandle& n)
+{
   std::map<std::string, boost::tuple<double, double, double> > types;
 
   if (n.hasParam("types"))
     {
       XmlRpc::XmlRpcValue t;
-      
+
       n.getParam("types", t);
-      
-      if (t.getType() != XmlRpc::XmlRpcValue::TypeArray) 
+
+      if (t.getType() != XmlRpc::XmlRpcValue::TypeArray)
         {
           ROS_ERROR("types parameter needs to be an array");
           return -1;
         }
-      else 
+      else
         {
-          if (t.size() == 0) 
+          if (t.size() == 0)
             {
               ROS_ERROR("no values in types array");
               return -1;
             }
-          else 
+          else
             {
               for (int i = 0; i < t.size(); i++)
                 {
-                  if (t[i].getType() != XmlRpc::XmlRpcValue::TypeStruct) 
+                  if (t[i].getType() != XmlRpc::XmlRpcValue::TypeStruct)
                     {
                       ROS_ERROR("types entry %d is not a structure, stopping", i);
                       return -1;
                     }
-                  if (!t[i].hasMember("id")) 
+                  if (!t[i].hasMember("id"))
                     {
                       ROS_ERROR("types entry %d has no 'id' member", i);
                       return -1;
                     }
-                  if (!t[i].hasMember("xdim")) 
+                  if (!t[i].hasMember("xdim"))
                     {
                       ROS_ERROR("models entry %d has no 'xdim' member", i);
                       return -1;
                     }
-                  if (!t[i].hasMember("ydim")) 
+                  if (!t[i].hasMember("ydim"))
                     {
                       ROS_ERROR("types entry %d has no 'ydim' member", i);
                       return -1;
                     }
-                  if (!t[i].hasMember("zdim")) 
+                  if (!t[i].hasMember("zdim"))
                     {
                       ROS_ERROR("types entry %d has no 'zdim' member", i);
                       return -1;
@@ -205,14 +213,14 @@ int LaserSimulator::LoadLaserModel(const ros::NodeHandle& n)
                   double xdim = (double)t[i]["xdim"];
                   double ydim = (double)t[i]["ydim"];
                   double zdim = (double)t[i]["zdim"];
-                  
+
                   if (types.count(id) > 0)
                     {
                       ROS_ERROR("type %s is not unique", id.c_str());
                       return -1;
                     }
 
-                  types.insert(std::make_pair<std::string, 
+                  types.insert(std::make_pair<std::string,
                                boost::tuple<double, double, double> >
                                (id, boost::make_tuple(xdim, ydim, zdim)));
                 }
@@ -228,35 +236,35 @@ int LaserSimulator::LoadLaserModel(const ros::NodeHandle& n)
   if (n.hasParam("models"))
     {
       XmlRpc::XmlRpcValue m;
-      
+
       n.getParam("models", m);
-      if (m.getType() != XmlRpc::XmlRpcValue::TypeArray) 
+      if (m.getType() != XmlRpc::XmlRpcValue::TypeArray)
         {
           ROS_ERROR("models parameter needs to be an array");
           return -1;
         }
-      else 
+      else
         {
-          if (m.size() == 0) 
+          if (m.size() == 0)
             {
               ROS_ERROR("no values in models array");
               return -1;
             }
-          else 
+          else
             {
               for (int i = 0; i < m.size(); i++)
                 {
-                  if (m[i].getType() != XmlRpc::XmlRpcValue::TypeStruct) 
+                  if (m[i].getType() != XmlRpc::XmlRpcValue::TypeStruct)
                     {
                       ROS_ERROR("models entry %d is not a structure, stopping", i);
                       return -1;
                     }
-                  if (!m[i].hasMember("id")) 
+                  if (!m[i].hasMember("id"))
                     {
                       ROS_ERROR("models entry %d has no 'id' member", i);
                       return -1;
                     }
-                  if (!m[i].hasMember("type")) 
+                  if (!m[i].hasMember("type"))
                     {
                       ROS_ERROR("models entry %d has no 'type' member", i);
                       return -1;
@@ -264,7 +272,7 @@ int LaserSimulator::LoadLaserModel(const ros::NodeHandle& n)
 
                   std::string id = (std::string)m[i]["id"];
                   std::string type = (std::string)m[i]["type"];
-                  
+
                   if (models.count(id) > 0)
                     {
                       ROS_ERROR("model %s is not unique", id.c_str());
@@ -273,12 +281,12 @@ int LaserSimulator::LoadLaserModel(const ros::NodeHandle& n)
 
                   if (types.count(type) == 0)
                     {
-                      ROS_ERROR("model %s has unknown type %s", 
+                      ROS_ERROR("model %s has unknown type %s",
                                 id.c_str(), type.c_str());
                       return -1;
                     }
 
-                  models[id] = new Model(types[type].get<0>(), 
+                  models[id] = new Model(types[type].get<0>(),
                                          types[type].get<1>(),
                                          types[type].get<2>());
                 }
@@ -291,13 +299,11 @@ int LaserSimulator::LoadLaserModel(const ros::NodeHandle& n)
       return -1;
     }
 
-  initialized = true;
- 
   return 0;
 }
 
 void LaserSimulator::GetScan(std::vector<float>& ranges)
-{     
+{
   arma::colvec s(3);
   arma::colvec t(3);
   t(0) = pose.position.x + offset.position.x;
@@ -319,7 +325,7 @@ void LaserSimulator::GetScan(std::vector<float>& ranges)
   R(2, 0) = 2.0*b*d - 2.0*a*c;
   R(2, 1) = 2.0*c*d + 2.0*a*b;
   R(2, 2) = a*a - b*b - c*c + d*d;
-  
+
   arma::colvec p(3);
   p(2) = 0;
 
@@ -343,9 +349,9 @@ void LaserSimulator::GetScan(std::vector<float>& ranges)
       if (tree.do_intersect(segment_query))
         {
           intersections.clear();
-          tree.all_intersections(segment_query, 
+          tree.all_intersections(segment_query,
                                  std::back_inserter(intersections));
-          
+
           for (std::list<Object_and_primitive_id>::iterator j = intersections.begin();
                j != intersections.end(); ++j)
             {
@@ -357,7 +363,7 @@ void LaserSimulator::GetScan(std::vector<float>& ranges)
               pi(2) = point.z();
               double range = arma::norm(pi - t, 2);
               if (range < max_range)
-                max_range = range;             
+                max_range = range;
             }
         }
 
@@ -366,10 +372,10 @@ void LaserSimulator::GetScan(std::vector<float>& ranges)
           if (dynamic_tree.do_intersect(segment_query))
             {
               intersections.clear();
-              dynamic_tree.all_intersections(segment_query, 
+              dynamic_tree.all_intersections(segment_query,
                                              std::back_inserter(intersections));
-              
-              for (std::list<Object_and_primitive_id>::iterator j = 
+
+              for (std::list<Object_and_primitive_id>::iterator j =
                      intersections.begin(); j != intersections.end(); ++j)
                 {
                   Point point;
@@ -380,7 +386,7 @@ void LaserSimulator::GetScan(std::vector<float>& ranges)
                   pi(2) = point.z();
                   double range = arma::norm(pi - t, 2);
                   if (range < max_range)
-                    max_range = range;           
+                    max_range = range;
                 }
             }
         }
@@ -403,7 +409,7 @@ void LaserSimulator::UpdatePoseArray(const pose_aggregator::PoseStampedNamedArra
     if (models.count(pose_array.poses[i].child_frame_id) == 0)
       {
         printf("%s: Unknown model in odom_array message (%s) - skipping\n",
-               ros::this_node::getName().c_str(), 
+               ros::this_node::getName().c_str(),
                pose_array.poses[i].child_frame_id.c_str());
         continue;
       }
@@ -455,10 +461,10 @@ void LaserSimulator::UpdatePoseArray(const pose_aggregator::PoseStampedNamedArra
     Point face_4_4(dxp, dyp, dzp);
 
     dynamic_triangles.push_back(Triangle(face_4_1, face_4_3, face_4_4));
-    dynamic_triangles.push_back(Triangle(face_4_1, face_4_2, face_4_3));      
+    dynamic_triangles.push_back(Triangle(face_4_1, face_4_2, face_4_3));
   }
 
   dynamic_tree.clear();
   if (dynamic_triangles.size() > 0)
-    dynamic_tree.rebuild(dynamic_triangles.begin(), dynamic_triangles.end());   
+    dynamic_tree.rebuild(dynamic_triangles.begin(), dynamic_triangles.end());
 }

@@ -40,7 +40,7 @@ typedef struct Model
   double xdim, ydim, zdim;
   Model() : xdim(0), ydim(0), zdim(0) {}
   Model(double x, double y, double z) :
-    xdim(x), ydim(y), zdim(z) {}  
+    xdim(x), ydim(y), zdim(z) {}
 } model_t;
 
 class LaserSimulator
@@ -48,15 +48,17 @@ class LaserSimulator
 public:
   LaserSimulator();
   ~LaserSimulator();
-  
+
   void SetPose(const geometry_msgs::Pose& pose);
   void SetFrameID(const std::string& frame_id);
   void LoadOccupancyGrid(const nav_msgs::OccupancyGrid& map, double depth);
   void UpdatePoseArray(const pose_aggregator::PoseStampedNamedArray& pose_array);
   int LoadLaserModel(const ros::NodeHandle& n);
+  int LoadDynamicModels(const ros::NodeHandle& n);
   void GetScan(std::vector<float>& ranges);
   void SetLaserOffset(const geometry_msgs::Pose& offset);
-  
+  void SetOccupiedThreshold(const int8_t t) { assert(t>=0 && t<=100); occupied_threshold = t; }
+
   double GetMinimumAngle() { assert(initialized); return minimum_angle; }
   double GetMaximumAngle() { assert(initialized); return maximum_angle; }
   double GetAngleIncrement() { assert(initialized); return angle_increment; }
@@ -68,7 +70,8 @@ public:
 
 private:
   bool initialized;
-  
+  int8_t occupied_threshold;
+
   double minimum_angle;
   double maximum_angle;
   double angle_increment;
@@ -81,7 +84,7 @@ private:
   std::string frame_id;
 
   geometry_msgs::Pose pose, offset;
-  nav_msgs::OccupancyGrid map;  
+  nav_msgs::OccupancyGrid map;
   std::list< std::pair<float, float> > scan_points;
 
   typedef CGAL::Simple_cartesian<double> K;
