@@ -36,7 +36,6 @@ private:
   bool pub_global_frame_;
 
   ros::NodeHandle *node_;
-  ros::Publisher odom_pub;
   ros::Publisher gt_odom_pub;
   ros::Publisher amcl_pose_pub;
   ros::Publisher gt_pose_pub;
@@ -63,12 +62,16 @@ public:
   {
     this->node_ = node;
     this->name = name;
-    odom_pub = node_->advertise<nav_msgs::Odometry>("/"+name+"/odom", 100);
-    gt_odom_pub = node_->advertise<nav_msgs::Odometry>("/"+name+"/gt_odom", 100);
+    string gt_pose_topic, gt_odom_topic;
+    node_->param("gt_pose_topic", gt_pose_topic, string("gt_pose"));
+    node_->param("gt_odom_topic", gt_odom_topic, string("gt_odom"));
+
+    gt_odom_pub =
+      node_->advertise<nav_msgs::Odometry>("/"+name+"/"+gt_odom_topic, 100);
     amcl_pose_pub =
       node_->advertise<geometry_msgs::PoseWithCovarianceStamped>("/"+name+"/amcl_pose", 100);
     gt_pose_pub =
-      node_->advertise<geometry_msgs::PoseStamped>("/"+name+"/gt_pose", 100);
+      node_->advertise<geometry_msgs::PoseStamped>("/"+name+"/"+gt_pose_topic, 100);
     cmd_vel_sub = node_->subscribe("/"+name+"/cmd_vel", 1,
            &KinematicSimAgent::OnVelCmd, this);
     initialpose_sub = node_->subscribe("/"+name+"/initialpose", 1,
@@ -237,11 +240,7 @@ public:
 
     state.header.stamp = ros::Time::now();
     gt_state.header.stamp = ros::Time::now();
-
-    if (odom_pub.getNumSubscribers())
-      odom_pub.publish(state);
-    if (gt_odom_pub.getNumSubscribers())
-      gt_odom_pub.publish(gt_state);
+    gt_odom_pub.publish(gt_state);
 
     if(isnan(this->x)) {
       ROS_ERROR("X is nan?!?");
@@ -275,8 +274,7 @@ public:
     amcl_pose.pose.pose.position.x = this->x;
     amcl_pose.pose.pose.position.y = this->y;
     amcl_pose.pose.pose.orientation = tf::createQuaternionMsgFromYaw(this->th);
-    if (amcl_pose_pub.getNumSubscribers())
-      amcl_pose_pub.publish(amcl_pose);
+    amcl_pose_pub.publish(amcl_pose);
 
     gt_pose.header.stamp = ros::Time::now();
     gt_pose.header.frame_id = global_frame_id;
@@ -284,8 +282,7 @@ public:
     gt_pose.pose.position.x = this->x_gt;
     gt_pose.pose.position.y = this->y_gt;
     gt_pose.pose.orientation = tf::createQuaternionMsgFromYaw(this->th_gt);
-    if (gt_pose_pub.getNumSubscribers())
-      gt_pose_pub.publish(gt_pose);
+    gt_pose_pub.publish(gt_pose);
   }
 
   void OnVelCmd(const geometry_msgs::TwistConstPtr &input)
@@ -344,12 +341,14 @@ public:
   KinematicSim(ros::NodeHandle *n_)
   {
     int num_agents;
+    string agent_name;
+    n_->param("agent_prefix", agent_name, string("agent"));
     n_->param("num_agents", num_agents, 0);
     for(int i=0; i < num_agents; ++i) {
       stringstream name_key, initial_pos_key;;
       string name;
       string initial_pos;
-      name_key << "agent" << i;
+      name_key << agent_name << i;
       initial_pos_key << "initial" << i;
 
       n_->param(name_key.str(), name, name_key.str());
