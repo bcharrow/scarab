@@ -3,6 +3,7 @@
 #include <string>
 #include <map>
 #include <math.h>
+#include <time.h>
 
 #include "ros/ros.h"
 
@@ -51,6 +52,7 @@ private:
 public:
   double x, y, th, v, w; // odom position
   double x_gt, y_gt, th_gt; // global position
+  double noise_x_sd, noise_y_sd, noise_th_sd; // std dev of noise add per second
   nav_msgs::Odometry state;
   nav_msgs::Odometry gt_state;
   geometry_msgs::PoseWithCovarianceStamped amcl_pose;
@@ -98,6 +100,18 @@ public:
 
     node_->param("freq", freq_, 50.0);
     node_->param("publish_freq", publish_freq_, 10.0);
+
+    node_->param(string("noise_x_sd"), noise_x_sd, 0.0);
+    node_->param(string("noise_y_sd"), noise_y_sd, 0.0);
+    node_->param(string("noise_th_sd"), noise_th_sd, 0.0);
+    if (noise_x_sd < 0.0 || noise_y_sd < 0.0 || noise_th_sd < 0.0)
+      {
+        ROS_ERROR("%s: Noise must be non-negative",
+                  ros::this_node::getName().c_str());
+      }
+    noise_x_sd /= publish_freq_;
+    noise_y_sd /= publish_freq_;
+    noise_th_sd /= publish_freq_;
 
     // odometry starts at zero
     state.pose.pose.position.x = 0.0;
@@ -172,6 +186,8 @@ public:
   // (last_v and last_w below)
   void IntegrateOdometry()
   {
+    srand(time(NULL));
+
     // find time difference since last integration
     double t, dt;
     t = ros::WallTime::now().toSec();
@@ -210,10 +226,23 @@ public:
   ROS_ERROR_STREAM("[Integrate] [" << this->name << "] " << dx << ", " << dy << ", " << dth);
   this->x = -1.0;
       }
+
+      // apply noise if desired, only if robot is moving
+      if ((noise_x_sd > 0.0 || noise_y_sd > 0.0 || noise_th_sd > 0.0) &&
+          (fabs(this->v) > 1e-3 || fabs(this->w) > 1e-3))
+        {
+          double U = rand() / double(RAND_MAX);
+          double V = rand() / double(RAND_MAX);
+          // Box-Muller method
+          double sn_var = sqrt (-2.0*log(U)) * cos(2.0*M_PI*V);
+
+          this->x += noise_x_sd * sn_var;
+          this->y += noise_y_sd * sn_var;
+          this->th += noise_th_sd * sn_var;
+        }
+
+
     }
-
-
-
   }
 
   void PublishPosition()
