@@ -19,12 +19,12 @@
 
 #include "LaserSimulator.h"
 #include <cmath>
+#include <time.h>
 #include <armadillo>
 #include <boost/tuple/tuple.hpp>
 
-LaserSimulator::LaserSimulator()
+LaserSimulator::LaserSimulator() : occupied_threshold(0), noise_sd(0.0)
 {
-  occupied_threshold = 0;
   return;
 }
 
@@ -304,6 +304,8 @@ int LaserSimulator::LoadDynamicModels(const ros::NodeHandle& n)
 
 void LaserSimulator::GetScan(std::vector<float>& ranges)
 {
+  srand(time(NULL)); // initialize random number generator
+
   arma::colvec s(3);
   arma::colvec t(3);
   t(0) = pose.position.x + offset.position.x;
@@ -391,7 +393,19 @@ void LaserSimulator::GetScan(std::vector<float>& ranges)
             }
         }
 
-      ranges[k] = max_range;
+
+      if (noise_sd > 0.0)
+        {
+          double U = rand() / double(RAND_MAX);
+          double V = rand() / double(RAND_MAX);
+          // Box-Muller method
+          double sn_var = sqrt (-2.0*log(U)) * cos(2.0*M_PI*V);
+          ranges[k] = max_range + noise_sd * sn_var;
+        }
+      else
+        {
+          ranges[k] = max_range;
+        }
     }
 
   return;

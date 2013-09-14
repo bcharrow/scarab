@@ -58,6 +58,7 @@ public:
   void GetScan(std::vector<float>& ranges);
   void SetLaserOffset(const geometry_msgs::Pose& offset);
   void SetOccupiedThreshold(const int8_t t) { assert(t>=0 && t<=100); occupied_threshold = t; }
+  void SetLaserNoiseStdDev(const double noise) { noise_sd = noise; }
 
   double GetMinimumAngle() { assert(initialized); return minimum_angle; }
   double GetMaximumAngle() { assert(initialized); return maximum_angle; }
@@ -67,6 +68,8 @@ public:
   double GetMinimumRange() { assert(initialized); return minimum_range; }
   double GetMaximumRange() { assert(initialized); return maximum_range; }
   int GetScanCount() { assert(initialized); return number_of_ranges; }
+
+  double GetNoiseStdDev() { return noise_sd; }
 
 private:
   bool initialized;
@@ -80,6 +83,8 @@ private:
   double minimum_range;
   double maximum_range;
   int number_of_ranges;
+
+  double noise_sd;
 
   std::string frame_id;
 

@@ -96,6 +96,16 @@ int main(int argc, char **argv)
 
   sim.SetLaserOffset(offset);
 
+  double noise_sd;
+  n.param("noise_sd", noise_sd, 0.0);
+  if (noise_sd < 0.0)
+    {
+      ROS_ERROR("%s: noise cannot be negative",
+                ros::this_node::getName().c_str());
+      return -1;
+    }
+  sim.SetLaserNoiseStdDev(noise_sd);
+
   if (sim.LoadLaserModel(n) != 0)
     {
       ROS_ERROR("%s: failed to load laser model",
