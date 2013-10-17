@@ -26,8 +26,8 @@
 #include <ros/ros.h>
 #include <geometry_msgs/Pose.h>
 #include <nav_msgs/OccupancyGrid.h>
-#include <pose_aggregator/PoseStampedNamed.h>
-#include <pose_aggregator/PoseStampedNamedArray.h>
+#include <laser_simulator/PoseStampedNamed.h>
+#include <laser_simulator/PoseStampedNamedArray.h>
 
 #include <CGAL/AABB_tree.h>
 #include <CGAL/AABB_traits.h>
@@ -52,7 +52,7 @@ public:
   void SetPose(const geometry_msgs::Pose& pose);
   void SetFrameID(const std::string& frame_id);
   void LoadOccupancyGrid(const nav_msgs::OccupancyGrid& map, double depth);
-  void UpdatePoseArray(const pose_aggregator::PoseStampedNamedArray& pose_array);
+  void UpdatePoseArray(const laser_simulator::PoseStampedNamedArray& pose_array);
   int LoadLaserModel(const ros::NodeHandle& n);
   int LoadDynamicModels(const ros::NodeHandle& n);
   void GetScan(std::vector<float>& ranges);

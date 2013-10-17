@@ -397,7 +397,7 @@ void LaserSimulator::GetScan(std::vector<float>& ranges)
   return;
 }
 
-void LaserSimulator::UpdatePoseArray(const pose_aggregator::PoseStampedNamedArray& pose_array)
+void LaserSimulator::UpdatePoseArray(const laser_simulator::PoseStampedNamedArray& pose_array)
 {
   std::list<Triangle> dynamic_triangles;
 

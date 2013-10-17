@@ -23,7 +23,7 @@
 #include <nav_msgs/OccupancyGrid.h>
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/LaserScan.h>
-#include <pose_aggregator/PoseStampedNamedArray.h>
+#include <laser_simulator/PoseStampedNamedArray.h>
 #include <LaserSimulator.h>
 #include <tf/tf.h>
 
@@ -51,7 +51,7 @@ void handle_occupancy_grid(const nav_msgs::OccupancyGrid::ConstPtr& grid)
   map_set = true;
 }
 
-void handle_pose_array(const pose_aggregator::PoseStampedNamedArray::ConstPtr& pose)
+void handle_pose_array(const laser_simulator::PoseStampedNamedArray::ConstPtr& pose)
 {
   boost::mutex::scoped_lock(sim_mutex);
   sim.UpdatePoseArray(*pose);
