@@ -6,19 +6,4 @@
   <maintainer email="bcharrow@seas.upenn.edu">bcharrow</maintainer>
   <license>TODO</license>
   <buildtool_depend>catkin</buildtool_depend>
-
-  <run_depend>bb04</run_depend>
-  <run_depend>joy_to_twist</run_depend>
-  <run_depend>key_to_twist</run_depend>
-  <run_depend>kinematic_sim</run_depend>
-  <run_depend>laser_simulator</run_depend>
-  <run_depend>laser_subsample</run_depend>
-  <run_depend>roboclaw</run_depend>
-  <run_depend>scarab_launch</run_depend>
-  <run_depend>upenn_maps</run_depend>
-  <run_depend>mesh80211s</run_depend>
-
-  <export>
-    <metapackage/>
-  </export>
 </package>
