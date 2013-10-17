@@ -37,6 +37,7 @@ private:
   bool pub_global_frame_;
 
   ros::NodeHandle *node_;
+  ros::Publisher odom_pub;
   ros::Publisher gt_odom_pub;
   ros::Publisher amcl_pose_pub;
   ros::Publisher gt_pose_pub;
@@ -68,6 +69,8 @@ public:
     node_->param("gt_pose_topic", gt_pose_topic, string("gt_pose"));
     node_->param("gt_odom_topic", gt_odom_topic, string("gt_odom"));
 
+    odom_pub =
+      node_->advertise<nav_msgs::Odometry>("/"+name+"/odom_motor", 100);
     gt_odom_pub =
       node_->advertise<nav_msgs::Odometry>("/"+name+"/"+gt_odom_topic, 100);
     amcl_pose_pub =
@@ -80,7 +83,7 @@ public:
            &KinematicSimAgent::OnInitialPose, this);
 
     node_->param(string("base_frame_id"), base_frame_id, string("/base_link"));
-    node_->param(string("odom_frame_id"), odom_frame_id, string("/odom"));
+    node_->param(string("odom_frame_id"), odom_frame_id, string("/odom_motor"));
     node_->param(string("global_frame_id"), global_frame_id, string("/map"));
     node_->param("pub_global_frame", pub_global_frame_, false);
 
@@ -269,6 +272,7 @@ public:
 
     state.header.stamp = ros::Time::now();
     gt_state.header.stamp = ros::Time::now();
+    odom_pub.publish(state);
     gt_odom_pub.publish(gt_state);
 
     if(isnan(this->x)) {
