@@ -6,4 +6,7 @@
   <maintainer email="bcharrow@seas.upenn.edu">bcharrow</maintainer>
   <license>TODO</license>
   <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>geometry_msgs</build_depend>
+  <run_depend>geometry_msgs</run_depend>
 </package>

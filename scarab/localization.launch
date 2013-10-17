@@ -1,18 +1,18 @@
 <launch>
   <!-- Launch map server and amcl -->
   <arg name="init" default="false" />
-  <include file="$(find scarab_launch)/scarab.launch" />
+  <include file="$(find scarab)/scarab.launch" />
   
   <group ns="$(env ROS_NAMESPACE)" >
     <remap from="/tf" to="tf" />
     <param name="tf_prefix" value="$(env ROS_NAMESPACE)" />
 
     <node name="map_server" pkg="map_server" type="map_server" output="screen"
-          args="$(find upenn_maps)/maps/levine-4.yaml">
+          args="$(find scarab)/maps/levine-4.yaml">
       <param name="frame_id" value="/map" />
     </node>
 
-    <node name="pose_stamped" pkg="scarab_launch" type="posestamped_node.py" />
+    <node name="pose_stamped" pkg="scarab" type="posestamped_node.py" />
 
     <node pkg="amcl" type="amcl" name="amcl" output="screen">
       <param name="global_frame_id" value="/map" />

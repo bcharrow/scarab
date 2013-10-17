@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #
 # A node that listens for PoseWithCovarianceStamped and publishes PoseStamped
-import roslib; roslib.load_manifest('scarab_launch')
+import roslib; roslib.load_manifest('scarab')
 import rospy
 
 import geometry_msgs.msg

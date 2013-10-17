@@ -3,7 +3,7 @@
 	name="map" 
 	type="map_server" 
 	output="screen" 
-	args="$(find upenn_maps)/maps/levine_towne_map.yaml"/>
+	args="$(find scarab)/maps/levine_towne_map.yaml"/>
 
     <node pkg="kinematic_sim" 
           type="kinematic_sim" 
