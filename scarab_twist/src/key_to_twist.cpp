@@ -7,7 +7,7 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
-    std::string output_topic;
+    std::string output_topic("cmd_vel");
     double v_speed, v_inc;
     double w_speed, w_inc;
 
@@ -16,6 +16,10 @@ int main(int argc, char** argv)
     ros::NodeHandle *node;
 
     ros::init(argc, argv, "key_to_twist");
+    if (argc > 1) {
+      output_topic = argv[1];
+    }
+
     ros::NodeHandle n("~");
     node = &n;
 
@@ -23,7 +27,6 @@ int main(int argc, char** argv)
     node->param("wspeed", w_speed, 0.6);
     node->param("vinc", v_inc, 0.08);
     node->param("winc", w_inc, 0.05);
-    node->param("output", output_topic, std::string("cmd_vel"));
     output_topic = ros::names::resolve(output_topic);
     pub = n.advertise<geometry_msgs::Twist>(output_topic, 10);
 
