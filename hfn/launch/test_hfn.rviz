@@ -5,9 +5,8 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /TF1/Frames1
-        - /Scarab401
-        - /Scarab401/Goal1
-        - /Scarab401/Goal1/Namespaces1
+        - /Scarab01
+        - /Scarab01/Goal1/Namespaces1
       Splitter Ratio: 0.711462
     Tree Height: 478
   - Class: rviz/Selection
@@ -87,7 +86,7 @@ Visualization Manager:
           Size (Pixels): 3
           Size (m): 0.08
           Style: Flat Squares
-          Topic: /scarab40/scan
+          Topic: /scarab0/scan
           Use Fixed Frame: true
           Use rainbow: true
           Value: true
@@ -103,7 +102,7 @@ Visualization Manager:
           Shaft Length: 1
           Shaft Radius: 0.05
           Shape: Arrow
-          Topic: /scarab40/pose
+          Topic: /scarab0/pose
           Value: true
         - Alpha: 1
           Axes Length: 1
@@ -117,7 +116,7 @@ Visualization Manager:
           Shaft Length: 1
           Shaft Radius: 0.05
           Shape: Arrow
-          Topic: /scarab40/gt_pose
+          Topic: /scarab0/gt_pose
           Value: false
         - Alpha: 1
           Autocompute Intensity Bounds: true
@@ -143,7 +142,7 @@ Visualization Manager:
           Size (Pixels): 3
           Size (m): 0.04
           Style: Flat Squares
-          Topic: /scarab40/navigation/free_dist
+          Topic: /scarab0/inflated_scan
           Use Fixed Frame: true
           Use rainbow: true
           Value: false
@@ -153,18 +152,18 @@ Visualization Manager:
           Color: 25; 255; 0
           Enabled: true
           Name: Path
-          Topic: /scarab40/path
+          Topic: /scarab0/path
           Value: true
         - Class: rviz/Marker
-          Enabled: true
-          Marker Topic: /scarab40/marker
+          Enabled: false
+          Marker Topic: /scarab0/marker
           Name: Goal
           Namespaces:
-            /scarab40/navigation/waypoint: true
+            {}
           Queue Size: 100
-          Value: true
+          Value: false
       Enabled: true
-      Name: Scarab40
+      Name: Scarab0
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -180,7 +179,7 @@ Visualization Manager:
     - Class: rviz/SetInitialPose
       Topic: /scarab41/initialpose
     - Class: rviz/SetGoal
-      Topic: /scarab40/goal
+      Topic: /scarab0/goal
     - Class: rviz/PublishPoint
       Single click: true
       Topic: /clicked_point
@@ -213,5 +212,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1288
-  X: 71
+  X: 64
   Y: 90

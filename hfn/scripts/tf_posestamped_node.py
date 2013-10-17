@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import roslib; roslib.load_manifest('human_friendly_navigation')
+import roslib; roslib.load_manifest('hfn')
 import rospy
 import tf
 

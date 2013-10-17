@@ -1,10 +1,10 @@
 #! /usr/bin/env python
 
-import roslib; roslib.load_manifest('human_friendly_navigation')
+import roslib; roslib.load_manifest('hfn')
 import rospy
 import actionlib
 
-from human_friendly_navigation.msg import *
+from hfn.msg import *
 from geometry_msgs.msg import PoseStamped
 
 def callback(data):
