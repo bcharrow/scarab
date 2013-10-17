@@ -1,0 +1,94 @@
+<launch>
+
+  <node pkg="map_server" name="map" type="map_server" output="screen"
+        args="$(find upenn_maps)/maps/levine_towne-4.yaml" >
+    <param name="frame_id" value="/map" />
+  </node>
+
+  <arg name="num_agents" value="1" />
+  <arg name="agent0" value="scarab40" />
+
+  <arg name="base_frame_id" value="base" />
+  <arg name="odom_frame_id" value="odom" />
+  <arg name="global_frame_id" value="/map" />
+
+  <node pkg="kinematic_sim" type="kinematic_sim" name="KinematicSim"
+        output="screen" respawn="false">
+    <param name="publish_freq" value="7"/>
+    <param name="broadcast_tf" value="false"/>
+
+    <param name="base_frame_id" value="$(arg base_frame_id)"/>
+    <param name="odom_frame_id" value="$(arg odom_frame_id)"/>
+    <param name="global_frame_id" value="$(arg global_frame_id)"/>
+
+    <param name="num_agents" value="$(arg num_agents)"/>
+    <param name="agent0" value="$(arg agent0)"/>
+
+    <!-- Start for levine towne -->
+    <param name="initial0" value="0.17 27.78 0.0"/>
+
+    <remap from="/$(arg agent0)/cmd_vel" to="/$(arg agent0)/motor/cmd_vel" />
+  </node>
+
+  <node pkg="pose_aggregator" type="pose_aggregator" name="PoseAggregator"
+        output="screen" respawn="false">
+    <param name="publish_freq" value="7"/>
+
+    <param name="num_agents" value="$(arg num_agents)"/>
+    <param name="agent0_frame" value="/$(arg agent0)/$(arg base_frame_id)"/>
+
+    <remap from="~/agent0/pose" to="/$(arg agent0)/gt_pose"/>
+
+    <remap from="~/pose_array" to="/pose_array"/>
+  </node>
+
+  <!--=============================== Team ================================-->
+  <arg name="agent" value="$(arg agent0)" />
+  <group ns="$(arg agent)">
+    <node name="transformer" pkg="tf" type="static_transform_publisher"
+      args="0.0 0.0 0.2 0.0 0.0 0.0 /$(arg agent)/$(arg base_frame_id)
+            /$(arg agent)/laser 100" />
+
+
+    <node name="laser" pkg="laser_simulator" type="laser_simulator"
+        output="screen" respawn="false">
+
+      <param name="frame_id" value="/$(arg agent)/laser"/>
+      <param name="offset/x" value="0.0"/>
+      <param name="offset/y" value="0.0"/>
+      <param name="offset/z" value="0.0"/>
+
+      <rosparam file="$(find laser_simulator)/models/UTM_30.yaml" command="load" />
+      <rosparam file="$(find laser_simulator)/config/models.yaml" command="load" />
+
+      <remap from="~map" to="/map"/>
+      <remap from="~odom" to="/$(arg agent)/gt_odom"/>
+      <remap from="~pose_array" to="/pose_array"/>
+      <remap from="~scan" to="/$(arg agent)/scan" />
+    </node>
+
+
+    <node name="goal_to_action" pkg="human_friendly_navigation" type="goal_to_action.py" />
+
+
+    <node name="navigation" pkg="human_friendly_navigation" type="hfn"
+          respawn="false" output="screen" launch-prefix="" >
+      <param name="base_frame_id" value="/$(arg agent)/$(arg base_frame_id)" />
+      <param name="map_frame_id" value="$(arg global_frame_id)" />
+
+      <remap from="cmd_vel" to="motor/cmd_vel" />
+      <remap from="map" to="/map" />
+    </node>
+
+
+    <node name="dummy_slam" pkg="tf" type="static_transform_publisher"
+      args="0.0 0.0 0.0 0.0 0.0 0.0 $(arg global_frame_id)
+            /$(arg agent)/$(arg odom_frame_id) 100" />
+
+    <node name="pose_stamped" pkg="human_friendly_navigation" type="tf_posestamped_node.py" >
+      <param name="base_frame_id" value="/$(arg agent)/$(arg base_frame_id)" />
+    </node>
+
+  </group>
+
+</launch>

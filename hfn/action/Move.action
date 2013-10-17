@@ -1,0 +1,5 @@
+bool stop # If true, stop, otherwise go to target
+geometry_msgs/PoseStamped[] target_poses # Target goals
+---
+---
+geometry_msgs/PoseStamped base_position # Where we ended up
