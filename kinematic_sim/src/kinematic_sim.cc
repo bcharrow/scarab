@@ -342,7 +342,7 @@ public:
   {
     int num_agents;
     string agent_name;
-    n_->param("agent_prefix", agent_name, string("agent"));
+    n_->param("agent_prefix", agent_name, string("scarab"));
     n_->param("num_agents", num_agents, 0);
     for(int i=0; i < num_agents; ++i) {
       stringstream name_key, initial_pos_key;;
