@@ -115,7 +115,7 @@ public:
 
   enum Status {
     FINISHED,   // Successfully reached goal
-    TIMEOUT,    // Took to long to reach goal
+    TIMEOUT,    // Took too long to reach goal
     STUCK,      // Robot has not moved in a while
     NOTREADY,   // Don't have all the data we need to move, check back soon!
     UNREACHABLE // Goal is no longer reachable (e.g., due to map change)

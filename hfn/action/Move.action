@@ -1,5 +1,12 @@
-bool stop # If true, stop, otherwise go to target
-geometry_msgs/PoseStamped[] target_poses # Target goals
+bool stop                                 # If true, stop, otherwise go to target
+geometry_msgs/PoseStamped[] target_poses  # Target goals
 ---
+uint8 FINISHED=0      # Successfully reached goal
+uint8 TIMEOUT=1       # Took too long to reach goal
+uint8 STUCK=2         # Robot has not moved in a while
+uint8 NOTREADY=3      # Don't have all the data we need to move, check back soon!
+uint8 UNREACHABLE=4   # Goal is no longer reachable (e.g., due to map change)
+
+uint8 final_status    # Status of robot when action was ended
 ---
-geometry_msgs/PoseStamped base_position # Where we ended up
+geometry_msgs/PoseStamped base_position   # Where we are now

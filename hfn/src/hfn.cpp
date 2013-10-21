@@ -736,16 +736,36 @@ void MoveServer::goalCallback() {
   } else {
     ROS_INFO("%s got request to stop", action_name_.c_str());
     wrapper_->stop();
-    as_.setSucceeded();
+    hfn::MoveResult result;
+    result.final_status = hfn::MoveResult::FINISHED;
+    as_.setSucceeded(result);
   }
 }
 
 void MoveServer::hfnCallback(HFNWrapper::Status status) {
+  hfn::MoveResult result;
   if (status == HFNWrapper::FINISHED) {
-    as_.setSucceeded();
+    result.final_status = hfn::MoveResult::FINISHED;
+    as_.setSucceeded(result);
   } else {
     ROS_WARN("%s Aborting", action_name_.c_str());
-    as_.setAborted();
+    switch (status) {
+      case HFNWrapper::TIMEOUT:
+        result.final_status = hfn::MoveResult::TIMEOUT;
+        break;
+      case HFNWrapper::STUCK:
+        result.final_status = hfn::MoveResult::STUCK;
+        break;
+      case HFNWrapper::NOTREADY:
+        result.final_status = hfn::MoveResult::NOTREADY;
+        break;
+      case HFNWrapper::UNREACHABLE:
+        result.final_status = hfn::MoveResult::UNREACHABLE;
+        break;
+      default:
+        ROS_ERROR("%s Unknown status %d", action_name_.c_str(), status);
+    }
+    as_.setAborted(result);
   }
 }
 
