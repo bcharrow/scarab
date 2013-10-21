@@ -44,11 +44,23 @@ struct _rtk_fig_t;
 
 // Description for a single map cell.
 typedef struct {
-  // Occupancy state (-1 = free, 0 = unknown, +1 = occ)
+  enum {
+    OCCUPIED,
+    UNKNOWN,
+    FREE
+  } occ_state_t;
+
+  // Occupancy state
   int occ_state;
+
+  // Probability of occupancy (0-100, -1 = unknown)
+  int occ_prob;
 
   // Distance to the nearest occupied cell
   double occ_dist;
+
+  // Cost of traversing cell
+  float cost;
 
   // Wifi levels
   //int wifi_levels[MAP_WIFI_MAX_LEVELS];

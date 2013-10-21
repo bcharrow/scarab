@@ -94,6 +94,9 @@ class HFNWrapper {
 public:
   struct Params {
     double max_occ_dist;     // maximum margin for distance transform
+    double lethal_occ_dist;  // distance at which robot is in collision
+    double cost_occ_prob;    // factor to convert occupancy prob to cost
+    double cost_occ_dist;    // factor to convert occ_dist to cost
     double goal_tol;         // distance when goal is considered reached
     double path_margin;      // max margin for path planning
     double waypoint_spacing; // max distance between waypoints
@@ -146,7 +149,7 @@ private:
   std::string uninitializedString();
 
   ros::NodeHandle nh_;
-  ros::Publisher path_pub_, vis_pub_, vel_pub_, inflated_pub_;
+  ros::Publisher path_pub_, vis_pub_, vel_pub_, inflated_pub_, costmap_pub_;
   ros::Subscriber pose_sub_, map_sub_, odom_sub_, laser_sub_;
 
   boost::function<void(Status)> callback_;

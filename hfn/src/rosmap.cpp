@@ -28,16 +28,18 @@ void convertMap(const nav_msgs::OccupancyGrid &map, map_t *pmap,
   // Convert to player format
   pmap->cells = (map_cell_t*)malloc(sizeof(map_cell_t)*pmap->size_x*pmap->size_y);
   ROS_ASSERT(pmap->cells);
-  for(int i=0;i<pmap->size_x * pmap->size_y;i++) {
-    if(map.data[i] >= 0 && map.data[i] <= free_threshold) {
-      pmap->cells[i].occ_state = -1;
-    } else if(map.data[i] >= occupied_threshold) {
-      pmap->cells[i].occ_state = +1;
+  for(int i = 0; i < pmap->size_x * pmap->size_y; ++i) {
+    if(0 <= map.data[i] && map.data[i] <= free_threshold) {
+      pmap->cells[i].occ_state = map_cell_t::FREE;
+    } else if(occupied_threshold <= map.data[i] && map.data[i] <= 100) {
+      pmap->cells[i].occ_state = map_cell_t::OCCUPIED;
     } else {
-      pmap->cells[i].occ_state = 0;
+      pmap->cells[i].occ_state = map_cell_t::UNKNOWN;
     }
 
+    pmap->cells[i].occ_prob = map.data[i];
     pmap->cells[i].occ_dist = 0;
+    pmap->cells[i].cost = 0.;
   }
 }
 
@@ -106,12 +108,95 @@ void OccupancyMap::setMap(const nav_msgs::OccupancyGrid &grid) {
   convertMap(grid, map_, max_free_threshold_, min_occupied_threshold_);
 }
 
-void OccupancyMap::updateCSpace(double max_occ_dist) {
+void OccupancyMap::updateCSpace(double max_occ_dist,
+                                double lethal_occ_dist,
+                                double cost_occ_prob /* = 0.0 */,
+                                double cost_occ_dist /* = 0.0 */) {
   // check if cspace needs to be updated
-  if (map_ == NULL || map_->max_occ_dist > max_occ_dist) {
+  if (map_ == NULL || map_->max_occ_dist >= max_occ_dist) {
+    return;
+  }
+  if (cost_occ_prob < 0.0) {
+    ROS_ERROR("cost_occ_prob must be non-negative");
+    return;
+  }
+  if (cost_occ_dist < 0.0) {
+    ROS_ERROR("cost_occ_dist must be non-negative");
+    return;
+  }
+  if (max_occ_dist < lethal_occ_dist) {
+    ROS_ERROR("max_occ_dist must be at least lethal_occ_dist");
     return;
   }
   map_update_cspace(map_, max_occ_dist);
+  // compute cost for each cell
+  for (int i = 0; i < map_->size_x * map_->size_y; ++i) {
+    if (map_->cells[i].occ_state == map_cell_t::OCCUPIED ||
+        map_->cells[i].occ_dist <= lethal_occ_dist) {
+      map_->cells[i].cost = std::numeric_limits<float>::infinity();
+    } else {
+      map_->cells[i].cost = 0.0;
+      // Add cost occ prob
+      if (map_->cells[i].occ_prob < 0 || map_->cells[i].occ_prob > 100) {
+        map_->cells[i].cost += cost_occ_prob * 0.5;
+      } else {
+        map_->cells[i].cost += cost_occ_prob * float(map_->cells[i].occ_prob) / 100.0;
+      }
+      // Add cost occ prob
+      if (lethal_occ_dist < max_occ_dist) {
+        float dist_cost = 1.0 - (map_->cells[i].occ_dist - lethal_occ_dist) / (max_occ_dist - lethal_occ_dist);
+        map_->cells[i].cost += cost_occ_dist * dist_cost;
+      } else {
+        map_->cells[i].cost == std::numeric_limits<float>::infinity();
+      }
+    }
+  }
+}
+
+nav_msgs::OccupancyGrid OccupancyMap::getCSpace() {
+  nav_msgs::OccupancyGrid grid;
+  grid.info.width = map_->size_x;
+  grid.info.height = map_->size_y;
+  grid.info.resolution = map_->scale;
+  grid.info.origin.position.x = map_->origin_x - map_->size_x / 2 * map_->scale;
+  grid.info.origin.position.y = map_->origin_y - map_->size_y / 2 * map_->scale;
+
+  // Convert to player format
+  grid.data.resize(map_->size_x*map_->size_y);
+  ROS_ASSERT(map_->cells);
+  for (int i = 0; i < map_->size_x * map_->size_y; ++i) {
+    grid.data[i] = 100 - int(100. * map_->cells[i].occ_dist / map_->max_occ_dist);
+  }
+
+  return grid;
+}
+
+nav_msgs::OccupancyGrid OccupancyMap::getCostMap() {
+  nav_msgs::OccupancyGrid grid;
+  grid.info.width = map_->size_x;
+  grid.info.height = map_->size_y;
+  grid.info.resolution = map_->scale;
+  grid.info.origin.position.x = map_->origin_x - map_->size_x / 2 * map_->scale;
+  grid.info.origin.position.y = map_->origin_y - map_->size_y / 2 * map_->scale;
+
+  // Convert to player format
+  grid.data.resize(map_->size_x*map_->size_y);
+  ROS_ASSERT(map_->cells);
+  float max_cost = -std::numeric_limits<float>::infinity();
+  for (int i = 0; i < map_->size_x * map_->size_y; ++i) {
+    if (map_->cells[i].cost > max_cost && !isinff(map_->cells[i].cost)) {
+      max_cost = map_->cells[i].cost;
+    }
+  }
+  for (int i = 0; i < map_->size_x * map_->size_y; ++i) {
+    if (isinff(map_->cells[i].cost)) {
+      grid.data[i] = 100;
+    } else {
+      grid.data[i] = int(100.0 * map_->cells[i].cost / max_cost);
+    }
+  }
+
+  return grid;
 }
 
 inline double OccupancyMap::minX() {
@@ -166,7 +251,9 @@ bool OccupancyMap::lineOfSight(double x1, double y1, double x2, double y2,
     if (cell == NULL) {
       // ROS_WARN_THROTTLE(5, "lineOfSight() Beyond map edge");
       return false;
-    } else if (cell->occ_state == +1 || (!allow_unknown && cell->occ_state == 0) || cell->occ_dist < max_occ_dist) {
+    } else if (cell->occ_state == map_cell_t::OCCUPIED ||
+               (!allow_unknown && cell->occ_state == map_cell_t::UNKNOWN) ||
+               cell->occ_dist < max_occ_dist) {
       return false;
     }
     line_x += step_size * ct;
@@ -261,7 +348,7 @@ void OccupancyMap::addNeighbors(const Node &node, double max_occ_dist, bool allo
       map_cell_t *cell = map_->cells + index;
       // If cell is occupied or too close to occupied cell, continue
 
-      if (cell->occ_state == +1 || (!allow_unknown && cell->occ_state == 0) || cell->occ_dist < max_occ_dist) {
+      if (isinff(cell->cost)) {
         // fprintf(stderr, "occupado\n");
         continue;
       }
@@ -271,19 +358,19 @@ void OccupancyMap::addNeighbors(const Node &node, double max_occ_dist, bool allo
       if (stopi_ != -1 && stopj_ != -1) {
         heur_cost = hypot(newi - stopi_, newj - stopj_);
       }
-      double ttl_cost = edge_cost + node.true_dist + heur_cost;
-      if (ttl_cost < costs_[index]) {
+      double total_cost = node.true_cost + edge_cost + cell->cost + heur_cost;
+      if (total_cost < costs_[index]) {
         // fprintf(stderr, "    Better path: new cost= % 6.2f\n", ttl_cost);
         // If node has finite cost, it's in queue and needs to be removed
         if (!isinf(costs_[index])) {
           Q_->erase(Node(make_pair(newi, newj), costs_[index], 0.0));
         }
-        costs_[index] = ttl_cost;
+        costs_[index] = total_cost;
         prev_i_[index] = ci;
         prev_j_[index] = cj;
         Q_->insert(Node(make_pair(newi, newj),
-                        edge_cost + node.true_dist,
-                        ttl_cost));
+                        node.true_cost + edge_cost + cell->cost,
+                        total_cost));
       }
     }
   }
@@ -311,7 +398,7 @@ bool OccupancyMap::nextNode(double max_occ_dist, Node *curr_node, bool allow_unk
     int ci = curr_node->coord.first, cj = curr_node->coord.second;
     // fprintf(stderr, "At %i %i (cost = %6.2f)  % 7.2f % 7.2f \n",
     //     ci, cj, curr_node.true_dist, MAP_WXGX(map_, ci), MAP_WYGY(map_, cj));
-    costs_[MAP_INDEX(map_, ci, cj)] = curr_node->true_dist;
+    costs_[MAP_INDEX(map_, ci, cj)] = curr_node->true_cost;
     Q_->erase(Q_->begin());
     addNeighbors(*curr_node, max_occ_dist, allow_unknown);
     return true;
@@ -386,7 +473,7 @@ OccupancyMap::prepareShortestPaths(double x, double y, double distance,
 
   Node curr_node;
   while (nextNode(max_occ_dist, &curr_node, allow_unknown)) {
-    double node_dist = curr_node.true_dist * map_->scale;
+    double node_dist = curr_node.true_cost * map_->scale;
     if (fabs(node_dist - distance) < margin && node_dist > min_dist) {
       float x = MAP_WXGX(map_, curr_node.coord.first);
       float y = MAP_WYGY(map_, curr_node.coord.second);

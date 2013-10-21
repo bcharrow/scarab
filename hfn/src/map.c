@@ -105,7 +105,7 @@ void map_update_cspace(map_t *map, double max_occ_dist) {
   for (j = 0; j < map->size_y; j++) {
     for (i = 0; i < map->size_x; i++) {
       cell = map->cells + MAP_INDEX(map, i, j);
-      if (cell->occ_state != +1) {
+      if (cell->occ_state != OCCUPIED) {
         continue;
       }
 

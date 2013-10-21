@@ -74,6 +74,11 @@
       <param name="base_frame_id" value="/$(arg agent)/$(arg base_frame_id)" />
       <param name="map_frame_id" value="$(arg global_frame_id)" />
 
+      <param name="cost_occ_prob" value="0.0" />
+      <param name="cost_occ_dist" value="0.0" />
+      <param name="max_occ_dist" value="1.0" />
+      <param name="lethal_occ_dist" value="0.2" />
+
       <remap from="map" to="/map" />
       <remap from="odom" to="odom_motor" />
     </node>

@@ -367,6 +367,7 @@ HFNWrapper::HFNWrapper(const Params &params, HumanFriendlyNav *hfn) :
   vis_pub_ = nh_.advertise<visualization_msgs::Marker>("marker", 10, true);
   vel_pub_ = nh_.advertise<geometry_msgs::Twist>("cmd_vel", 10);
   inflated_pub_ = nh_.advertise<sensor_msgs::LaserScan>("inflated_scan", 10, true);
+  costmap_pub_ = nh_.advertise<nav_msgs::OccupancyGrid>("costmap", 1, true);
 
   pose_sub_ = nh_.subscribe("pose", 1, &HFNWrapper::onPose, this);
   map_sub_ = nh_.subscribe("map", 1, &HFNWrapper::onMap, this);
@@ -389,6 +390,9 @@ void HFNWrapper::registerStatusCallback(const boost::function<void(Status)> &cal
 HFNWrapper* HFNWrapper::ROSInit(ros::NodeHandle& nh) {
   Params p;
   nh.param("max_occ_dist", p.max_occ_dist, 0.5);
+  nh.param("lethal_occ_dist", p.lethal_occ_dist, 0.23);
+  nh.param("cost_occ_prob", p.cost_occ_prob, 0.0);
+  nh.param("cost_occ_dist", p.cost_occ_dist, 0.0);
   nh.param("goal_tolerance", p.goal_tol, 0.2);
   nh.param("path_margin", p.path_margin, 0.5);
   nh.param("waypoint_spacing", p.waypoint_spacing, 0.05);
@@ -457,7 +461,10 @@ void HFNWrapper::onMap(const nav_msgs::OccupancyGrid &input) {
   ROS_INFO("HFNWrapper: Updating map");
   flags_.have_map = true;
   map_->setMap(input);
-  map_->updateCSpace(params_.max_occ_dist);
+  map_->updateCSpace(params_.max_occ_dist, params_.lethal_occ_dist,
+                     params_.cost_occ_prob, params_.cost_occ_dist);
+  //~ costmap_pub_.publish(map_->getCSpace());
+  costmap_pub_.publish(map_->getCostMap());
 
   if (active_) {
     setGoal(goals_);
@@ -540,8 +547,6 @@ void HFNWrapper::setGoal(const vector<geometry_msgs::PoseStamped> &p) {
   waypoints_.clear();
   pose_history_.clear();
 
-  double min_margin = 0.9 * params_.los_margin;
-
   // Plan path from current location to the final location in goals_,
   // passing through all intermediate points in goals_
   scarab::Path path;
@@ -549,7 +554,8 @@ void HFNWrapper::setGoal(const vector<geometry_msgs::PoseStamped> &p) {
   for (std::vector<geometry_msgs::PoseStamped>::iterator it = goals_.begin();
        it != goals_.end(); ++it) {
     // Check if goals_ location is reachable
-    if (map_->getCell(it->pose.position.x, it->pose.position.y)->occ_dist < min_margin) {
+    if (map_->getCell(it->pose.position.x, it->pose.position.y)->occ_dist <
+        params_.lethal_occ_dist) {
       ROS_WARN("HFNWrapper: UNREACHABLE (Goal at (%f, %f) is too close to obstacle)",
                it->pose.position.x, it->pose.position.y);
       stop();
@@ -561,21 +567,11 @@ void HFNWrapper::setGoal(const vector<geometry_msgs::PoseStamped> &p) {
     last_pose.position.x = path.back().x();
     last_pose.position.y = path.back().y();
     if (linear_distance(last_pose, it->pose) > params_.waypoint_spacing) {
-      double margin = params_.path_margin;
-      scarab::Path path_segment;
-      while (true) {
-        path_segment = map_->astar(last_pose.position.x, last_pose.position.y,
-                                   it->pose.position.x, it->pose.position.y,
-                                   margin, params_.allow_unknown_path);
-        if (path_segment.size() != 0 || margin < min_margin) {
-          break;
-        } else {
-          ROS_DEBUG("Shrinking path");
-          margin *= 0.9;
-        }
-      }
+      scarab::Path path_segment =
+        map_->astar(last_pose.position.x, last_pose.position.y,
+                    it->pose.position.x, it->pose.position.y,
+                    params_.lethal_occ_dist, params_.allow_unknown_path);
       if (path_segment.size() != 0) {
-        ROS_INFO("Margin = %f", margin);
         for (int i=0; i<path_segment.size(); ++i) {
           path.push_back(path_segment[i]);
         }

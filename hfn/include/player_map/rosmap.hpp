@@ -30,7 +30,11 @@ public:
 
   void setMap(map_t *map);
   void setMap(const nav_msgs::OccupancyGrid &grid);
-  void updateCSpace(double max_occ_dist);
+  void updateCSpace(double max_occ_dist, double lethal_occ_dist,
+                    double cost_occ_prob = 0.0, double cost_occ_dist = 0.0);
+
+  nav_msgs::OccupancyGrid getCSpace();
+  nav_msgs::OccupancyGrid getCostMap();
 
   double minX();
   double minY();
@@ -63,14 +67,15 @@ public:
   Path shortestPath(double x, double y);
 
   void setThresholds(int free, int occ);
+  void setCostFactors(double occ_prob, double occ_dist);
 
 private:
   struct Node {
     Node() {}
     Node(const std::pair<int, int> &c, float d, float h) :
-      coord(c), true_dist(d), heuristic(h) { }
+      coord(c), true_cost(d), heuristic(h) { }
     std::pair<int, int> coord;
-    float true_dist;
+    float true_cost;
     float heuristic;
   };
 
