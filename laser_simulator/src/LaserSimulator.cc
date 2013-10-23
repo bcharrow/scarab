@@ -394,7 +394,7 @@ void LaserSimulator::GetScan(std::vector<float>& ranges)
         }
 
 
-      if (noise_sd > 0.0)
+      if (noise_sd > 0.0 && max_range < maximum_range)
         {
           double U = rand() / double(RAND_MAX);
           double V = rand() / double(RAND_MAX);
