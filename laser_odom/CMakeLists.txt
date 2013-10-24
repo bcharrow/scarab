@@ -13,9 +13,7 @@ catkin_package(INCLUDE_DIRS
 include_directories(${Boost_INCLUDE_DIR} ${EIGEN_INCLUDE_DIRS} 
   ${catkin_INCLUDE_DIRS})
 
-add_library(laser_odom src/matcher.cpp)
-add_executable(matcher_bag src/matcher_bag.cpp)
-target_link_libraries(matcher_bag laser_odom ${catkin_LIBRARIES})
+add_library(matcher src/matcher.cpp)
 
-catkin_add_gtest(matcher_test src/matcher_test.cpp)
-target_link_libraries(matcher_test laser_odom ${catkin_LIBRARIES})
+add_executable(laser_odom_bag src/laser_odom_bag.cpp)
+target_link_libraries(laser_odom_bag matcher ${catkin_LIBRARIES})

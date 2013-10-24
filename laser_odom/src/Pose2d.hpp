@@ -31,6 +31,9 @@
 #include <ostream>
 #include <Eigen/Dense>
 
+#include <tf/tf.h>
+#include <angles/angles.h>
+
 #include "Point2d.hpp"
 
 class Pose2d {
@@ -39,7 +42,10 @@ public:
   Pose2d(double x, double y, double t)
     : x_(x), y_(y), t_(angles::normalize_angle(t)) {}
   Pose2d(const Eigen::Vector3d& vec)
-    : x_(vec(0)), y_(vec(1)), t_(angles::normalize_angle(2)) {}
+    : x_(vec(0)), y_(vec(1)), t_(angles::normalize_angle(vec(2))) {}
+  Pose2d(const tf::Pose& pose)
+    : x_(pose.getOrigin().x()), y_(pose.getOrigin().y()),
+      t_(angles::normalize_angle(tf::getYaw(pose.getRotation()))) {}
 
   double x() const { return x_; }
   double y() const { return y_; }
@@ -48,6 +54,13 @@ public:
   Eigen::Vector3d vector() const {
     Eigen::Vector3d v(x_, y_, t_);
     return v;
+  }
+
+  tf::Pose tf() const {
+    tf::Pose tform;
+    tform.setOrigin(tf::Vector3(x(), y(), 0.0));
+    tform.setRotation(tf::createQuaternionFromYaw(t()));
+    return tform;
   }
 
   void setX(double x) { x_ = x; }

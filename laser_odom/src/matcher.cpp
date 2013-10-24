@@ -6,15 +6,48 @@ using namespace std;
 using namespace Eigen;
 using namespace mrsl;
 
-GridMap::GridMap(double minx, double maxx, double miny, double maxy,
+GridMap::GridMap(double ox, double width, double oy, double height,
                  double meters_per_pixel)
-  : min_x_(minx), min_y_(miny), meters_per_pixel_(meters_per_pixel) {
-  width_ = ceil((maxx - minx) / meters_per_pixel_);
-  height_ = ceil((maxy - miny) / meters_per_pixel_);
+  : origin_x_(ox), origin_y_(oy), meters_per_pixel_(meters_per_pixel) {
+  width_ = ceil(width / meters_per_pixel_);
+  height_ = ceil(height / meters_per_pixel_);
+  ROS_INFO("Width() = %i Height() = %i", width_, height_);
+
+  ros_grid_.reset(new nav_msgs::OccupancyGrid);
+  ros_grid_->data.resize(width_ * height_);
+  ros_grid_->info.resolution = meters_per_pixel_;
+  ros_grid_->info.width = width_;
+  ros_grid_->info.height = height_;
+  ros_grid_->info.origin.position.x = origin_x_;
+  ros_grid_->info.origin.position.y = origin_y_;
+  ros_grid_->info.origin.orientation.w = 1.0;
+
   grid_ = new uint8_t[width_ * height_];
 }
 
-void GridMap::scores3D(const RowMatrix2d &points,
+void GridMap::occGrid(nav_msgs::OccupancyGrid *grid) const {
+  grid->header.frame_id = "/map";
+  grid->info.resolution = metersPerPixel();
+  grid->info.width = width();
+  grid->info.height = height();
+  grid->info.origin.position.x = originX();
+  grid->info.origin.position.y = originY();
+  grid->info.origin.orientation.w = 1.0;
+  grid->data.resize(height() * width());
+  for (int yi = 0; yi < height(); ++yi) {
+    for (int xi = 0; xi < width(); ++xi) {
+      int ind = yi * width() + xi;
+      grid->data.at(ind) = 100 - static_cast<int>(get(xi, yi) / 2.55);
+    }
+  }
+}
+
+nav_msgs::OccupancyGrid *GridMap::getOccGrid() const {
+  return ros_grid_.get();
+}
+
+void GridMap::scores3D(const Pose2d &pose,
+                       const RowMatrix2d &points,
                        int delta_xi, int num_x,
                        int delta_yi, int num_y,
                        double delta_t, int num_t, double inc_t,
@@ -23,11 +56,13 @@ void GridMap::scores3D(const RowMatrix2d &points,
   scores->resize(num_t);
   for (int t = 0; t < num_t; ++t) {
     double theta = delta_t + t * inc_t;
-    scores2D(points, delta_xi, num_x, delta_yi, num_y, theta, &scores->at(t));
+    scores2D(pose, points, delta_xi, num_x, delta_yi, num_y, theta,
+             &scores->at(t));
   }
 }
 
-void GridMap::scores2D(const RowMatrix2d &points,
+void GridMap::scores2D(const Pose2d &pose,
+                       const RowMatrix2d &points,
                        int delta_xi, int num_x,
                        int delta_yi, int num_y,
                        double theta, ArrayXXi *scores_ptr) const {
@@ -35,13 +70,14 @@ void GridMap::scores2D(const RowMatrix2d &points,
   scores.resize(num_x, num_y);
   scores.setZero();
 
-  double ct = cos(theta), st = sin(theta);
+  double ct = cos(theta + pose.t()), st = sin(theta + pose.t());
   for (int i = 0; i < points.cols(); ++i) {
     // Rotate point, convert it to pixel coordinates and *then* translate it.
     // If you translate in world coordinates rounding can do weird things.
     const Eigen::Vector2d &point = points.col(i);
-    double x = ct * point(0) - st * point(1);
-    double y = st * point(0) + ct * point(1);
+    double x = ct * point(0) - st * point(1) + pose.x();
+    double y = st * point(0) + ct * point(1) + pose.y();
+
     int xi0, yi0;
     // Get grid coordinates of point
     getSubscript(x, y, &xi0, &yi0);
@@ -58,65 +94,115 @@ void GridMap::scores2D(const RowMatrix2d &points,
         int ll = static_cast<int>(get(xi, yi));
         scores(dxi, dyi) += ll;
       }
-    }    
+    }
   }
 }
 
-ScanMatcher::ScanMatcher(const Params &p)
-  : p_(p), map_(NULL) {
-
-}
-
-ScanMatcher::~ScanMatcher() {
-}
-
-
-void mrsl::projectScan(const sensor_msgs::LaserScan &scan, RowMatrix2d *points) {
-  // Project to robot frame
-  points->resize(2, scan.ranges.size());
+void mrsl::projectScan(const Pose2d &pose, const sensor_msgs::LaserScan &scan,
+                       int subsample, RowMatrix2d *points) {
+  vector<Point2d> point_vec;
   double theta = scan.angle_min;
+  int added = 0;
   for (size_t i = 0; i < scan.ranges.size(); ++i) {
-    points->operator()(0, i) = cos(theta) * scan.ranges[i];
-    points->operator()(1, i) = sin(theta) * scan.ranges[i];
+    double range = scan.ranges[i];
+    if (scan.range_min <= range && range <= scan.range_max) {
+      ++added;
+      if (added % subsample == 0) {
+        double x = cos(theta) * scan.ranges[i];
+        double y = sin(theta) * scan.ranges[i];
+        point_vec.push_back(pose.transform_from(Point2d(x, y)));
+      }
+    }
     theta += scan.angle_increment;
   }
   if (abs(theta - scan.angle_increment - scan.angle_max) > 1e-5) {
     ROS_ERROR("Bad angle: %f %f", theta-scan.angle_increment, scan.angle_max);
     ROS_BREAK();
   }
-}
 
-void mrsl::transformPoints(const Vector3d& xyt, const RowMatrix2d &local,
-                     RowMatrix2d *points) {
-  double ct = cos(xyt(2)), st = sin(xyt(2));
-  points->resize(2, local.cols());
-  for (int i = 0; i < local.cols(); ++i) {
-    points->operator()(0, i) = ct * local(0, i) - st * local(1, i) + xyt(0);
-    points->operator()(1, i) = st * local(0, i) + ct * local(1, i) + xyt(1);
+  // Copy to output
+  points->resize(2, point_vec.size());
+  for (size_t i = 0; i < point_vec.size(); ++i) {
+    points->col(i) = point_vec.at(i).vector();
   }
 }
 
-void ScanMatcher::setScan(const Vector3d &pose,
+void mrsl::transformPoints(const Pose2d& pose, const RowMatrix2d &local,
+                           RowMatrix2d *points) {
+  double ct = cos(pose.t()), st = sin(pose.t());
+  points->resize(2, local.cols());
+  for (int i = 0; i < local.cols(); ++i) {
+    Point2d local_point = Point2d(local.col(i));
+    points->col(i) = pose.transform_from(local_point).vector();
+  }
+}
+
+ScanMatcher::ScanMatcher(const Params &p)
+  : p_(p), map_(NULL), have_scan_(false) {
+  p_.align();
+  map_.reset(new GridMap(-40, 80.0, -40, 80.0, p_.grid_res));
+  map_->fill(0);
+}
+
+ScanMatcher::~ScanMatcher() {
+}
+
+bool ScanMatcher::addScan(const Pose2d &odom,
                           const sensor_msgs::LaserScan &scan) {
-  // Project the scan
-  RowMatrix2d local_points, points;
-  projectScan(scan, &local_points);
-  transformPoints(pose, local_points, &points);
+  // Add odometry
+  pose_ = pose_.oplus(odom);
+  // ROS_INFO_STREAM("Pose: " << pose_);
 
-  double min_x = points.row(0).minCoeff();
-  double min_y = points.row(1).minCoeff();
-  double max_x = points.row(0).maxCoeff();
-  double max_y = points.row(1).maxCoeff();
+  // Correct pose
+  if (have_scan_) {
+    ros::Time start = ros::Time::now();
+    Gaussian3d update_est = matchScan(pose_, scan);
+    // ROS_INFO("  Match time: %.3f", (ros::Time::now() - start).toSec());
+    Eigen::Vector3d update = update_est.mean();
+    // ROS_INFO_STREAM("Update: " << update.transpose());
 
-  // Create map
-  // TODO: Allow several scans to comprise map
-  GridMap *newmap
-    = new GridMap(min_x - 1, max_x + 1, min_y - 1, max_y + 1, p_.grid_res);
-  newmap->fill(0);
+    if (fabs(update(0)) == p_.range_x || fabs(update(1)) == p_.range_y ||
+        fabs(update(2)) == p_.range_t) {
+      ROS_WARN("Update (%.5f, %.5f, %.5f) is at max of search window;\n"
+               "drive slower or make window bigger!",
+               update(0), update(1), update(2));
+    }
 
+    pose_.setX(pose_.x() +  update(0));
+    pose_.setY(pose_.y() +  update(1));
+    pose_.setT(pose_.t() +  update(2));
+  } else {
+    last_decay_ = scan.header.stamp;
+  }
+
+  if (scan.header.stamp - last_decay_ > ros::Duration(p_.decay_duration)) {
+    map_->decay(p_.decay_step);
+    last_decay_ = scan.header.stamp;
+  }
+
+  // If travelled, update map
+  Pose2d traveled = pose_.ominus(last_scan_pose_);
+  if (!have_scan_ || hypot(traveled.x(), traveled.y()) > p_.travel_distance ||
+      traveled.t() > p_.travel_angle) {
+    // Update map
+    RowMatrix2d points;
+    projectScan(pose_, scan, 1, &points);
+
+    ros::Time start = ros::Time::now();
+    updateMap(points);
+    ROS_INFO("  Update time: %.3f", (ros::Time::now() - start).toSec());
+    last_scan_pose_ = pose_;
+    have_scan_ = true;
+    return true;
+  } else {
+    return false;
+  }
+}
+
+// update map; points are in map frame
+void ScanMatcher::updateMap(const RowMatrix2d &points) {
   // TODO: Lookup table
-  // Project range measurement and update likelihood of neighboring points.
-  // Update probabilities in 3 sigma radius around point
+  // Update likelihood of neighboring points in 3 sigma radius around point
   const int max_offset = ceil(p_.sensor_sd / p_.grid_res) * 3;
   // Don't normalize by standard deviation; all values are scaled equally and
   // this results in a better spread
@@ -126,52 +212,38 @@ void ScanMatcher::setScan(const Vector3d &pose,
 
   for (int i = 0; i < points.cols(); ++i) {
     int xi, yi;
-    newmap->getSubscript(points(0, i), points(1, i), &xi, &yi);
+    map_->getSubscript(points(0, i), points(1, i), &xi, &yi);
     for (int delta_y = -max_offset; delta_y <= max_offset; ++delta_y) {
       for (int delta_x = -max_offset; delta_x <= max_offset; ++delta_x) {
         int dist = delta_x * delta_x + delta_y * delta_y;
         double prob = normalizer * exp(-dist * exp_factor);
         uint8_t val = static_cast<uint8_t>(prob * 255.0);
-        uint8_t orig = newmap->get(xi + delta_x, yi + delta_y);
-        newmap->set(xi + delta_x, yi + delta_y, max(val, orig));
+        map_->setMax(xi + delta_x, yi + delta_y, val);
       }
     }
   }
-  setMap(newmap);
 }
 
-void ScanMatcher::setMap(GridMap *map) {
-  if (map->metersPerPixel() != p_.grid_res) {
-    throw invalid_argument("Non-matching resolution");
-  }
-  map_.reset(map);
+Gaussian3d ScanMatcher::matchScan(const Pose2d &pose,
+                                  const sensor_msgs::LaserScan &scan) {
+  RowMatrix2d points;
+  // Project laser scan points into local frame
+  Pose2d identity(0.0, 0.0, 0.0);
+  projectScan(identity, scan, p_.subsample, &points);
+  return match(points);
 }
 
-Gaussian3d ScanMatcher::matchScan(const Eigen::Vector3d &pose_xyt,
-                                     const sensor_msgs::LaserScan &scan,
-                                     const SearchWindow &window) {
-  RowMatrix2d local_points, points;
-  projectScan(scan, &local_points);
-  transformPoints(pose_xyt, local_points, &points);
-  // Project laser scan points
-  return match(points, window);
-}
-
-Gaussian3d ScanMatcher::match(const RowMatrix2d &points,
-                              const SearchWindow &unaligned_win) {
-  static int it = 0;
-  // Align search window with map grid
-  double res = map_->metersPerPixel();
-  SearchWindow win = unaligned_win.makeAligned(res);
-  int sx = round(win.range_x / res);
-  int sy = round(win.range_y / res);
+Gaussian3d ScanMatcher::match(const RowMatrix2d &points) {
+  int sx = round(p_.range_x / p_.grid_res);
+  int sy = round(p_.range_y / p_.grid_res);
   int num_x = 2 * sx + 1;
   int num_y = 2 * sy + 1;
-  int num_t = 2 * round(win.range_t / win.inc_t) + 1;
+  int num_t = 2 * round(p_.range_t / p_.inc_t) + 1;
 
   vector<ArrayXXi> scores;
-  map_->scores3D(points, -sx, num_x, -sy, num_y,
-                 -win.range_t, num_t, win.inc_t, &scores);
+  map_->scores3D(pose_,
+                 points, -sx, num_x, -sy, num_y,
+                 -p_.range_t, num_t, p_.inc_t, &scores);
 
   // Process scores to get best guess
   Vector3i inds = Vector3i::Zero();
@@ -181,12 +253,6 @@ Gaussian3d ScanMatcher::match(const RowMatrix2d &points,
     for (int xi = 0; xi < dxdy_scores.rows(); ++xi) {
       for (int yi = 0; yi < dxdy_scores.cols(); ++yi) {
         int score = dxdy_scores(xi, yi);
-        ROS_DEBUG_NAMED("costsurface", "%i %f %f %f %i",
-                        it,
-                        -win.range_x + xi * res,
-                        -win.range_y + yi * res,
-                        -win.range_t + ti * win.inc_t,
-                        score);
         if (score > max_likeli) {
           inds(0) = xi;
           inds(1) = yi;
@@ -197,77 +263,8 @@ Gaussian3d ScanMatcher::match(const RowMatrix2d &points,
     }
   }
 
-  Vector3d transform(-win.range_x + inds(0) * res,
-                     -win.range_y + inds(1) * res,
-                     -win.range_t + inds(2) * win.inc_t);
-  ++it;
+  Vector3d transform(-p_.range_x + inds(0) * p_.grid_res,
+                     -p_.range_y + inds(1) * p_.grid_res,
+                     -p_.range_t + inds(2) * p_.inc_t);
   return Gaussian3d(transform, Matrix3d::Identity());
-
-}
-
-MatchVisualizer::MatchVisualizer() {
-      marker_pub_ =
-        nh_.advertise<visualization_msgs::MarkerArray>("/scan_match", 1, true);
-
-      visualization_msgs::Marker arr;
-      arr.action = visualization_msgs::Marker::ADD;
-      arr.type = visualization_msgs::Marker::CUBE_LIST;
-      arr.header.stamp = ros::Time();
-      arr.lifetime = ros::Duration(40.0);
-      arr.scale.x = 0.1;
-      arr.scale.y = 0.1;
-      arr.scale.z = 0.1;
-
-      scan1_ = arr;
-      scan1_.id = 0;
-      scan1_.header.frame_id ="/debug_laser";
-      scan1_.ns = "laser_scan1";
-      scan1_.color.a = 1.0;
-      scan1_.color.r = 1.0;
-
-      scan2_ = arr;
-      scan2_.id = 0;
-      scan2_.header.frame_id ="/debug_laser";
-      scan2_.ns = "laser_scan2";
-      scan2_.color.a = 1.0;
-      scan2_.color.b = 1.0;
-    }
-
-void MatchVisualizer::visualize(const sensor_msgs::LaserScan &scan1,
-                                const sensor_msgs::LaserScan &scan2,
-                                const Vector3d &match_transform) {
-  RowMatrix2d scan1_xy, scan2_local_points, scan2_xy;
-  projectScan(scan1, &scan1_xy);
-
-  projectScan(scan2, &scan2_local_points);
-  Eigen::Vector3d pose_xyt;
-
-  pose_xyt = match_transform;
-  transformPoints(pose_xyt, scan2_local_points, &scan2_xy);
-
-  scan1_.points.resize(scan1_xy.cols());
-  for (int i = 0; i < scan1_xy.cols(); ++i) {
-    scan1_.points[i].x = scan1_xy(0, i);
-    scan1_.points[i].y = scan1_xy(1, i);
-  }
-
-  scan2_.points.resize(scan2_xy.cols());
-  for (int i = 0; i < scan2_xy.cols(); ++i) {
-    scan2_.points[i].x = scan2_xy(0, i);
-    scan2_.points[i].y = scan2_xy(1, i);
-  }
-
-  visualization_msgs::MarkerArray arr;
-  arr.markers.push_back(scan1_);
-  arr.markers.push_back(scan2_);
-  marker_pub_.publish(arr);
-
-  ros::Time ts = ros::Time::now();
-
-  tf::Transform tform;
-  tform.setOrigin(tf::Vector3(pose_xyt(0), pose_xyt(1), 0.));
-  tform.setRotation(tf::createQuaternionFromYaw(pose_xyt(2)));
-  broadcaster_.sendTransform(tf::StampedTransform(tform, ts,
-                                                  "/debug_laser",
-                                                  "/debug_transform"));
 }
