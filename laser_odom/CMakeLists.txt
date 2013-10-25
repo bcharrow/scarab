@@ -17,3 +17,6 @@ add_library(matcher src/matcher.cpp)
 
 add_executable(laser_odom_bag src/laser_odom_bag.cpp)
 target_link_libraries(laser_odom_bag matcher ${catkin_LIBRARIES})
+
+add_executable(laser_odom src/laser_odom.cpp)
+target_link_libraries(laser_odom matcher ${catkin_LIBRARIES})
