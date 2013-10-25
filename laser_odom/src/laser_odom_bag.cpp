@@ -15,8 +15,6 @@ const std::string map_topic("/scarab44/map");
 const std::string map_frame("/map");
 const std::string base_frame("/scarab44/base_link");
 
-const bool use_odom_prior = false;
-
 struct BagTF {
   BagTF(const rosbag::Bag &bag) {
     bool interpolate = true;
@@ -106,6 +104,7 @@ int main(int argc, char **argv) {
   tf::TransformBroadcaster broadcaster;
 
   ScanMatcher mapper(ScanMatcher::Params::FromROS(pnh));
+  mapper.map().setFrameId("/newmap");
   mapper.setPose(Pose2d(offset.getOrigin().x(), offset.getOrigin().y(),
                         tf::getYaw(offset.getRotation())));
   nav_msgs::OccupancyGrid new_grid;
@@ -155,9 +154,7 @@ int main(int argc, char **argv) {
     bool map_change = mapper.addScan(Pose2d(0.0, 0.0, 0.0), laser_now);
 
     if (map_change) {
-      nav_msgs::OccupancyGrid *grid = mapper.map().getOccGrid();
-      grid->header.frame_id = "/newmap";
-      pub_newmap.publish(*grid);
+      pub_newmap.publish(mapper.map().occGrid());
     }
 
     // Offset for occ grid
@@ -167,9 +164,8 @@ int main(int argc, char **argv) {
                                                    map_frame, "/newmap"));
 
     // Pose of robot in occ grid
-    transform.setOrigin(tf::Vector3(mapper.pose().x(), mapper.pose().y(), 0.0));
-    transform.setRotation(tf::createQuaternionFromYaw(mapper.pose().t()));
-    broadcaster.sendTransform(tf::StampedTransform(transform, ros::Time::now(),
+    broadcaster.sendTransform(tf::StampedTransform(mapper.pose().tf(),
+                                                   ros::Time::now(),
                                                    "/newmap", "/scarabpose"));
 
     // Laser in occ grid

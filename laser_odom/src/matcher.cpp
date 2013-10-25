@@ -11,9 +11,8 @@ GridMap::GridMap(double ox, double width, double oy, double height,
   : origin_x_(ox), origin_y_(oy), meters_per_pixel_(meters_per_pixel) {
   width_ = ceil(width / meters_per_pixel_);
   height_ = ceil(height / meters_per_pixel_);
-  ROS_INFO("Width() = %i Height() = %i", width_, height_);
-
   ros_grid_.reset(new nav_msgs::OccupancyGrid);
+  ros_grid_->header.frame_id = "/map";
   ros_grid_->data.resize(width_ * height_);
   ros_grid_->info.resolution = meters_per_pixel_;
   ros_grid_->info.width = width_;
@@ -23,27 +22,6 @@ GridMap::GridMap(double ox, double width, double oy, double height,
   ros_grid_->info.origin.orientation.w = 1.0;
 
   grid_ = new uint8_t[width_ * height_];
-}
-
-void GridMap::occGrid(nav_msgs::OccupancyGrid *grid) const {
-  grid->header.frame_id = "/map";
-  grid->info.resolution = metersPerPixel();
-  grid->info.width = width();
-  grid->info.height = height();
-  grid->info.origin.position.x = originX();
-  grid->info.origin.position.y = originY();
-  grid->info.origin.orientation.w = 1.0;
-  grid->data.resize(height() * width());
-  for (int yi = 0; yi < height(); ++yi) {
-    for (int xi = 0; xi < width(); ++xi) {
-      int ind = yi * width() + xi;
-      grid->data.at(ind) = 100 - static_cast<int>(get(xi, yi) / 2.55);
-    }
-  }
-}
-
-nav_msgs::OccupancyGrid *GridMap::getOccGrid() const {
-  return ros_grid_.get();
 }
 
 void GridMap::scores3D(const Pose2d &pose,
@@ -155,7 +133,7 @@ bool ScanMatcher::addScan(const Pose2d &odom,
 
   // Correct pose
   if (have_scan_) {
-    ros::Time start = ros::Time::now();
+    // ros::Time start = ros::Time::now();
     Gaussian3d update_est = matchScan(pose_, scan);
     // ROS_INFO("  Match time: %.3f", (ros::Time::now() - start).toSec());
     Eigen::Vector3d update = update_est.mean();
@@ -188,9 +166,9 @@ bool ScanMatcher::addScan(const Pose2d &odom,
     RowMatrix2d points;
     projectScan(pose_, scan, 1, &points);
 
-    ros::Time start = ros::Time::now();
+    // ros::Time start = ros::Time::now();
     updateMap(points);
-    ROS_INFO("  Update time: %.3f", (ros::Time::now() - start).toSec());
+    // ROS_INFO("  Update time: %.3f", (ros::Time::now() - start).toSec());
     last_scan_pose_ = pose_;
     have_scan_ = true;
     return true;

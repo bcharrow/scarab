@@ -103,8 +103,13 @@ public:
     }
   }
 
-  void occGrid(nav_msgs::OccupancyGrid *grid) const;
-  nav_msgs::OccupancyGrid* getOccGrid() const;
+  void setFrameId(const std::string &frame) {
+    ros_grid_->header.frame_id = frame;
+  }
+
+  const nav_msgs::OccupancyGrid& occGrid() const {
+    return *ros_grid_;
+  }
 
   // Get likelihood of points for various translations after a rotation.
   //
@@ -220,9 +225,10 @@ public:
   void updateMap(const RowMatrix2d &points);
 
   const GridMap& map() const { return *map_; }
+  GridMap& map() { return *map_; }
+
   Gaussian3d matchScan(const Pose2d &pose, const sensor_msgs::LaserScan &scan);
   Gaussian3d match(const RowMatrix2d &points);
-
 private:
   Params p_;
   Pose2d last_scan_pose_; // pose of the last incorporated scan
