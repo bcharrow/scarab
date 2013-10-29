@@ -17,7 +17,7 @@
     <param name="tf_prefix" value="/$(env ROS_NAMESPACE)" />
     <remap from="/tf" to="tf" />
     <node pkg="tf" type="static_transform_publisher" name="transformer"
-          args="0.0 0.0 0.0 0.0 0.0 0.0 base laser 500" />
+          args="0.0 0.0 0.0 0.0 0.0 0.0 base_link laser 500" />
 
     <node name="laser" pkg="hokuyo_node" type="hokuyo_node" output="screen">
       <param name="cluster" value="1" />
@@ -44,7 +44,7 @@
           output="screen">
     </node>
     <node name="odom_throttle" pkg="topic_tools" type="throttle"
-          args="messages /$(env ROS_NAMESPACE)/motor/odom 2.0" />
+          args="messages /$(env ROS_NAMESPACE)/odom_motor 2.0" />
 
   </group>
 </launch>

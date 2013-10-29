@@ -16,8 +16,8 @@
 
     <node pkg="amcl" type="amcl" name="amcl" output="screen">
       <param name="global_frame_id" value="/map" />
-      <param name="base_frame_id" value="base" />
-      <param name="odom_frame_id" value="odom" />
+      <param name="base_frame_id" value="base_link" />
+      <param name="odom_frame_id" value="odom_motor" />
 
       <!-- <param name="gui_publish_rate" value="10.0" /> -->
 
@@ -50,7 +50,7 @@
       <param name="odom_alpha2" value="1.0" />  <!-- Rot noise from trans  -->
       <param name="odom_alpha3" value="1.0" />  <!-- Trans noise from trans  -->
       <param name="odom_alpha4" value="1.0" />  <!-- Trans noise from rot  -->
-      <param name="odom_frame_id" value="odom" />
+      <param name="odom_frame_id" value="odom_motor" />
       <param name="odom_model_type" value="diff" />
       <param name="recovery_alpha_fast" value="0.0" />
       <param name="recovery_alpha_slow" value="0.0" />

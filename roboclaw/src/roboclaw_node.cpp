@@ -393,8 +393,8 @@ public:
 
     driver_.reset(new DifferentialDriver(priv_node_));
 
-    priv_node_.param("odom_frame", odom_state.header.frame_id, string("odom"));
-    priv_node_.param("base_frame", odom_state.child_frame_id, string("base"));
+    priv_node_.param("odom_frame", odom_state.header.frame_id, string("odom_motor"));
+    priv_node_.param("base_frame", odom_state.child_frame_id, string("base_link"));
 
     priv_node_.param("freq", freq_, 30.0);
 
@@ -402,7 +402,7 @@ public:
     odom_state.pose.pose.orientation = tf::createQuaternionMsgFromYaw(0.0);
     x_ = y_ = th_ = 0.0;
 
-    odom_pub = priv_node_.advertise<nav_msgs::Odometry>("odom", 100);
+    odom_pub = node_.advertise<nav_msgs::Odometry>("odom_motor", 100);
 
     cmd_vel_sub = node_.subscribe("cmd_vel", 1,
                                   &RoboClawNode::OnTwistCmd, this);
