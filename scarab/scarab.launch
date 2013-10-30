@@ -42,9 +42,17 @@
 
     <node pkg="roboclaw" type="roboclaw_node" name="motor" respawn="false"
           output="screen">
+      <param name="broadcast_tf" value="false" />
     </node>
     <node name="odom_throttle" pkg="topic_tools" type="throttle"
           args="messages /$(env ROS_NAMESPACE)/odom_motor 2.0" />
+
+    <node name="laser_odom" pkg="laser_odom" type="laser_odom"
+          output="screen" >
+      <param name="debug" value="true" />
+      <param name="base_frame" value="/$(env ROS_NAMESPACE)/base_link" />
+      <param name="odom_frame" value="/$(env ROS_NAMESPACE)/odom_laser" />
+    </node>
 
   </group>
 </launch>

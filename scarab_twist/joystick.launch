@@ -4,7 +4,7 @@
     <node name="joy_to_twist" pkg="scarab_twist" type="joy_to_twist"
           output="screen" >
       <param name="wmax" value="0.6" type="double" />
-      <param name="vmax" value="0.20" type="double" />
+      <param name="vmax" value="0.60" type="double" />
       <remap from="~/twist" to="cmd_vel" />
       <remap from="~/joy" to="joy" />
     </node>

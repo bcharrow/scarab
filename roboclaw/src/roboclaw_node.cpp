@@ -393,6 +393,7 @@ public:
 
     driver_.reset(new DifferentialDriver(priv_node_));
 
+    priv_node_.param("broadcast_tf", broadcast_tf_, true);
     priv_node_.param("odom_frame", odom_state.header.frame_id, string("odom_motor"));
     priv_node_.param("base_frame", odom_state.child_frame_id, string("base_link"));
 
@@ -466,6 +467,9 @@ public:
 
   void broadcastTf() {
     boost::mutex::scoped_lock lock(state_mutex_);
+    if (!broadcast_tf_) {
+      return;
+    }
 
     tf::Transform transform;
     transform.setOrigin(tf::Vector3(x_, y_, 0));
@@ -529,6 +533,7 @@ private:
 
   // Current x, y, theta estimate given odometry
   ros::Time last_vel_update;
+  bool broadcast_tf_;
   nav_msgs::Odometry odom_state;
   double x_, y_, th_;
 

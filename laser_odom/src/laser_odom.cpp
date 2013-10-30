@@ -21,8 +21,7 @@ public:
 
     podom_ = nh_.advertise<nav_msgs::Odometry>("odom_laser", 5, false);
     if (debug_) {
-      pscan_ = nh_.advertise<sensor_msgs::LaserScan>("scan_local", 1, false);
-      pmap_ = nh_.advertise<nav_msgs::OccupancyGrid>("map_local", 1, false);
+      pmap_ = nh_.advertise<nav_msgs::OccupancyGrid>("map_local", 1, true);
     }
 
     odom_.header.frame_id = odom_frame_;
@@ -35,10 +34,6 @@ public:
     // No odom estimate
     bool map_change = matcher_.addScan(Pose2d(0.0, 0.0, 0.0), scan);
     if (debug_) {
-      sensor_msgs::LaserScan local_scan;
-      local_scan = scan;
-      local_scan.header.frame_id = base_frame_;
-      pscan_.publish(local_scan);
       if (map_change) {
         pmap_.publish(matcher_.map().occGrid());
       }
@@ -73,7 +68,7 @@ private:
   std::string odom_frame_, base_frame_;
   mrsl::ScanMatcher matcher_;
   ros::Subscriber sscan_;
-  ros::Publisher podom_, pmap_, pscan_;
+  ros::Publisher podom_, pmap_;
   bool have_pose_;
   Pose2d last_pose_;
   ros::Time last_pose_time_;
