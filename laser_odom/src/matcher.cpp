@@ -153,16 +153,20 @@ bool ScanMatcher::addScan(const Pose2d &odom,
     last_decay_ = scan.header.stamp;
   }
 
+  bool changed = false;
   if (scan.header.stamp - last_decay_ > ros::Duration(p_.decay_duration)) {
     map_->decay(p_.decay_step);
     last_decay_ = scan.header.stamp;
+    changed = true;
   }
 
-  // If travelled, update map
+  // If map has no scans, robot has moved, or nothing has been incorporated in
+  // a while, update the map
   Pose2d traveled = pose_.ominus(last_scan_pose_);
-  if (!have_scan_ || hypot(traveled.x(), traveled.y()) > p_.travel_distance ||
-      traveled.t() > p_.travel_angle) {
-    // Update map
+  bool moved_linear = hypot(traveled.x(), traveled.y()) > p_.travel_distance;
+  bool moved_angular = traveled.t() > p_.travel_angle;
+  bool add = scan.header.stamp - last_add_ > ros::Duration(p_.decay_duration);
+  if (!have_scan_ || moved_linear || moved_angular || add) {
     RowMatrix2d points;
     projectScan(pose_, scan, 1, &points);
 
@@ -171,9 +175,10 @@ bool ScanMatcher::addScan(const Pose2d &odom,
     // ROS_INFO("  Update time: %.3f", (ros::Time::now() - start).toSec());
     last_scan_pose_ = pose_;
     have_scan_ = true;
+    last_add_ = scan.header.stamp;
     return true;
   } else {
-    return false;
+    return changed;
   }
 }
 

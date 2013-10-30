@@ -233,7 +233,7 @@ private:
   Params p_;
   Pose2d last_scan_pose_; // pose of the last incorporated scan
   Pose2d pose_; // current pose of the robot
-  ros::Time last_decay_;
+  ros::Time last_decay_, last_add_;
   bool have_scan_;
   boost::scoped_ptr<GridMap> map_;
 };
