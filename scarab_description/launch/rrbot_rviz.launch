@@ -1,0 +1,27 @@
+<launch>
+  <!-- <param name="robot_description" -->
+  <!--   command="$(find xacro)/xacro.py '$(find scarab_description)/urdf/rrbot.xacro'" /> -->
+
+  <!-- send fake joint values -->
+  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+    <param name="use_gui" value="TRUE"/>
+  </node>
+
+  <!-- Combine joint values -->
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher">
+    <param name="tf_prefix" value="rrbot1" />
+  </node>
+
+  <node name="robot_state_publisher2" pkg="robot_state_publisher" type="state_publisher">
+    <param name="tf_prefix" value="rrbot2" />
+  </node>
+
+  <!-- Show in Rviz   -->
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find scarab_description)/launch/rrbot.rviz"/>
+
+  
+  <node name="static_1" type="static_transform_publisher" pkg="tf2_ros"
+        args="0 0 0 0 0 0 1 world rrbot1/world"/>
+  <node name="static_2" type="static_transform_publisher" pkg="tf2_ros"
+        args="0 0 0 0 0 0 1 world rrbot2/world"/>
+</launch>
