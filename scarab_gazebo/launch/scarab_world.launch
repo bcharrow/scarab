@@ -21,6 +21,9 @@
   <node name="levine_spawn" pkg="gazebo_ros" type="spawn_model" output="screen"
         args="-sdf -model levine -file $(find scarab_gazebo)/models/levine/model.sdf"/>
 
+  <node name="transformer" pkg="tf2_ros" type="static_transform_publisher"
+        args="0 0 0 0 0 0 1 map scarab40/odom_true" />
+
   <group ns="scarab40">
     <param name="tf_prefix" value="scarab40" />
     <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" output="screen"

@@ -187,7 +187,7 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        hokuyo_link:
+        laser:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -306,7 +306,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: scarab40/odom
+    Fixed Frame: map
     Frame Rate: 30
   Name: root
   Tools:
@@ -326,17 +326,18 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Class: rviz/FPS
+      Class: rviz/XYOrbit
+      Distance: 9.84993
+      Focal Point:
+        X: 1.37454
+        Y: 0.252579
+        Z: -5.26425e-07
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.229705
-      Position:
-        X: -10.2246
-        Y: 1.17148
-        Z: 1.13652
+      Pitch: 0.509797
       Target Frame: <Fixed Frame>
-      Value: FPS (rviz)
-      Yaw: 6.03888
+      Value: XYOrbit (rviz)
+      Yaw: 4.17229
     Saved: ~
 Window Geometry:
   Camera:
@@ -356,5 +357,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1076
-  X: 769
+  X: 755
   Y: 163
