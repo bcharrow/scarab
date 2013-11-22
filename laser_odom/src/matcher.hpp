@@ -107,6 +107,10 @@ public:
     ros_grid_->header.frame_id = frame;
   }
 
+  geometry_msgs::Pose& origin() {
+    return ros_grid_->info.origin;
+  }
+
   const nav_msgs::OccupancyGrid& occGrid() const {
     return *ros_grid_;
   }

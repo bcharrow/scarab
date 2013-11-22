@@ -53,8 +53,8 @@
         <wheelDiameter>0.070</wheelDiameter>
         <torque>1.0</torque>
         <commandTopic>cmd_vel</commandTopic>
-        <odometryTopic>odom</odometryTopic>
-        <odometryFrame>odom</odometryFrame>
+        <odometryTopic>odom_true</odometryTopic>
+        <odometryFrame>odom_true</odometryFrame>
         <robotBaseFrame>base_footprint</robotBaseFrame>
       </plugin>
     </gazebo>
