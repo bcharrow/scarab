@@ -16,7 +16,7 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES playermap
   CATKIN_DEPENDS dynamic_reconfigure roscpp sensor_msgs geometry_msgs
-                 nav_msgs tf actionlib_msgs actionlib
+                 nav_msgs tf actionlib_msgs actionlib angles
 )
 
 include(${CGAL_USE_FILE})

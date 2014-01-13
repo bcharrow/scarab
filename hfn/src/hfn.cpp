@@ -8,6 +8,8 @@
 
 #include <CGAL/squared_distance_2.h>
 
+#include <angles/angles.h>
+
 using namespace std;
 
 //=========================== Helper functions ============================//
@@ -352,7 +354,8 @@ void HumanFriendlyNav::twistToWheelVel(const geometry_msgs::Twist &twist,
 
 
 HFNWrapper::HFNWrapper(const Params &params, HumanFriendlyNav *hfn) :
-  map_(new scarab::OccupancyMap()), active_(false), params_(params), nh_(), hfn_(hfn) {
+  map_(new scarab::OccupancyMap()), active_(false), turning_(false),
+  params_(params), nh_(), hfn_(hfn) {
   flags_.have_pose = false;
   flags_.have_odom = false;
   flags_.have_map = false;
@@ -389,6 +392,7 @@ HFNWrapper* HFNWrapper::ROSInit(ros::NodeHandle& nh) {
   nh.param("cost_occ_prob", p.cost_occ_prob, 0.0);
   nh.param("cost_occ_dist", p.cost_occ_dist, 0.0);
   nh.param("goal_tolerance", p.goal_tol, 0.2);
+  nh.param("goal_tolerance_ang", p.goal_tol_ang, M_PI * 2.0);
   nh.param("path_margin", p.path_margin, 0.5);
   nh.param("waypoint_spacing", p.waypoint_spacing, 0.05);
   nh.param("los_margin", p.los_margin, 0.2);
@@ -427,7 +431,10 @@ void HFNWrapper::onPose(const geometry_msgs::PoseStamped &input) {
   }
 
   // check if reached goal or stuck
-  if (linear_distance(pose_.pose, goals_.back().pose) < params_.goal_tol) {
+  bool xy_ok = turning_ ||
+    linear_distance(pose_.pose, goals_.back().pose) < params_.goal_tol;
+  if (xy_ok &&
+      ang_distance(pose_.pose, goals_.back().pose) < params_.goal_tol_ang) {
     stop();
     ROS_INFO("HFNWrapper: FINISHED");
     callback_(FINISHED);
@@ -515,6 +522,24 @@ void HFNWrapper::onLaserScan(const sensor_msgs::LaserScan &scan) {
   if (valid_waypoint) {
     geometry_msgs::Twist cmd;
     hfn_->getCommandVel(&cmd);
+    if (!turning_ &&
+        linear_distance(pose_.pose, goals_.back().pose) < 0.8*params_.goal_tol) {
+      turning_ = 0.0 <= params_.goal_tol_ang && params_.goal_tol_ang <= M_PI;
+      if (turning_) {
+        ROS_INFO("Ignoring HFN and turning instead");
+      }
+    }
+    if (turning_) {
+      cmd.linear.x = 0.0;
+      double diff =
+        angles::normalize_angle(tf::getYaw(goals_.back().pose.orientation) -
+                                tf::getYaw(pose_.pose.orientation));
+      double speed = hfn_->params().w_max;
+      if (fabs(diff) < M_PI / 8.0) {
+        speed /= 3.0;
+      }
+      cmd.angular.z = copysign(speed, diff);
+    }
     vel_pub_.publish(cmd);
   } else {
     stop();
@@ -541,6 +566,7 @@ void HFNWrapper::setGoal(const vector<geometry_msgs::PoseStamped> &p) {
   goals_ = p;
   waypoints_.clear();
   pose_history_.clear();
+  turning_ = false;
 
   // Plan path from current location to the final location in goals_,
   // passing through all intermediate points in goals_

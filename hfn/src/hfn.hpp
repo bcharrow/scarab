@@ -97,6 +97,7 @@ public:
     double cost_occ_prob;    // factor to convert occupancy prob to cost
     double cost_occ_dist;    // factor to convert occ_dist to cost
     double goal_tol;         // distance when goal is considered reached
+    double goal_tol_ang;     // max angle difference for goal to be reached
     double path_margin;      // max margin for path planning
     double waypoint_spacing; // max distance between waypoints
     double los_margin;       // margin for line of sight checks
@@ -153,6 +154,7 @@ private:
 
   boost::function<void(Status)> callback_;
   bool active_; // True if we're navigating to a goal
+  bool turning_; // True if we've reached goal and are just turning
   geometry_msgs::PoseStamped pose_;
   std::vector<geometry_msgs::PoseStamped> goals_;
   std::list<geometry_msgs::PoseStamped> pose_history_;
