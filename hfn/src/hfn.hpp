@@ -58,7 +58,6 @@ public:
   void setLaserScan(const sensor_msgs::LaserScan &input);
   void setPose(const geometry_msgs::PoseStamped &input);
   void setOdom(const nav_msgs::Odometry &input);
-  bool done();
   void getCommandVel(geometry_msgs::Twist *cmd_vel);
 
   const sensor_msgs::LaserScan& inflatedScan() {

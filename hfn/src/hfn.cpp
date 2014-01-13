@@ -279,11 +279,6 @@ void HumanFriendlyNav::desiredOrientation(double &alpha_des, double &distance_de
   }
 }
 
-bool HumanFriendlyNav::done() {
-  geometry_msgs::Pose zero_pose;
-  return linear_distance(goal_, zero_pose) < params_.waypoint_thresh;
-}
-
 void HumanFriendlyNav::orientationToTwist(double alpha, double distance,
                                           geometry_msgs::Twist &twist) {
   twist.linear.x = desiredVelocity(distance, alpha);
