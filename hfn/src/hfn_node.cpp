@@ -14,6 +14,9 @@ int main(int argc, char **argv)
   //~ dynamic_reconfigure::Server<human_friendly_navigation::HumanFriendlyNavigationConfig> server;
   //~ server.setCallback(boost::bind(&HumanFriendlyNav::reconfigureCallback, hfn, _1, _2));
 
+  // Wait for connections to form
+  ros::Duration(1.0).sleep();
+  hfn->stop();
   MoveServer mover("move", hfn.get());
 
   mover.start();
