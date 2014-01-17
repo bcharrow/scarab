@@ -566,7 +566,10 @@ void HFNWrapper::setGoal(const vector<geometry_msgs::PoseStamped> &p) {
   goals_ = p;
   waypoints_.clear();
   pose_history_.clear();
-  turning_ = false;
+  // If we were turning to orient towards the last goal, and we're still pretty
+  // close to goal, don't bother moving closer, just keep on turning
+  turning_ = (turning_ &&
+              linear_distance(goals_.back().pose, pose_.pose) < 2 * params_.goal_tol);
 
   // Plan path from current location to the final location in goals_,
   // passing through all intermediate points in goals_
