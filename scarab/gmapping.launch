@@ -1,13 +1,11 @@
 <launch>
-  <group ns="$(env ROS_NAMESPACE)" >
-    <remap from="/tf" to="tf" />
-    <param name="tf_prefix" value="/$(env ROS_NAMESPACE)" />
-    <node pkg="gmapping" type="slam_gmapping" name="mapping"
-          output="screen" >
-      <remap from="scan" to="scan" />
-      <param name="odom_frame" value="odom" />
-      <param name="base_frame" value="base" />
-      <param name="map_frame" value="/map" />
-    </node>
-  </group>
+  <!-- <remap from="/tf" to="tf" /> -->
+  <node pkg="gmapping" type="slam_gmapping" name="mapping"
+        output="screen" >
+    <remap from="scan" to="scan" />
+    <remap from="map" to ="/map_hokuyo" />
+    <param name="odom_frame" value="odom_laser" />
+    <param name="base_frame" value="base_link" />
+    <param name="map_frame" value="map_hokuyo" />
+  </node>
 </launch>
