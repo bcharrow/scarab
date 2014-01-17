@@ -73,8 +73,9 @@ map_t * requestCSpaceMap(const char *srv_name, const int free_threshold,
 }
 
 
-OccupancyMap::OccupancyMap() : map_(NULL), ncells_(0),
-  min_occupied_threshold_(100), max_free_threshold_(0) {
+OccupancyMap::OccupancyMap()
+  : map_(NULL), ncells_(0), min_occupied_threshold_(100),
+    max_free_threshold_(0), max_occ_dist_(0.0), lethal_occ_dist_(0.0) {
 
 }
 
@@ -128,6 +129,8 @@ void OccupancyMap::updateCSpace(double max_occ_dist,
     ROS_ERROR("max_occ_dist must be at least lethal_occ_dist");
     return;
   }
+  max_occ_dist_ = max_occ_dist_;
+  lethal_occ_dist_ = lethal_occ_dist_;
   map_update_cspace(map_, max_occ_dist);
   // compute cost for each cell
   for (int i = 0; i < map_->size_x * map_->size_y; ++i) {
@@ -215,7 +218,7 @@ inline double OccupancyMap::maxY() {
   return MAP_WYGY(map_, map_->size_y);
 }
 
-const map_cell_t* OccupancyMap::getCell(double x, double y) {
+const map_cell_t* OccupancyMap::getCell(double x, double y) const {
   return map_get_cell(map_, x, y, 0);
 }
 
@@ -452,9 +455,10 @@ Path OccupancyMap::astar(double startx, double starty,
 }
 
 const Path&
-OccupancyMap::prepareShortestPaths(double x, double y, double distance,
-                                   double margin, double max_occ_dist,
-                                   double min_dist, bool allow_unknown) {
+OccupancyMap::prepareShortestPaths(double x, double y,
+                                   double min_distance, double max_distance,
+                                   double max_occ_dist,
+                                   bool allow_unknown) {
   endpoints_.clear();
 
   if (map_ == NULL) {
@@ -474,11 +478,11 @@ OccupancyMap::prepareShortestPaths(double x, double y, double distance,
   Node curr_node;
   while (nextNode(max_occ_dist, &curr_node, allow_unknown)) {
     double node_dist = curr_node.true_cost * map_->scale;
-    if (fabs(node_dist - distance) < margin && node_dist > min_dist) {
+    if (min_distance <= node_dist && node_dist < max_distance) {
       float x = MAP_WXGX(map_, curr_node.coord.first);
       float y = MAP_WYGY(map_, curr_node.coord.second);
       endpoints_.push_back(Eigen::Vector2f(x, y));
-    } else if (node_dist > distance + margin) {
+    } else if (node_dist > max_distance) {
       break;
     }
   }

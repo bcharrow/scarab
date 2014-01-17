@@ -41,7 +41,10 @@ public:
   double maxX();
   double maxY();
 
-  const map_cell_t* getCell(double x, double y);
+  double lethalOccDist() const { return lethal_occ_dist_; }
+  double maxOccDist() const { return max_occ_dist_; }
+
+  const map_cell_t* getCell(double x, double y) const;
 
   bool lineOfSight(double x1, double y1, double x2, double y2,
                    double max_occ_dist = 0.0, bool allow_unknown = false) const;
@@ -51,9 +54,8 @@ public:
   // TODO: Unify these two APIs
 
   // Get a list of endpoints
-  const Path& prepareShortestPaths(double x, double y, double distance,
-                                   double margin, double max_occ_dist,
-                                   double min_dist = 0.0,
+  const Path& prepareShortestPaths(double x, double y, double min_distance,
+                                   double max_distance, double max_occ_dist,
                                    bool allow_unknown = false);
   // Get the path whose endpoint is ind from last call to prepareShortestPaths()
   Path buildShortestPath(int ind);
@@ -96,6 +98,7 @@ private:
   int starti_, startj_;
   int stopi_, stopj_;
   int max_free_threshold_, min_occupied_threshold_;
+  double max_occ_dist_, lethal_occ_dist_;
   boost::scoped_array<float> costs_;
   boost::scoped_array<int> prev_i_;
   boost::scoped_array<int> prev_j_;
