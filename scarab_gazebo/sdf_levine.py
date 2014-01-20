@@ -4,8 +4,38 @@ from __future__ import print_function
 import math
 import sys
 
-scheme="""<sdf version='1.4'>
+scheme="""<?xml version='1.0'?>
+<sdf version='1.4'>
   <model name='Levine'>
+    <link name='Floor_0'>
+      <collision name='Floor_0_Collision'>
+        <geometry>
+          <box>
+            <size>40 30 0.1</size>
+          </box>
+        </geometry>
+        <pose>0 0 0.05 0 -0 0</pose>
+      </collision>
+      <visual name='Floor_0_Visual'>
+        <pose>0 0 0.05 0 -0 0</pose>
+        <geometry>
+          <box>
+            <size>40 30 0.1</size>
+          </box>
+        </geometry>
+        <material>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/Grey</name>
+          </script>
+        </material>
+      </visual>
+      <velocity_decay>
+        <linear>0</linear>
+        <angular>0</angular>
+      </velocity_decay>
+      <pose>15 10 1.5 0 -0 0</pose>
+    </link>
 {links}
     <static>1</static>
   </model>
@@ -164,6 +194,10 @@ in_bot = ((in_leftx, in_boty),
           (in_rightx-0.1, 4.9-door_height),
           (in_rightx, 4.9-door_height),
           (in_rightx, in_boty),
+          (4.5, in_boty),
+          (4.5, in_boty+0.1),
+          (4.5-door_height, in_boty+0.1),
+          (4.5-door_height, in_boty),
           (in_leftx, in_boty))
 
 in_topy = ytop-hallway_width
