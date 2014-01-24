@@ -65,8 +65,8 @@ void HumanFriendlyNav::setLaserScan(const sensor_msgs::LaserScan &input) {
 
 void HumanFriendlyNav::setPose(const geometry_msgs::PoseStamped &input) {
   if (input.header.frame_id != params_.map_frame) {
-    ROS_ERROR("HumanFriendlyNav::setPose() Invalid frame_id: %s ",
-              input.header.frame_id.c_str());
+    ROS_ERROR("HumanFriendlyNav::setPose() Must have pose in map frame.  Map frame = %s, pose frame = %s ",
+              params_.map_frame.c_str(), input.header.frame_id.c_str());
     ROS_BREAK();
   }
   pose_ = input.pose;
@@ -536,7 +536,7 @@ void HFNWrapper::onLaserScan(const sensor_msgs::LaserScan &scan) {
                                 tf::getYaw(pose_.pose.orientation));
       double speed = hfn_->params().w_max;
       if (fabs(diff) < M_PI / 8.0) {
-        speed /= 3.0;
+        speed /= 1.5;
       }
       cmd.angular.z = copysign(speed, diff);
     }
