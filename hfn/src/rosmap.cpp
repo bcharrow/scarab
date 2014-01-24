@@ -74,8 +74,8 @@ map_t * requestCSpaceMap(const char *srv_name, const int free_threshold,
 
 
 OccupancyMap::OccupancyMap()
-  : map_(NULL), ncells_(0), min_occupied_threshold_(100),
-    max_free_threshold_(0), max_occ_dist_(0.0), lethal_occ_dist_(0.0) {
+  : map_(NULL), ncells_(0), max_free_threshold_(0),
+    min_occupied_threshold_(100), max_occ_dist_(0.0), lethal_occ_dist_(0.0) {
 
 }
 
@@ -150,7 +150,7 @@ void OccupancyMap::updateCSpace(double max_occ_dist,
         float dist_cost = 1.0 - (map_->cells[i].occ_dist - lethal_occ_dist) / (max_occ_dist - lethal_occ_dist);
         map_->cells[i].cost += cost_occ_dist * dist_cost;
       } else {
-        map_->cells[i].cost == std::numeric_limits<float>::infinity();
+        map_->cells[i].cost = std::numeric_limits<float>::infinity();
       }
     }
   }

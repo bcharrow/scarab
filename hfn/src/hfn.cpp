@@ -354,8 +354,8 @@ void HumanFriendlyNav::twistToWheelVel(const geometry_msgs::Twist &twist,
 
 
 HFNWrapper::HFNWrapper(const Params &params, HumanFriendlyNav *hfn) :
-  map_(new scarab::OccupancyMap()), active_(false), turning_(false),
-  params_(params), nh_(), hfn_(hfn) {
+  active_(false), turning_(false), map_(new scarab::OccupancyMap()),
+  params_(params), hfn_(hfn) {
   flags_.have_pose = false;
   flags_.have_odom = false;
   flags_.have_map = false;
@@ -596,7 +596,7 @@ void HFNWrapper::setGoal(const vector<geometry_msgs::PoseStamped> &p) {
                     it->pose.position.x, it->pose.position.y,
                     params_.lethal_occ_dist, params_.allow_unknown_path);
       if (path_segment.size() != 0) {
-        for (int i=0; i<path_segment.size(); ++i) {
+        for (size_t i=0; i<path_segment.size(); ++i) {
           path.push_back(path_segment[i]);
         }
       } else {
