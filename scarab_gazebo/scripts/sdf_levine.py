@@ -34,7 +34,7 @@ scheme="""<?xml version='1.0'?>
         <linear>0</linear>
         <angular>0</angular>
       </velocity_decay>
-      <pose>15 10 1.5 0 -0 0</pose>
+      <pose>15 10 1.7 0 -0 0</pose>
     </link>
 {links}
     <static>1</static>

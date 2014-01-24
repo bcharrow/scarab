@@ -28,7 +28,7 @@
         <linear>0</linear>
         <angular>0</angular>
       </velocity_decay>
-      <pose>15 10 1.5 0 -0 0</pose>
+      <pose>15 10 1.7 0 -0 0</pose>
     </link>
     <link name='Wall_0'>
       <collision name='Wall_0_Collision'>
