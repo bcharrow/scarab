@@ -200,7 +200,7 @@ public:
     try {
       speed = claw_->ReadISpeedM1(address_, &status, &valid) * 125;
     } catch (USBSerial::Exception &e) {
-      ROS_WARN("Problem reading motor 1 speed (error=%s)", e.what());
+      ROS_INFO("Problem reading motor 1 speed (error=%s)", e.what());
       serialError();
       return;
     }
@@ -211,7 +211,7 @@ public:
     if (valid && (status == 0 || status == 1)) {
       state_.left_qpps = left_sign_ * speed;
     } else {
-      ROS_WARN("Invalid data from motor 1");
+      ROS_INFO("Invalid data from motor 1");
       serialError();
       return;
     }
@@ -219,7 +219,7 @@ public:
     try {
       speed = claw_->ReadISpeedM2(address_, &status, &valid) * 125;
     } catch(USBSerial::Exception &e) {
-      ROS_WARN("Problem reading motor 2 speed (error=%s)", e.what());
+      ROS_INFO("Problem reading motor 2 speed (error=%s)", e.what());
       serialError();
       return;
     }
@@ -227,7 +227,7 @@ public:
     if (valid && (status == 0 || status == 1)) {
       state_.right_qpps = right_sign_ * speed;
     } else {
-      ROS_WARN("Invalid data from motor 2");
+      ROS_INFO("Invalid data from motor 2");
       serialError();
       return;
     }
@@ -303,7 +303,7 @@ public:
   void serialError() {
     serial_errs_ += 1;
     if (serial_errs_ == 5) {
-      ROS_ERROR("Several errors from roboclaw, restarting");
+      ROS_WARN("Several errors from roboclaw, restarting");
       roboclaw_restart_usb();
       openUsb();
       setupClaw();
