@@ -468,6 +468,19 @@ void HFNWrapper::onPose(const geometry_msgs::PoseStamped &input) {
     return;
   }
 
+  // remove visited waypoints from goals
+  double min_dist = std::numeric_limits<double>::max();
+  vector<geometry_msgs::PoseStamped>::iterator min_it = goals_.begin();
+  for (vector<geometry_msgs::PoseStamped>::iterator it=goals_.begin();
+       it!=goals_.end(); ++it) {
+    double dist = linear_distance(pose_.pose, it->pose);
+    if (dist < min_dist) {
+      min_dist = dist;
+      min_it = it;
+    }
+  }
+  goals_.erase(goals_.begin(), min_it);
+
   // check if reached goal or stuck
   geometry_msgs::Twist cmd;
   hfn_->getCommandVel(&cmd);
