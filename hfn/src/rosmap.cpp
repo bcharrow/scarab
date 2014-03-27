@@ -156,6 +156,34 @@ void OccupancyMap::updateCSpace(double max_occ_dist,
   }
 }
 
+bool OccupancyMap::nearestPoint(double x, double y, double max_obst_distance,
+                                double *out_x, double *out_y) const {
+  // spiral out from current point until we hit unoccupied grid cell
+  double theta_inc = 0.3;
+  double radius_inc = 0.01;
+
+  double radius = 0.0, theta = 0.0;
+
+  *out_x = x;
+  *out_y = y;
+  while (true) {
+    const map_cell_t *cell = getCell(*out_x, *out_y);
+    if (cell &&
+        cell->occ_state == map_cell_t::FREE &&
+        cell->occ_dist >= max_obst_distance) {
+      return true;
+    } else if (hypot(*out_x - x, *out_y - y) > 5.0) {
+      return false;
+    }
+    theta += theta_inc;
+    radius += radius_inc;
+
+    *out_x = x + radius * cos(theta);
+    *out_y = y + radius * sin(theta);
+  }
+}
+
+
 nav_msgs::OccupancyGrid OccupancyMap::getCSpace() {
   nav_msgs::OccupancyGrid grid;
   grid.info.width = map_->size_x;

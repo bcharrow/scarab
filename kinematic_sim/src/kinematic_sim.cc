@@ -15,6 +15,8 @@
 #include "tf/transform_broadcaster.h"
 #include "tf/transform_datatypes.h"
 
+#include "player_map/rosmap.hpp"
+
 using namespace std;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -35,6 +37,7 @@ private:
   string odom_frame_id;
   string global_frame_id;
   bool pub_global_frame_;
+  boost::scoped_ptr<scarab::OccupancyMap> map_;
 
   ros::NodeHandle *node_;
   ros::Publisher odom_pub;
@@ -86,6 +89,13 @@ public:
     node_->param(string("odom_frame_id"), odom_frame_id, string("/odom_motor"));
     node_->param(string("global_frame_id"), global_frame_id, string("/map"));
     node_->param("pub_global_frame", pub_global_frame_, false);
+
+    bool use_map;
+    node_->param("use_map", use_map, false);
+    if (use_map) {
+      map_.reset(scarab::OccupancyMap::FromMapServer("/static_map"));
+      map_->updateCSpace(0.2, 0.05);
+    }
 
     // ensure that frame id begins with / character
     if (base_frame_id.compare(0, 1, "/", 1) != 0)
@@ -253,6 +263,23 @@ public:
     boost::recursive_mutex::scoped_lock lock(state_lock_);
 
     //ROS_INFO_STREAM("[" << this->name << "] " << x << ", " << y << ", " << th);
+
+    // If using a map, get closest valid position
+    if (map_ != NULL) {
+      double new_x, new_y;
+      if (map_->nearestPoint(this->x, this->y, 0.3, &new_x, &new_y)) {
+        if (this->x != new_x || this->y != new_y) {
+          ROS_INFO("(%f %f) -> (%f %f)",
+                   this->x, this->y, new_x, new_y);
+        }
+        this->x = new_x;
+        this->y = new_y;
+        this->x_gt = new_x;
+        this->y_gt = new_y;
+      } else {
+        ROS_WARN("Couldnt find point starting at %f %f", this->x, this->y);
+      }
+    }
 
     state.pose.pose.position.x = this->x;
     state.pose.pose.position.y = this->y;

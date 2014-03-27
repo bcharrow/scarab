@@ -50,7 +50,8 @@ public:
                    double max_occ_dist = 0.0, bool allow_unknown = false) const;
   Path astar(double x1, double y1, double x2, double y2,
              double max_occ_dist = 0.0, bool allow_unknown = false);
-
+  bool nearestPoint(double x, double y, double max_occ_dist,
+                    double *out_x, double *out_y) const;
   // TODO: Unify these two APIs
 
   // Get a list of endpoints

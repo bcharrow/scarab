@@ -11,9 +11,11 @@
   <build_depend>tf</build_depend>
   <build_depend>geometry_msgs</build_depend>
   <build_depend>nav_msgs</build_depend>
+  <build_depend>hfn</build_depend>
 
   <run_depend>roscpp</run_depend>
   <run_depend>tf</run_depend>
   <run_depend>geometry_msgs</run_depend>
   <run_depend>nav_msgs</run_depend>
+  <run_depend>hfn</run_depend>
 </package>
