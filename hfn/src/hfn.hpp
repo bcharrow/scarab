@@ -94,25 +94,26 @@ private:
 class HFNWrapper {
 public:
   struct Params {
-    double max_occ_dist;     // maximum margin for distance transform
-    double lethal_occ_dist;  // distance at which robot is in collision
-    double cost_occ_prob;    // factor to convert occupancy prob to cost
-    double cost_occ_dist;    // factor to convert occ_dist to cost
-    double goal_tol;         // distance when goal is considered reached
-    double goal_tol_ang;     // max angle difference for goal to be reached
-    double path_margin;      // max margin for path planning
-    double waypoint_spacing; // max distance between waypoints
-    double los_margin;       // margin for line of sight checks
-    double timeout;          // time at which an action is aborted
-    double stuck_distance;   // radius of neighborhood for when a robot is stuck
-    double stuck_angle;      // Not stuck if moved angle is larger than this
-    double stuck_timeout;    // time over which a robot must remain in radius
-    double stuck_start;      // Seconds to before we start checking if we're stuck
-    int free_threshold;      // max occupancy grid value for free space
-    int occupied_threshold;  // min occupancy grid value for occupied space
-    bool allow_unknown_path; // allow paths through unknown space
-    bool allow_unknown_los;  // allow line of sight through unknown space
-    double min_map_update;   // Wait at least this time before updating map
+    double max_occ_dist;          // maximum margin for distance transform
+    double lethal_occ_dist;       // distance at which robot is in collision
+    double cost_occ_prob;         // factor to convert occupancy prob to cost
+    double cost_occ_dist;         // factor to convert occ_dist to cost
+    double goal_tol;              // distance when goal is considered reached
+    double goal_tol_ang;     			// max angle difference for goal to be reached
+    double path_margin;           // max margin for path planning
+    double waypoint_spacing;      // max distance between waypoints
+    double los_margin;            // margin for line of sight checks
+    double timeout;               // time at which an action is aborted
+    double stuck_distance;        // radius of neighborhood for when a robot is stuck
+    double stuck_angle;           // Not stuck if moved angle is larger than this
+    double stuck_timeout;         // time over which a robot must remain in radius
+    double stuck_start;      			// Seconds to before we start checking if we're stuck
+    int free_threshold;           // max occupancy grid value for free space
+    int occupied_threshold;       // min occupancy grid value for occupied space
+    bool allow_unknown_path;      // allow paths through unknown space
+    bool allow_unknown_los;       // allow line of sight through unknown space
+    double min_map_update;   			// Wait at least this time before updating map
+    bool publish_action_feedback; // publish feedback from action client
     std::string map_frame;
     std::string name_space;
   };
@@ -137,6 +138,8 @@ public:
   void stop();
   void setGoal(const std::vector<geometry_msgs::PoseStamped> &p);
   void registerStatusCallback(const boost::function<void(Status)> &callback);
+  void registerFeedbackCallback(
+    const boost::function<void(const geometry_msgs::PoseStamped&)> &feedback);
 
 private:
   void ensureValidPose();
@@ -158,6 +161,7 @@ private:
   ros::Subscriber pose_sub_, map_sub_, odom_sub_, laser_sub_;
 
   boost::function<void(Status)> callback_;
+  boost::function<void(const geometry_msgs::PoseStamped&)> feedback_;
   bool active_; // True if we're navigating to a goal
   bool turning_; // True if we've reached goal and are just turning
   geometry_msgs::PoseStamped pose_;
@@ -189,6 +193,7 @@ public:
 
   void goalCallback();
   void preemptCallback();
+  void feedbackCallback(const geometry_msgs::PoseStamped& pose);
   void hfnCallback(HFNWrapper::Status status);
 
 private:
