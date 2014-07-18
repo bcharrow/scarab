@@ -43,6 +43,8 @@ public:
     double freq;
     std::string map_frame;
     std::string base_frame;
+
+    bool z_control;
   };
 
   HumanFriendlyNav(Params p);
@@ -87,6 +89,8 @@ private:
   geometry_msgs::Pose pose_, goal_;
   geometry_msgs::Twist current_twist_, goal_twist_;
   Polygon_2 polygon_;  // Polygon of free_distance_
+  ros::Time last_ztime;
+  double prev_zerr_;
 };
 
 class HFNWrapper {
@@ -111,6 +115,9 @@ public:
     bool allow_unknown_los;  // allow line of sight through unknown space
     std::string map_frame;
     std::string name_space;
+
+    bool z_control;
+    double z_tol;
   };
 
   enum Status {

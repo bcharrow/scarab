@@ -20,6 +20,11 @@ double linear_distance(const geometry_msgs::Pose &start,
                start.position.y - stop.position.y);
 }
 
+double z_distance(const geometry_msgs::Pose &start,
+                  const geometry_msgs::Pose &stop) {
+  return fabs(start.position.z - stop.position.z);
+}
+
 double ang_distance(const geometry_msgs::Pose &start,
                     const geometry_msgs::Pose &stop) {
   return fabs(tf::getYaw(stop.orientation) - tf::getYaw(start.orientation));
@@ -51,6 +56,8 @@ HumanFriendlyNav* HumanFriendlyNav::ROSInit(ros::NodeHandle& nh) {
   nh.param("w_max", p.w_max, 0.7);
   nh.param("waypoint_thresh", p.waypoint_thresh, 0.2);
   nh.param("alpha_thresh", p.alpha_thresh, 2.094);
+
+  nh.param("z_control", p.z_control, false);
 
   HumanFriendlyNav *human_friendly_nav = new HumanFriendlyNav(p);
   return human_friendly_nav;
@@ -302,6 +309,16 @@ double HumanFriendlyNav::desiredVelocity(double distance, double alpha) {
   }
 }
 
+double clamp(double val, double min, double max) {
+  if (val < min) {
+    return min;
+  } else if (val > max) {
+    return max;
+  } else {
+    return val;
+  }
+}
+
 void HumanFriendlyNav::getCommandVel(geometry_msgs::Twist *cmd_vel)
 {
   double left, right;
@@ -320,6 +337,17 @@ void HumanFriendlyNav::getCommandVel(geometry_msgs::Twist *cmd_vel)
   // Wheel vel to twist
   cmd_vel->linear.x = (right + left) / 2.0;
   cmd_vel->angular.z = (right -left) / params_.axle_width;
+
+  if (params_.z_control) {
+    const double zmax_vel = 0.2;
+    const double period = 1.0;
+    const double p = 0.5;
+    double error = goal_.position.z;
+    double zvel = error * p / period;
+    zvel = clamp(zvel, -zmax_vel, zmax_vel);
+    // ROS_INFO("At err = %.2f zvel = %.2f", error, zvel);
+    cmd_vel->linear.z = zvel;
+  }
 }
 
 // move to HFNWrapper
@@ -405,6 +433,8 @@ HFNWrapper* HFNWrapper::ROSInit(ros::NodeHandle& nh) {
   nh.param("allow_unknown_path", p.allow_unknown_path, true);
   nh.param("allow_unknown_los", p.allow_unknown_los, false);
   nh.param("map_frame_id", p.map_frame, string("/map"));
+  nh.param("z_tol", p.z_tol, 0.1);
+  nh.param("z_control", p.z_control, false);
   p.name_space = nh.getNamespace();
 
   HumanFriendlyNav *hfn = HumanFriendlyNav::ROSInit(nh);
@@ -431,9 +461,15 @@ void HFNWrapper::onPose(const geometry_msgs::PoseStamped &input) {
   }
 
   // check if reached goal or stuck
+  geometry_msgs::Twist cmd;
+  hfn_->getCommandVel(&cmd);
+
+  double z_dist = fabs(goals_.back().pose.position.z - pose_.pose.position.z);
+  bool z_ok = !params_.z_control || (z_dist < params_.z_tol &&
+                                     fabs(cmd.linear.z) < 0.05);
   bool xy_ok = turning_ ||
     linear_distance(pose_.pose, goals_.back().pose) < params_.goal_tol;
-  if (xy_ok &&
+  if (xy_ok && z_ok &&
       ang_distance(pose_.pose, goals_.back().pose) < params_.goal_tol_ang) {
     stop();
     ROS_INFO("HFNWrapper: FINISHED");
@@ -444,8 +480,10 @@ void HFNWrapper::onPose(const geometry_msgs::PoseStamped &input) {
     for (list<geometry_msgs::PoseStamped>::iterator it = pose_history_.begin();
          it != pose_history_.end(); ++it) {
       const geometry_msgs::PoseStamped &pose = pose_history_.front();
+      bool z_movement = params_.z_control && z_distance(pose.pose, it->pose) > 0.1;
       if (linear_distance(pose.pose, it->pose) > params_.stuck_distance ||
-          ang_distance(pose.pose, it->pose) > params_.stuck_angle) {
+          ang_distance(pose.pose, it->pose) > params_.stuck_angle ||
+          z_movement) {
         stuck = false;
         break;
       }
@@ -553,8 +591,8 @@ void HFNWrapper::onOdom(const nav_msgs::Odometry &odom) {
 }
 
 void HFNWrapper::setGoal(const vector<geometry_msgs::PoseStamped> &p) {
-  ROS_INFO("HFNWrapper: Got final goal: (%.2f, %.2f)",
-           p.back().pose.position.x, p.back().pose.position.y);
+  ROS_INFO("HFNWrapper: Got final goal: (%.2f, %.2f, %.2f)",
+           p.back().pose.position.x, p.back().pose.position.y, p.back().pose.position.z);
 
   if (!initialized()) {
     ROS_WARN("HFNWrapper: NOTREADY (Haven't received: %s)",
@@ -684,6 +722,7 @@ bool HFNWrapper::updateWaypoint() {
     goal.header.frame_id = params_.map_frame;
     goal.pose.position.x = waypoints_[min_ind].x();
     goal.pose.position.y = waypoints_[min_ind].y();
+    goal.pose.position.z = goals_.back().pose.position.z;
 
     hfn_->setGoal(goal);
 
@@ -752,10 +791,11 @@ void MoveServer::preemptCallback() {
 void MoveServer::goalCallback() {
   hfn::MoveGoalConstPtr goal = as_.acceptNewGoal();
   if (!goal->stop) {
-    ROS_INFO("%s got request to (%.2f, %.2f)",
+    ROS_INFO("%s got request to (%.2f, %.2f, %.2f)",
              action_name_.c_str(),
              goal->target_poses.back().pose.position.x,
-             goal->target_poses.back().pose.position.y);
+             goal->target_poses.back().pose.position.y,
+             goal->target_poses.back().pose.position.z);
     wrapper_->setGoal(goal->target_poses);
   } else {
     ROS_INFO("%s got request to stop", action_name_.c_str());
