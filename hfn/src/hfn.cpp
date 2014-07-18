@@ -812,23 +812,28 @@ void MoveServer::hfnCallback(HFNWrapper::Status status) {
     result.final_status = hfn::MoveResult::FINISHED;
     as_.setSucceeded(result);
   } else {
-    ROS_WARN("%s Aborting", action_name_.c_str());
+    std::string statstr;
     switch (status) {
       case HFNWrapper::TIMEOUT:
+        statstr = "TIMEOUT";
         result.final_status = hfn::MoveResult::TIMEOUT;
         break;
       case HFNWrapper::STUCK:
+        statstr = "STUCK";
         result.final_status = hfn::MoveResult::STUCK;
         break;
       case HFNWrapper::NOTREADY:
+        statstr = "NOTREADY";
         result.final_status = hfn::MoveResult::NOTREADY;
         break;
       case HFNWrapper::UNREACHABLE:
+        statstr = "UNREACHABLE";
         result.final_status = hfn::MoveResult::UNREACHABLE;
         break;
       default:
         ROS_ERROR("%s Unknown status %d", action_name_.c_str(), status);
     }
+    ROS_WARN("%s Aborting (status=%s)", action_name_.c_str(), statstr.c_str());
     as_.setAborted(result);
   }
 }
