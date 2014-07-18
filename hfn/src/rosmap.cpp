@@ -129,8 +129,8 @@ void OccupancyMap::updateCSpace(double max_occ_dist,
     ROS_ERROR("max_occ_dist must be at least lethal_occ_dist");
     return;
   }
-  max_occ_dist_ = max_occ_dist_;
-  lethal_occ_dist_ = lethal_occ_dist_;
+  max_occ_dist_ = max_occ_dist;
+  lethal_occ_dist_ = lethal_occ_dist;
   map_update_cspace(map_, max_occ_dist);
   // compute cost for each cell
   for (int i = 0; i < map_->size_x * map_->size_y; ++i) {
