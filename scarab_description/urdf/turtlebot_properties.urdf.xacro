@@ -24,8 +24,8 @@
    -->
 	<property name="cam_px" value="-0.087" />
 	<property name="cam_py" value="-0.0125" />
-	<property name="cam_pz" value="0.2870" />
+	<property name="cam_pz" value="0.3" />
 	<property name="cam_or" value="0" />
-	<property name="cam_op" value="0" />
+	<property name="cam_op" value="-0.357" />
 	<property name="cam_oy" value="0" />
 </robot>
