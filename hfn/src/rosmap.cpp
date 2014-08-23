@@ -109,6 +109,16 @@ void OccupancyMap::setMap(const nav_msgs::OccupancyGrid &grid) {
   convertMap(grid, map_, max_free_threshold_, min_occupied_threshold_);
 }
 
+bool OccupancyMap::safePoint(double x, double y) const {
+  return safePoint(x, y, lethalOccDist());
+}
+
+bool OccupancyMap::safePoint(double x, double y, double safe_dist) const {
+  const map_cell_t *cell = getCell(x, y);
+  return (cell != NULL && cell->occ_state == map_cell_t::FREE &&
+          cell->occ_dist >= safe_dist);
+}
+
 void OccupancyMap::updateCSpace(double max_occ_dist,
                                 double lethal_occ_dist,
                                 double cost_occ_prob /* = 0.0 */,
@@ -379,7 +389,8 @@ void OccupancyMap::addNeighbors(const Node &node, double max_occ_dist, bool allo
       map_cell_t *cell = map_->cells + index;
       // If cell is occupied or too close to occupied cell, continue
 
-      if (isinff(cell->cost)) {
+      if (isinff(cell->cost) ||
+          (!allow_unknown && cell->occ_state == map_cell_t::UNKNOWN)) {
         // fprintf(stderr, "occupado\n");
         continue;
       }

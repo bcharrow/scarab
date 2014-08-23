@@ -13,7 +13,7 @@
 #include <nav_msgs/OccupancyGrid.h>
 
 #include "player_map/map.h"
-
+#include <Eigen/StdVector>
 namespace scarab {
 
 typedef std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f> > Path;
@@ -45,6 +45,10 @@ public:
   double maxOccDist() const { return max_occ_dist_; }
 
   const map_cell_t* getCell(double x, double y) const;
+
+  // True if cell is free and far away from obstacles
+  bool safePoint(double x, double y) const; // Use lethalOccDist()
+  bool safePoint(double x, double y, double occ_dist) const;
 
   bool lineOfSight(double x1, double y1, double x2, double y2,
                    double max_occ_dist = 0.0, bool allow_unknown = false) const;
