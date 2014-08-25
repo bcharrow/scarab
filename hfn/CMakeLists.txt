@@ -4,8 +4,8 @@ project(hfn)
 find_package(Eigen REQUIRED)
 find_package(CGAL REQUIRED COMPONENTS Core PATHS /opt/local)
 find_package(catkin REQUIRED COMPONENTS dynamic_reconfigure roscpp
-             sensor_msgs geometry_msgs nav_msgs tf
-             actionlib_msgs actionlib)
+             sensor_msgs geometry_msgs nav_msgs tf angles
+             actionlib_msgs actionlib message_generation)
 
 add_action_files(DIRECTORY action FILES Move.action)
 generate_messages(DEPENDENCIES actionlib_msgs geometry_msgs)
@@ -16,7 +16,7 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES playermap
   CATKIN_DEPENDS dynamic_reconfigure roscpp sensor_msgs geometry_msgs
-                 nav_msgs tf actionlib_msgs actionlib angles
+                 nav_msgs tf actionlib_msgs actionlib angles message_runtime
 )
 
 include(${CGAL_USE_FILE})
