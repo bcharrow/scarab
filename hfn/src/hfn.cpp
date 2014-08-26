@@ -570,8 +570,8 @@ void HFNWrapper::onLaserScan(const sensor_msgs::LaserScan &scan) {
     if (turning_) {
       cmd.linear.x = 0.0;
       double diff =
-        angles::normalize_angle(tf::getYaw(goals_.back().pose.orientation) -
-                                tf::getYaw(pose_.pose.orientation));
+        angles::shortest_angular_distance(tf::getYaw(pose_.pose.orientation),
+                                          tf::getYaw(goals_.back().pose.orientation));
       double speed = hfn_->params().w_max;
       if (fabs(diff) < M_PI / 8.0) {
         speed /= 1.5;
