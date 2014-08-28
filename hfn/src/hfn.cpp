@@ -443,10 +443,35 @@ HFNWrapper* HFNWrapper::ROSInit(ros::NodeHandle& nh) {
   return wrapper;
 }
 
+void HFNWrapper::ensureValidPose() {
+  if (map_ != NULL) {
+    double startx = pose_.pose.position.x;
+    double starty = pose_.pose.position.y;
+    double newx, newy;
+    bool valid =
+      map_->nearestPoint(startx, starty, params_.lethal_occ_dist,
+                         &newx, &newy);
+    if (!valid) {
+      ROS_WARN("Couldn't find valid starting position from (% .2f, % .2f)",
+               startx, starty);
+    } else if (startx != newx || starty != newy) {
+      ROS_WARN_THROTTLE(5.0, "Shifted position from (% .2f, % .2f) to (% .2f, % .2f)",
+               startx, starty, newx, newy);
+      pose_.pose.position.x = newx;
+      pose_.pose.position.y = newy;
+      hfn_->setPose(pose_);
+    }
+  }
+}
+
+
 void HFNWrapper::onPose(const geometry_msgs::PoseStamped &input) {
   pose_ = input;
   flags_.have_pose = true;
   hfn_->setPose(pose_);
+
+  ensureValidPose();
+
   if (!initialized()) {
     return;
   }
@@ -505,6 +530,8 @@ void HFNWrapper::onMap(const nav_msgs::OccupancyGrid &input) {
                      params_.cost_occ_prob, params_.cost_occ_dist);
   //~ costmap_pub_.publish(map_->getCSpace());
   costmap_pub_.publish(map_->getCostMap());
+
+  ensureValidPose();
 
   if (active_) {
     setGoal(goals_);

@@ -180,7 +180,7 @@ bool OccupancyMap::nearestPoint(double x, double y, double max_obst_distance,
     const map_cell_t *cell = getCell(*out_x, *out_y);
     if (cell &&
         cell->occ_state == map_cell_t::FREE &&
-        cell->occ_dist >= max_obst_distance) {
+        cell->occ_dist > max_obst_distance) {
       return true;
     } else if (hypot(*out_x - x, *out_y - y) > 5.0) {
       return false;

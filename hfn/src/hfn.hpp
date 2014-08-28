@@ -142,6 +142,7 @@ public:
   void registerStatusCallback(const boost::function<void(Status)> &callback);
 
 private:
+  void ensureValidPose();
   void timeout(const ros::TimerEvent &event);
 
   // Return true if we can follow a waypoint, false otherwise
