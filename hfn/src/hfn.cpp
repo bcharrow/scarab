@@ -27,7 +27,8 @@ double z_distance(const geometry_msgs::Pose &start,
 
 double ang_distance(const geometry_msgs::Pose &start,
                     const geometry_msgs::Pose &stop) {
-  return fabs(tf::getYaw(stop.orientation) - tf::getYaw(start.orientation));
+  return fabs(angles::shortest_angular_distance(tf::getYaw(start.orientation),
+                                                tf::getYaw(stop.orientation)));
 }
 
 //=========================== HumanFriendlyNav ============================//
@@ -495,7 +496,8 @@ void HFNWrapper::onPose(const geometry_msgs::PoseStamped &input) {
   bool xy_ok = turning_ ||
     linear_distance(pose_.pose, goals_.back().pose) < params_.goal_tol;
   if (xy_ok && z_ok &&
-      ang_distance(pose_.pose, goals_.back().pose) < params_.goal_tol_ang) {
+      (params_.goal_tol_ang >= M_PI ||
+       ang_distance(pose_.pose, goals_.back().pose) < params_.goal_tol_ang)) {
     stop();
     ROS_INFO("HFNWrapper: FINISHED");
     callback_(FINISHED);
