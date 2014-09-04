@@ -1,0 +1,9 @@
+#!/bin/bash
+trap exit INT TERM EXIT
+set -o nounset
+set -o errexit
+
+NAMES=$@
+REGEXP=$(echo $NAMES | tr ' ' '|')
+LINES=$(sort -u ~/.scarabrc)
+echo $LINES | tr ' ' '\n' | grep -vE $REGEXP  > ~/.scarabrc
