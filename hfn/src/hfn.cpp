@@ -445,7 +445,7 @@ HFNWrapper* HFNWrapper::ROSInit(ros::NodeHandle& nh) {
 }
 
 void HFNWrapper::ensureValidPose() {
-  if (map_ != NULL) {
+  if (flags_.have_map && flags_.have_pose) {
     double startx = pose_.pose.position.x;
     double starty = pose_.pose.position.y;
     double newx, newy;
@@ -525,7 +525,7 @@ void HFNWrapper::onPose(const geometry_msgs::PoseStamped &input) {
 
 void HFNWrapper::onMap(const nav_msgs::OccupancyGrid &input) {
   geometry_msgs::PoseStamped goal;
-  ROS_INFO("HFNWrapper: Updating map");
+  ROS_DEBUG("HFNWrapper: Updating map");
   flags_.have_map = true;
   map_->setMap(input);
   map_->updateCSpace(params_.max_occ_dist, params_.lethal_occ_dist,
