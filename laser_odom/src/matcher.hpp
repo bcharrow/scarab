@@ -240,6 +240,8 @@ private:
   ros::Time last_decay_, last_add_;
   bool have_scan_;
   boost::scoped_ptr<GridMap> map_;
+  ros::NodeHandle nh_;
+  ros::Publisher pub_scan_;
 };
 
 };

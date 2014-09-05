@@ -2,6 +2,12 @@
 
 #include <queue>
 
+#include <sensor_msgs/PointCloud.h>
+#include <pcl_ros/point_cloud.h>
+#include <pcl/point_types.h>
+#include <laser_geometry/laser_geometry.h>
+#include <pcl/filters/voxel_grid.h>
+
 using namespace std;
 using namespace Eigen;
 using namespace mrsl;
@@ -120,6 +126,7 @@ ScanMatcher::ScanMatcher(const Params &p)
   p_.align();
   map_.reset(new GridMap(-40, 80.0, -40, 80.0, p_.grid_res));
   map_->fill(0);
+  pub_scan_ = nh_.advertise<sensor_msgs::PointCloud2>("laser_cloud", 1, false);
 }
 
 ScanMatcher::~ScanMatcher() {
@@ -213,7 +220,31 @@ Gaussian3d ScanMatcher::matchScan(const Pose2d &pose,
   // Project laser scan points into local frame
   Pose2d identity(0.0, 0.0, 0.0);
   projectScan(identity, scan, p_.subsample, &points);
-  return match(points);
+
+  // Filter nearby points
+  double resolution = 0.01;
+  sensor_msgs::PointCloud2 ros_input;
+  laser_geometry::LaserProjection projector;
+  projector.projectLaser(scan, ros_input);
+  pcl::PCLPointCloud2 pcl_pc;
+  pcl_conversions::toPCL(ros_input, pcl_pc);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::fromPCLPointCloud2(pcl_pc, *cloud);
+  pcl::VoxelGrid<pcl::PointXYZ> sor;
+  sor.setInputCloud(cloud);
+  sor.setLeafSize(resolution, resolution, 1.0);
+  pcl::PointCloud<pcl::PointXYZ> pcl_filtered;
+  sor.filter(pcl_filtered);
+  pub_scan_.publish(cloud);
+
+  RowMatrix2d points_filt;
+  points_filt.resize(2, pcl_filtered.points.size());
+  for (int i = 0; i < points_filt.cols(); ++i) {
+    points_filt(0, i) = pcl_filtered.points.at(i).x;
+    points_filt(1, i) = pcl_filtered.points.at(i).y;
+  }
+
+  return match(points_filt);
 }
 
 Gaussian3d ScanMatcher::match(const RowMatrix2d &points) {
