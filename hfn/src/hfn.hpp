@@ -109,6 +109,7 @@ public:
     double stuck_distance;   // radius of neighborhood for when a robot is stuck
     double stuck_angle;      // Not stuck if moved angle is larger than this
     double stuck_timeout;    // time over which a robot must remain in radius
+    double stuck_start;      // Seconds to before we start checking if we're stuck
     int free_threshold;      // max occupancy grid value for free space
     int occupied_threshold;  // min occupancy grid value for occupied space
     bool allow_unknown_path; // allow paths through unknown space
@@ -171,6 +172,7 @@ private:
   Params params_;
   HumanFriendlyNav *hfn_;
   ros::Timer timeout_timer_;
+  ros::Time goal_time_;
   struct {
     bool have_pose, have_odom, have_map, have_laser;
   } flags_;

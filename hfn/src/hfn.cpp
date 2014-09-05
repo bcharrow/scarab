@@ -429,6 +429,7 @@ HFNWrapper* HFNWrapper::ROSInit(ros::NodeHandle& nh) {
   nh.param("stuck_distance", p.stuck_distance, 0.05);
   nh.param("stuck_angle", p.stuck_angle, 0.05);
   nh.param("stuck_timeout", p.stuck_timeout, 5.0);
+  nh.param("stuck_start", p.stuck_start, 1.0);
   nh.param("free_threshold", p.free_threshold, 0);
   nh.param("occupied_threshold", p.occupied_threshold, 100);
   nh.param("allow_unknown_path", p.allow_unknown_path, true);
@@ -501,7 +502,7 @@ void HFNWrapper::onPose(const geometry_msgs::PoseStamped &input) {
     stop();
     ROS_INFO("HFNWrapper: FINISHED");
     callback_(FINISHED);
-  } else if (pose_history_.size() > 10) {
+  } else if ((ros::Time::now() - goal_time_).toSec() > params_.stuck_start) {
     bool stuck = true;
     // Check if we've moved
     for (list<geometry_msgs::PoseStamped>::iterator it = pose_history_.begin();
@@ -633,6 +634,7 @@ void HFNWrapper::setGoal(const vector<geometry_msgs::PoseStamped> &p) {
   goals_ = p;
   waypoints_.clear();
   pose_history_.clear();
+  goal_time_ = ros::Time::now();
   // If we were turning to orient towards the last goal, and we're still pretty
   // close to goal, don't bother moving closer, just keep on turning
   turning_ = (turning_ &&
