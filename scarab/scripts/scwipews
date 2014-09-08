@@ -5,10 +5,9 @@ set -o errexit
 
 DESTS=$(cat ~/.scarabrc)
 
-# All files in FILES variable should have absolute paths
-FILES="$ROS_WORKSPACE $HOME/.bashrc $HOME/.gitconfig"
+# All files in SCFILES variable should have absolute paths
 for DEST in $DESTS; do
-    echo Deleting workspace $DEST
-    ssh $USER@$DEST "rm -rf $ROS_WORKSPACE"
+    echo Deleting $SCFILES from $DEST
+    ssh $USER@$DEST "rm -rf $SCFILES"
     echo "done!"
 done
