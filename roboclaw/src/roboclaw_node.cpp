@@ -281,19 +281,22 @@ public:
       state_.right_duty = copysign(500.0, state_.right_duty);
     }
 
-    double dlimit = 20;
+    double dlimit = 10;
     double left_diff = state_.left_duty - prev_left;
-    if (abs(left_diff) > dlimit) {
+    if (fabs(left_diff) > dlimit) {
       state_.left_duty = prev_left + copysign(dlimit, left_diff);
     }
 
     double right_diff = state_.right_duty - prev_right;
-    if (abs(right_diff) > dlimit) {
+    if (fabs(right_diff) > dlimit) {
       state_.right_duty = prev_right + copysign(dlimit, right_diff);
     }
 
-    claw_->DutyM1M2(address_, left_sign_*state_.left_duty,
-                              right_sign_*state_.right_duty);
+    uint16_t m1duty = left_sign_*state_.left_duty;
+    uint16_t m2duty = right_sign_*state_.right_duty;
+    // ROS_INFO("%i %i %f %f", (int16_t)m1duty, (int16_t)m2duty,
+    //          left_sign_*state_.left_duty, right_sign_*state_.right_duty);
+    claw_->DutyM1M2(address_, m1duty, m2duty);
     last_cmd_time_ = ros::Time::now();
 
     // ROS_INFO_STREAM("" << state_);
@@ -302,8 +305,8 @@ public:
 
   void serialError() {
     serial_errs_ += 1;
-    if (serial_errs_ == 5) {
-      ROS_WARN("Several errors from roboclaw, restarting");
+    if (serial_errs_ == 10) {
+      ROS_ERROR("Several errors from roboclaw, restarting");
       roboclaw_restart_usb();
       openUsb();
       setupClaw();
