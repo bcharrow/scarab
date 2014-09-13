@@ -437,6 +437,7 @@ HFNWrapper* HFNWrapper::ROSInit(ros::NodeHandle& nh) {
   nh.param("map_frame_id", p.map_frame, string("/map"));
   nh.param("z_tol", p.z_tol, 0.1);
   nh.param("z_control", p.z_control, false);
+  nh.param("min_map_update", p.min_map_update, 0.0);
   p.name_space = nh.getNamespace();
 
   HumanFriendlyNav *hfn = HumanFriendlyNav::ROSInit(nh);
@@ -526,7 +527,12 @@ void HFNWrapper::onPose(const geometry_msgs::PoseStamped &input) {
 
 void HFNWrapper::onMap(const nav_msgs::OccupancyGrid &input) {
   geometry_msgs::PoseStamped goal;
+  if ((input.header.stamp - last_map_update_).toSec() < params_.min_map_update) {
+    ROS_DEBUG("HFNWrapper: NOT updating map!");
+    return;
+  }
   ROS_DEBUG("HFNWrapper: Updating map");
+  last_map_update_ = ros::Time::now();
   flags_.have_map = true;
   map_->setMap(input);
   map_->updateCSpace(params_.max_occ_dist, params_.lethal_occ_dist,

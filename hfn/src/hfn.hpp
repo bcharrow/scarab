@@ -114,6 +114,7 @@ public:
     int occupied_threshold;  // min occupancy grid value for occupied space
     bool allow_unknown_path; // allow paths through unknown space
     bool allow_unknown_los;  // allow line of sight through unknown space
+    double min_map_update;   // Wait at least this time before updating map
     std::string map_frame;
     std::string name_space;
 
@@ -172,7 +173,7 @@ private:
   Params params_;
   HumanFriendlyNav *hfn_;
   ros::Timer timeout_timer_;
-  ros::Time goal_time_;
+  ros::Time goal_time_, last_map_update_;
   struct {
     bool have_pose, have_odom, have_map, have_laser;
   } flags_;
