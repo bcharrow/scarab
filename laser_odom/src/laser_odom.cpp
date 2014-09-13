@@ -22,6 +22,7 @@ public:
     pnh_.param("debug", debug_, false);
 
     sscan_ = nh_.subscribe("scan", 5, &LaserOdomNode::laserCb, this);
+    sub_motor_odom_ = nh_.subscribe("odom_motor", 5, &LaserOdomNode::motorOdomCb, this);
 
     podom_ = nh_.advertise<nav_msgs::Odometry>("odom_laser", 5, false);
     if (debug_) {
@@ -53,6 +54,10 @@ public:
     return laser_tform_ * matcher_.pose().tf();
   }
 
+  void motorOdomCb(const nav_msgs::Odometry &msg) {
+    motor_odom_ = msg;
+  }
+
   void laserCb(const sensor_msgs::LaserScan &scan) {
     // No odom estimate
     bool map_change = matcher_.addScan(Pose2d(0.0, 0.0, 0.0), scan);
@@ -80,6 +85,12 @@ public:
       }
     }
 
+    if (motor_odom_) {
+      odom_.twist.twist.linear.x = motor_odom_->twist.twist.linear.x;
+    } else {
+      ROS_ERROR("No motor odometry");
+    }
+
     podom_.publish(odom_);
     tf_.sendTransform(
       tf::StampedTransform(laserPose(), scan.header.stamp,
@@ -91,7 +102,7 @@ private:
   std::string odom_frame_, base_frame_, laser_frame_;
   tf::StampedTransform laser_tform_;
   mrsl::ScanMatcher matcher_;
-  ros::Subscriber sscan_;
+  ros::Subscriber sscan_, sub_motor_odom_;
   ros::Publisher podom_, pmap_;
   bool have_pose_;
   Pose2d last_pose_;
@@ -100,6 +111,7 @@ private:
   tf::TransformBroadcaster tf_;
   tf::TransformListener tf_listen_;
   nav_msgs::Odometry odom_;
+  boost::optional<nav_msgs::Odometry> motor_odom_;
 };
 
 int main(int argc, char **argv) {

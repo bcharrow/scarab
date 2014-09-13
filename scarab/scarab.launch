@@ -53,12 +53,12 @@
     <param name="base_frame" value="scarab/base_link" />
     <param name="odom_frame" value="scarab/odom_laser" />
     <rosparam>
-      grid_resolution: 0.025
+      grid_resolution: 0.02
       sensor_sd: 0.02
       subsample: 1
       travel_distance: 0.02
       travel_angle: 0.02
-      decay_duration: 80
+      decay_duration: 200
       decay_step: 40
     </rosparam>
   </node>
