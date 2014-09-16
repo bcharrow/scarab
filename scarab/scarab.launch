@@ -41,7 +41,7 @@
   <node pkg="roboclaw" type="roboclaw_node" name="motor" clear_params="true">
     <param name="broadcast_tf" value="false" />
     <param name="pid_d" value="0.0" />
-    <param name="pid_i" value="2.5" />
+    <param name="pid_i" value="3.0" />
     <param name="pid_iclamp" value="300" />
   </node>
   <!-- <node name="odom_throttle" pkg="topic_tools" type="throttle" -->
