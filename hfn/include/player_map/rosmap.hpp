@@ -45,6 +45,21 @@ public:
   double maxOccDist() const { return max_occ_dist_; }
 
   const map_cell_t* getCell(double x, double y) const;
+  int coordIndex(double x, double y) const {
+    int xi = MAP_GXWX(map_, x);
+    int yi = MAP_GYWY(map_, y);
+    if (!MAP_VALID(map_, xi, yi)) {
+      return -1;
+    } else {
+      return MAP_INDEX(map_, xi, yi);
+    }
+  }
+
+  int numX() { return map_->size_x; }
+  int numY() { return map_->size_y; }
+  const map_cell_t* at(int xi, int yi) const {
+    return map_->cells + MAP_INDEX(map_, xi, yi);
+  }
 
   // True if cell is free and far away from obstacles
   bool safePoint(double x, double y) const; // Use lethalOccDist()
