@@ -56,8 +56,8 @@
       grid_resolution: 0.02
       sensor_sd: 0.02
       subsample: 1
-      travel_distance: 0.02
-      travel_angle: 0.02
+      travel_distance: 0.2
+      travel_angle: 0.034
       decay_duration: 200
       decay_step: 40
     </rosparam>

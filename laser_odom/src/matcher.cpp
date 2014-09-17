@@ -172,7 +172,7 @@ bool ScanMatcher::addScan(const Pose2d &odom,
   Pose2d traveled = pose_.ominus(last_scan_pose_);
   bool moved_linear = hypot(traveled.x(), traveled.y()) > p_.travel_distance;
   bool moved_angular = traveled.t() > p_.travel_angle;
-  bool add = scan.header.stamp - last_add_ > ros::Duration(p_.decay_duration);
+  bool add = scan.header.stamp - last_add_ > ros::Duration(0.2);
   if (!have_scan_ || moved_linear || moved_angular || add) {
     RowMatrix2d points;
     projectScan(pose_, scan, 1, &points);
