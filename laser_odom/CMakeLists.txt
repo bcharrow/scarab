@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(laser_odom)
 
+find_package(cmake_modules REQUIRED)
 find_package(Eigen REQUIRED)
 find_package(PCL REQUIRED)
 find_package(catkin REQUIRED COMPONENTS roscpp rosbag angles tf sensor_msgs 

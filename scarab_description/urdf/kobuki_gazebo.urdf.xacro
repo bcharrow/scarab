@@ -51,6 +51,7 @@
         <rightJoint>wheel_left_joint</rightJoint>
         <wheelSeparation>0.230</wheelSeparation>
         <wheelDiameter>0.070</wheelDiameter>
+        <publishWheelTF>true</publishWheelTF>
         <torque>1.0</torque>
         <commandTopic>cmd_vel</commandTopic>
         <odometryTopic>odom_laser</odometryTopic>

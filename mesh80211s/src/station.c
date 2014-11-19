@@ -66,12 +66,13 @@ enum plink_state
     BLOCKED
   };
 
-enum plink_actions
-  {
-    PLINK_ACTION_UNDEFINED,
-    PLINK_ACTION_OPEN,
-    PLINK_ACTION_BLOCK,
-  };
+/* Remove to avoid redefinition error on 14.04 */
+/* enum plink_actions */
+/*   { */
+/*     PLINK_ACTION_UNDEFINED, */
+/*     PLINK_ACTION_OPEN, */
+/*     PLINK_ACTION_BLOCK, */
+/*   }; */
 
 int station_dump_callback(struct nl_msg *msg, void *arg)
 {
