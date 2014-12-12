@@ -743,14 +743,17 @@ bool HFNWrapper::updateWaypoint() {
     }
   }
 
+  int ind_delta = 0;
   if (min_ind == -1) {
     return false;
   } else {
-    while (static_cast<unsigned>(min_ind + 1) < waypoints_.size() &&
+    while (ind_delta < 20 &&
+           static_cast<unsigned>(min_ind + 1) < waypoints_.size() &&
            map_->lineOfSight(pos.x(), pos.y(),
                              waypoints_[min_ind+1].x(), waypoints_[min_ind+1].y(),
                              params_.los_margin, params_.allow_unknown_los)) {
       ++min_ind;
+      ++ind_delta;
     }
 
 
