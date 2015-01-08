@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(scarab_twist)
 
 find_package(catkin REQUIRED COMPONENTS roscpp)
-find_package(Curses REQUIRED)
+find_package(Curses)
 
 catkin_package(CATKIN_DEPENDS roscpp DEPENDS Curses)
 

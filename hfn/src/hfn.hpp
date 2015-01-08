@@ -202,6 +202,7 @@ private:
   HFNWrapper* wrapper_;
   std::string action_name_;
   actionlib::SimpleActionServer<hfn::MoveAction> as_;
+  bool stop_on_preempt_;
 };
 
 } // end namespace scarab

@@ -538,7 +538,9 @@ void HFNWrapper::onMap(const nav_msgs::OccupancyGrid &input) {
   map_->updateCSpace(params_.max_occ_dist, params_.lethal_occ_dist,
                      params_.cost_occ_prob, params_.cost_occ_dist);
   //~ costmap_pub_.publish(map_->getCSpace());
-  costmap_pub_.publish(map_->getCostMap());
+  if (costmap_pub_.getNumSubscribers() > 0) {
+    costmap_pub_.publish(map_->getCostMap());
+  }
 
   ensureValidPose();
 
@@ -655,11 +657,22 @@ void HFNWrapper::setGoal(const vector<geometry_msgs::PoseStamped> &p) {
     // Check if goals_ location is reachable
     if (map_->getCell(it->pose.position.x, it->pose.position.y)->occ_dist <
         params_.lethal_occ_dist) {
-      ROS_WARN("HFNWrapper: UNREACHABLE (Goal at (%f, %f) is too close to obstacle)",
-               it->pose.position.x, it->pose.position.y);
-      stop();
-      callback_(UNREACHABLE);
-      return;
+
+      double startx = it->pose.position.x, starty = it->pose.position.y;
+      double newx, newy;
+      bool valid = map_->nearestPoint(startx, starty, params_.lethal_occ_dist,
+                                      &newx, &newy);
+      if (valid) {
+        ROS_WARN("HFNWrapper: Adjusted goal at %f %f", startx, starty);
+        it->pose.position.x = newx;
+        it->pose.position.y = newy;
+      } else {
+        ROS_WARN("HFNWrapper: UNREACHABLE (Goal at (%f, %f) is too close to obstacle)",
+                 it->pose.position.x, it->pose.position.y);
+        stop();
+        callback_(UNREACHABLE);
+        return;
+      }
     }
     // Plan a path to goals_ location
     geometry_msgs::Pose last_pose;
@@ -816,6 +829,7 @@ MoveServer::MoveServer(const string &server_name, HFNWrapper *wrapper) :
   pnh_("~"), wrapper_(wrapper), action_name_(ros::names::resolve(server_name)),
   as_(nh_, server_name, false) {
 
+  pnh_.param("stop_on_preempt", stop_on_preempt_, true);
   wrapper->registerStatusCallback(boost::bind(&MoveServer::hfnCallback, this, _1));
 
   as_.registerGoalCallback(boost::bind(&MoveServer::goalCallback, this));
@@ -824,19 +838,29 @@ MoveServer::MoveServer(const string &server_name, HFNWrapper *wrapper) :
 
 void MoveServer::preemptCallback() {
   ROS_INFO("Preempted");
-  wrapper_->stop();
+  if (stop_on_preempt_) {
+    wrapper_->stop();
+  }
   as_.setPreempted();
 }
 
 void MoveServer::goalCallback() {
   hfn::MoveGoalConstPtr goal = as_.acceptNewGoal();
   if (!goal->stop) {
-    ROS_INFO("%s got request to (%.2f, %.2f, %.2f)",
-             action_name_.c_str(),
-             goal->target_poses.back().pose.position.x,
-             goal->target_poses.back().pose.position.y,
-             goal->target_poses.back().pose.position.z);
-    wrapper_->setGoal(goal->target_poses);
+    if (goal->target_poses.empty()) {
+      ROS_WARN("HFN was sent empty set of poses");
+      wrapper_->stop();
+      hfn::MoveResult result;
+      result.final_status = hfn::MoveResult::UNREACHABLE; 
+      as_.setAborted(result);
+    } else {
+      ROS_INFO("%s got request to (%.2f, %.2f, %.2f)",
+               action_name_.c_str(),
+               goal->target_poses.back().pose.position.x,
+               goal->target_poses.back().pose.position.y,
+               goal->target_poses.back().pose.position.z);
+      wrapper_->setGoal(goal->target_poses);
+    }
   } else {
     ROS_INFO("%s got request to stop", action_name_.c_str());
     wrapper_->stop();
