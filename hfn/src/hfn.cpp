@@ -163,7 +163,7 @@ void HumanFriendlyNav::setGoal(const geometry_msgs::PoseStamped &input) {
   Point_2 new_goal = Point_2(goal_.position.x, goal_.position.y);
   if (CGAL::bounded_side_2(polygon_.vertices_begin(), polygon_.vertices_end(),
                            new_goal, K()) == CGAL::ON_UNBOUNDED_SIDE) {
-    ROS_WARN("Failed to move point to inside");
+    // ROS_WARN("Failed to move point to inside");
     // ROS_BREAK();
   }
 }

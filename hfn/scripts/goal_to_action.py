@@ -13,7 +13,7 @@ def callback(data):
     goal.target_poses.append(data)
 
     client.send_goal(goal)
-    client.wait_for_result(rospy.Duration.from_sec(5.0))
+    # client.wait_for_result(rospy.Duration.from_sec(5.0))
 
 if __name__ == '__main__':
     rospy.init_node('move_client')

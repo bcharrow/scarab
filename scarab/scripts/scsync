@@ -8,6 +8,6 @@ DESTS=$(cat ~/.scarabrc)
 # All files in SCFILES variable should have absolute paths
 for DEST in $DESTS; do
     echo Pushing $SCFILES to $DEST
-    rsync -avz --copy-links --exclude="*.bag" --inplace $SCFILES $USER@$DEST:/home/$USER
+    rsync -avz --copy-links --relative -K --exclude="*.bag" --inplace $SCFILES $USER@$DEST:/
     echo "done!"
 done
