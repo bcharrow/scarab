@@ -22,6 +22,7 @@
 #include <time.h>
 #include <armadillo>
 #include <boost/tuple/tuple.hpp>
+#include <boost/regex.hpp>
 
 LaserSimulator::LaserSimulator() : occupied_threshold(0), noise_sd(0.0)
 {
@@ -420,17 +421,28 @@ void LaserSimulator::UpdatePoseArray(const laser_simulator::PoseStampedNamedArra
     if (pose_array.poses[i].child_frame_id == frame_id)
       continue;
 
-    if (models.count(pose_array.poses[i].child_frame_id) == 0)
-      {
-        printf("%s: Unknown model in odom_array message (%s) - skipping\n",
-               ros::this_node::getName().c_str(),
-               pose_array.poses[i].child_frame_id.c_str());
-        continue;
-      }
+		bool match = false;
+		model_t* model;
+		for (std::map<std::string, model_t*>::iterator it = models.begin();
+				 it != models.end(); ++it) {
+			boost::cmatch what;
+			if (boost::regex_match(pose_array.poses[i].child_frame_id.c_str(), what, boost::regex(it->first))) {
+				match = true;
+				model = it->second;
+				break;
+			}
+		}
 
-    double x_delta = 0.5*models[pose_array.poses[i].child_frame_id]->xdim;
-    double y_delta = 0.5*models[pose_array.poses[i].child_frame_id]->ydim;
-    double z_delta = 0.5*models[pose_array.poses[i].child_frame_id]->zdim;
+    if (!match) {
+			printf("%s: Unknown model in odom_array message (%s) - skipping\n",
+						 ros::this_node::getName().c_str(),
+						 pose_array.poses[i].child_frame_id.c_str());
+			continue;
+		}
+
+    double x_delta = 0.5 * model->xdim;
+    double y_delta = 0.5 * model->ydim;
+    double z_delta = 0.5 * model->zdim;
 
     double center_x = pose_array.poses[i].pose.position.x;
     double center_y = pose_array.poses[i].pose.position.y;

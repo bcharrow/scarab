@@ -7,7 +7,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <laser_simulator/PoseStampedNamedArray.h>
 
-#include <boost/thread/mutex.hpp>
+#include <boost/regex.hpp>
 
 using namespace std;
 
@@ -15,8 +15,6 @@ using namespace std;
 class PoseSubscriber {
 private:
   ros::Subscriber sub_;
-
-  boost::mutex pose_mutex_;
 
   string name_;
   string frame_;
@@ -33,7 +31,6 @@ public:
   }
 
   void poseCallback(const geometry_msgs::PoseStamped::ConstPtr& msg) {
-    boost::mutex::scoped_lock lock(pose_mutex_);
     active_ = true;
 
     pose_.header = msg->header;
@@ -42,14 +39,9 @@ public:
   }
 
   bool getPose(laser_simulator::PoseStampedNamed* pose) {
-    boost::mutex::scoped_lock lock(pose_mutex_);
     *pose = pose_;
     return sub_.getNumPublishers() > 0;
   }
-
-  string getName(void) { return name_; }
-
-  int getNumPublishers(void) { return sub_.getNumPublishers(); }
 
   bool active(void) { return active_; }
 };
@@ -60,7 +52,6 @@ private:
   ros::NodeHandle n_;
   ros::Publisher pub_;
   map<string, PoseSubscriber *> subscribers_;
-  int max_num_agents_;
 
   string agent_prefix_;
   string frame_id_;
@@ -74,9 +65,8 @@ public:
     node.param("num_agents", num_agents, 0);
     node.param("frame_id", frame_id_, string("base_link"));
     node.param("pose_topic", pose_topic_, string("pose"));
-    max_num_agents_ = num_agents;
 
-    for (unsigned int i = 0; i <= num_agents; ++i) {
+    for (unsigned int i = 0; i < num_agents; ++i) {
       stringstream name;
       name << agent_prefix_ << i;
 
@@ -97,6 +87,7 @@ public:
   void Spin() {
     laser_simulator::PoseStampedNamedArray msg;
 
+		vector<string> erase_keys;
     for (map<string, PoseSubscriber*>::iterator it = subscribers_.begin();
          it != subscribers_.end(); ++it) {
       if (!it->second->active()) {
@@ -106,26 +97,38 @@ public:
       if (it->second->getPose(&p)) {
         msg.poses.push_back(p);
       } else {
-        stringstream name;
-        name << agent_prefix_ << max_num_agents_;
-        if (name.str() != it->second->getName()) {
-          delete it->second;
-          subscribers_.erase(it);
-        }
+				erase_keys.push_back(it->first);
       }
     }
 
-    while (true) {
-      stringstream name;
-      name << agent_prefix_ << max_num_agents_;
-      if (subscribers_[name.str()]->getNumPublishers() > 0) {
-        stringstream new_name;
-        new_name << agent_prefix_ << ++max_num_agents_;
-        subscribers_[new_name.str()] = new PoseSubscriber(&n_, new_name.str(), frame_id_, pose_topic_);
-      } else {
-        break;
-      }
-    }
+    for (int i = 0; i < erase_keys.size(); ++i) {
+			delete subscribers_[erase_keys[i]];
+			subscribers_.erase(erase_keys[i]);
+		}
+
+		// Read in all topics and see if there are new agents
+		ros::master::V_TopicInfo topics;
+    ros::master::getTopics(topics);
+
+    boost::regex expression("/" + agent_prefix_ + "[0-9]*/" + pose_topic_);
+    for (ros::master::V_TopicInfo::iterator it = topics.begin();
+				 it != topics.end(); ++it) {
+			boost::cmatch what;
+			if (boost::regex_match(it->name.c_str(), what, expression)) {
+				string name = it->name;
+				name = name.substr(1); // remove leading / in topic name
+				std::size_t found = name.find_first_of("/"); // get base namespace
+				if (found != std::string::npos) {
+					name = name.substr(0, found);
+				} else {
+					continue;
+				}
+
+				if (subscribers_.find(name.c_str()) == subscribers_.end()) {
+					subscribers_[name] = new PoseSubscriber(&n_, name, frame_id_, pose_topic_);
+				}
+			}
+		}
 
     pub_.publish(msg);
   }
