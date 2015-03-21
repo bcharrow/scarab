@@ -3,6 +3,8 @@ project(laser_simulator)
 find_package(catkin REQUIRED
   COMPONENTS roscpp nav_msgs rosbag sensor_msgs tf message_generation)
 
+set(CMAKE_CXX_FLAGS "-frounding-math ${CMAKE_CXX_FLAGS}")
+
 add_message_files(FILES ScanPair.msg PoseStampedNamed.msg PoseStampedNamedArray.msg)
 
 generate_messages(DEPENDENCIES nav_msgs sensor_msgs geometry_msgs)

@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(hfn)
 
+set(CMAKE_CXX_FLAGS "-frounding-math ${CMAKE_CXX_FLAGS}")
+
 find_package(cmake_modules REQUIRED)
 find_package(Eigen REQUIRED)
 find_package(CGAL REQUIRED)
