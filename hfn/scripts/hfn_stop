@@ -4,7 +4,7 @@ import roslib; roslib.load_manifest('hfn')
 import rospy
 import actionlib
 
-from hfn.msg import *
+from scarab_msgs.msg import *
 
 if __name__ == '__main__':
     rospy.init_node('hfn_stop')

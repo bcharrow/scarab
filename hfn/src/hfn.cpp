@@ -845,13 +845,13 @@ void MoveServer::preemptCallback() {
 }
 
 void MoveServer::goalCallback() {
-  hfn::MoveGoalConstPtr goal = as_.acceptNewGoal();
+  scarab_msgs::MoveGoalConstPtr goal = as_.acceptNewGoal();
   if (!goal->stop) {
     if (goal->target_poses.empty()) {
       ROS_WARN("HFN was sent empty set of poses");
       wrapper_->stop();
-      hfn::MoveResult result;
-      result.final_status = hfn::MoveResult::UNREACHABLE; 
+      scarab_msgs::MoveResult result;
+      result.final_status = scarab_msgs::MoveResult::UNREACHABLE; 
       as_.setAborted(result);
     } else {
       ROS_INFO("%s got request to (%.2f, %.2f, %.2f)",
@@ -864,35 +864,35 @@ void MoveServer::goalCallback() {
   } else {
     ROS_INFO("%s got request to stop", action_name_.c_str());
     wrapper_->stop();
-    hfn::MoveResult result;
-    result.final_status = hfn::MoveResult::FINISHED;
+    scarab_msgs::MoveResult result;
+    result.final_status = scarab_msgs::MoveResult::FINISHED;
     as_.setSucceeded(result);
   }
 }
 
 void MoveServer::hfnCallback(HFNWrapper::Status status) {
-  hfn::MoveResult result;
+  scarab_msgs::MoveResult result;
   if (status == HFNWrapper::FINISHED) {
-    result.final_status = hfn::MoveResult::FINISHED;
+    result.final_status = scarab_msgs::MoveResult::FINISHED;
     as_.setSucceeded(result);
   } else {
     std::string statstr;
     switch (status) {
       case HFNWrapper::TIMEOUT:
         statstr = "TIMEOUT";
-        result.final_status = hfn::MoveResult::TIMEOUT;
+        result.final_status = scarab_msgs::MoveResult::TIMEOUT;
         break;
       case HFNWrapper::STUCK:
         statstr = "STUCK";
-        result.final_status = hfn::MoveResult::STUCK;
+        result.final_status = scarab_msgs::MoveResult::STUCK;
         break;
       case HFNWrapper::NOTREADY:
         statstr = "NOTREADY";
-        result.final_status = hfn::MoveResult::NOTREADY;
+        result.final_status = scarab_msgs::MoveResult::NOTREADY;
         break;
       case HFNWrapper::UNREACHABLE:
         statstr = "UNREACHABLE";
-        result.final_status = hfn::MoveResult::UNREACHABLE;
+        result.final_status = scarab_msgs::MoveResult::UNREACHABLE;
         break;
       default:
         ROS_ERROR("%s Unknown status %d", action_name_.c_str(), status);

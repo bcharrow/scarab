@@ -11,7 +11,7 @@ def main():
 
     base_frame = rospy.get_param("~base_frame_id", "base")
     map_frame = rospy.get_param("~map_frame_id", "map")
-    pose_pub = rospy.Publisher("pose", PoseStamped)
+    pose_pub = rospy.Publisher("pose", PoseStamped, queue_size = 5)
 
     tf_sub = tf.TransformListener()
 

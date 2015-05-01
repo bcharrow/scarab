@@ -14,7 +14,7 @@
 #include <sensor_msgs/LaserScan.h>
 #include <actionlib/server/simple_action_server.h>
 
-#include <hfn/MoveAction.h>
+#include <scarab_msgs/MoveAction.h>
 
 #include "player_map/rosmap.hpp"
 
@@ -182,7 +182,7 @@ private:
 class MoveServer {
 public:
   MoveServer(const std::string &server_name, HFNWrapper *wrapper);
-  void executeCB(const hfn::MoveGoalConstPtr &goal);
+  void executeCB(const scarab_msgs::MoveGoalConstPtr &goal);
   void start() {
     as_.start();
   }
@@ -201,7 +201,7 @@ private:
   std::string namespace_;
   HFNWrapper* wrapper_;
   std::string action_name_;
-  actionlib::SimpleActionServer<hfn::MoveAction> as_;
+  actionlib::SimpleActionServer<scarab_msgs::MoveAction> as_;
   bool stop_on_preempt_;
 };
 

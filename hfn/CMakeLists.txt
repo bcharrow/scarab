@@ -6,11 +6,7 @@ find_package(Eigen REQUIRED)
 find_package(CGAL REQUIRED)
 
 find_package(catkin REQUIRED COMPONENTS dynamic_reconfigure roscpp
-             sensor_msgs geometry_msgs nav_msgs tf angles
-             actionlib_msgs actionlib message_generation)
-
-add_action_files(DIRECTORY action FILES Move.action)
-generate_messages(DEPENDENCIES actionlib_msgs geometry_msgs)
+             sensor_msgs geometry_msgs nav_msgs tf angles scarab_msgs)
 
 generate_dynamic_reconfigure_options(cfg/HumanFriendlyNavigation.cfg)
 
@@ -18,7 +14,7 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES playermap
   CATKIN_DEPENDS dynamic_reconfigure roscpp sensor_msgs geometry_msgs
-                 nav_msgs tf actionlib_msgs actionlib angles message_runtime
+                 nav_msgs tf angles scarab_msgs
 )
 
 include_directories(include ${catkin_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIRS}
