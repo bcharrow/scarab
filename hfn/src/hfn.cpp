@@ -632,6 +632,16 @@ void HFNWrapper::setGoal(const vector<geometry_msgs::PoseStamped> &p) {
   ROS_INFO("HFNWrapper: Got final goal: (%.2f, %.2f, %.2f)",
            p.back().pose.position.x, p.back().pose.position.y, p.back().pose.position.z);
 
+  for (int i = 0; i < p.size(); ++i) {
+    const geometry_msgs::PoseStamped &pose = p.at(i);
+    double x = pose.pose.position.x, y = pose.pose.position.y;
+    if (map_->getCell(x, y) == NULL) {
+      ROS_WARN("HFNWrapper: UNREACHABLE (Goal %f %f is outside map limits)", x, y);
+      callback_(UNREACHABLE);
+      return;
+    }
+  }
+
   if (!initialized()) {
     ROS_WARN("HFNWrapper: NOTREADY (Haven't received: %s)",
              uninitializedString().c_str());
