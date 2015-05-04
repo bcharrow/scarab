@@ -16,7 +16,7 @@ def callback(data):
     goal = MoveGoal()
     rospy.loginfo("Got goal to %s" % data)
 
-    if set_height is not None:
+    if set_height is not None and math.fabs(data.pose.position.z) < 1e-3:
         data.pose.position.z = set_height
 
     rot = tft.numpy.array([data.pose.orientation.x,

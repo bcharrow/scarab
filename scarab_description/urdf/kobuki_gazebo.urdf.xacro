@@ -32,12 +32,12 @@
 
     <gazebo reference="base_link">
       <sensor type="contact" name="bumpers">
-	<always_on>1</always_on>
-	<update_rate>50.0</update_rate>
-	<visualize>true</visualize>
-	<contact>
-	  <collision>base_footprint_collision_base_link</collision>
-	</contact>
+	      <always_on>1</always_on>
+	      <update_rate>50.0</update_rate>
+	      <visualize>true</visualize>
+	      <contact>
+	        <collision>base_footprint_collision_base_link</collision>
+	      </contact>
       </sensor>
     </gazebo>
 
@@ -51,12 +51,18 @@
         <rightJoint>wheel_left_joint</rightJoint>
         <wheelSeparation>0.230</wheelSeparation>
         <wheelDiameter>0.070</wheelDiameter>
-        <publishWheelTF>true</publishWheelTF>
         <torque>1.0</torque>
         <commandTopic>cmd_vel</commandTopic>
-        <odometryTopic>odom_laser</odometryTopic>
-        <odometryFrame>odom_laser</odometryFrame>
-        <robotBaseFrame>base_footprint</robotBaseFrame>
+        <odometryTopic>ground_truth/odom</odometryTopic>
+        <odometryFrame>ground_truth/odom</odometryFrame>
+        <robotBaseFrame>ground_truth/base_link</robotBaseFrame>
+
+        <publishWheelJointState>false</publishWheelJointState>
+        <wheelAcceleration>0</wheelAcceleration>
+        <wheelTorque>5</wheelTorque>
+        <odometrySource>world</odometrySource>
+        <publishTf>1</publishTf>
+        <publishWheelTF>false</publishWheelTF>
       </plugin>
     </gazebo>
   </xacro:macro>
