@@ -1,0 +1,46 @@
+#!/usr/sbin/cfagent -f
+
+control:
+   any::
+   actionsequence = ( directories editfiles )
+   EditFileSize = ( 30000 )
+
+directories:
+   any::
+	${target}/tmp mode=1777 owner=0 group=0
+
+editfiles:
+   any::
+	{ /etc/sudoers
+	  AutoCreate
+	  AppendIfNoSuchLine "Cmnd_Alias SHUTDOWN_CMDS = /sbin/shutdown, /sbin/reboot, /sbin/halt"
+	  AppendIfNoSuchLine "ALL ALL= NOPASSWD: SHUTDOWN_CMDS"
+	  AppendIfNoSuchLine "%admin ALL=(ALL) ALL"
+	}
+	
+        # http://www.codewhirl.com/2011/10/ubuntu-11-10-waiting-up-to-60-more-seconds-for-network-configuration/
+	{ /etc/init/failsafe.conf
+	  HashCommentLinesMatching ".*sleep [0-9]+.*"
+        }
+
+        # Have powerbutton turn computer off
+        { /etc/acpi/events/powerbtn
+          ReplaceAll "/etc/acpi/powerbtn.sh"
+                With "/sbin/poweroff"
+        }
+
+  { /etc/ssh/sshd_config
+    HashCommentLinesMatching "PermitRootLogin.*"
+    AppendIfNoSuchLine "PermitRootLogin yes"
+  }
+        # This makes SSH login faster
+	{ /etc/ssh/sshd_config
+	  AppendIfNoSuchLine "UseDNS no"
+	}
+
+        # Respond to broadcast pings and forward packets
+	{ /etc/sysctl.conf
+	  AppendIfNoSuchLine "net.ipv4.icmp_echo_ignore_broadcasts = 0"
+	  AppendIfNoSuchLine "net.ipv4.ip_forward = 1"
+          AppendIfNoSuchLine "net.ipv4.conf.all.forwarding = 1"
+	}

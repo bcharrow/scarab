@@ -1,0 +1,21 @@
+# UTM 30
+SUBSYSTEMS=="usb", KERNEL=="ttyACM[0-9]*", ATTRS{manufacturer}=="Hokuyo Data Flex for USB", SYMLINK+="hokuyo", MODE="0666"
+
+# Roboclaw
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="03eb", ATTRS{idProduct}=="2404", SYMLINK+="roboclaw", MODE="0666"
+# Roboclaw permissions on /dev/bus/*/*, for libusb to work w/out root privilege
+SUBSYSTEM=="usb", ATTRS{idVendor}=="03eb", ATTRS{idProduct}=="2404", MODE="0666"
+
+# Nanopan
+SUBSYSTEMS=="usb", ATTRS{interface}=="NanoLoc Basestation 2.01", SYMLINK+="nanopan", MODE="0666"
+
+# BB04
+SUBSYSTEM=="tty", KERNEL=="ttyUSB*", ATTRS{serial}=="FTUTXL4X", SYMLINK+="bb04", MODE="0666"
+SUBSYSTEM=="tty", KERNEL=="ttyUSB*", ATTRS{serial}=="FTUTY1RG", SYMLINK+="bb04", MODE="0666"
+SUBSYSTEM=="tty", KERNEL=="ttyUSB*", ATTRS{serial}=="FTUTXLNS", SYMLINK+="bb04", MODE="0666"
+SUBSYSTEM=="tty", KERNEL=="ttyUSB*", ATTRS{serial}=="A600QB9C", SYMLINK+="bb04", MODE="0666"
+SUBSYSTEM=="tty", KERNEL=="ttyUSB*", ATTRS{serial}=="A600QBPM", SYMLINK+="bb04", MODE="0666"
+SUBSYSTEM=="tty", KERNEL=="ttyUSB*", ATTRS{serial}=="A600QBCK", SYMLINK+="bb04", MODE="0666"
+
+# Servo
+SUBSYSTEM=="tty", ATTRS{idVendor}=="067b", SYMLINK+="servo", MODE="0666"

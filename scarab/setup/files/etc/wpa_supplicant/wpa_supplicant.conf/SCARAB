@@ -1,0 +1,13 @@
+ctrl_interface=/var/run/wpa_supplicant
+
+# network={
+# 	ssid="mrsl"
+# 	# Password is 'mrsl_12345'
+# 	psk=7b0bcd9e78bbd5fbe752a0699fba6663480773c2c91ee2280ab2acc1ae8c3f90
+# }
+
+network={
+	ssid="scarab"
+	#psk="mrsl_12345"
+	psk=d54b6b651f8966488a98b0220e6a6cd043a14e56db0e4da008abdd15ccfdeda6
+}

@@ -1,0 +1,38 @@
+127.0.0.1 localhost
+
+192.168.131.140 scarab40.wired
+192.168.131.141 scarab41.wired
+192.168.131.142 scarab42.wired
+192.168.131.143 scarab43.wired
+192.168.131.144 scarab44.wired
+192.168.131.145 scarab45.wired
+
+192.168.131.40 scarab40.wifi
+192.168.131.41 scarab41.wifi
+192.168.131.42 scarab42.wifi
+192.168.131.43 scarab43.wifi
+192.168.131.44 scarab44.wifi
+192.168.131.45 scarab45.wifi
+
+192.168.130.40 scarab40.mesh
+192.168.130.41 scarab41.mesh
+192.168.130.42 scarab42.mesh
+192.168.130.43 scarab43.mesh
+192.168.130.44 scarab44.mesh
+192.168.130.45 scarab45.mesh
+
+192.168.131.2 seal
+192.168.131.5	jstephanUbuntu
+192.168.131.6 philip-Desktop
+192.168.131.8 boga
+192.168.131.10 monroes-MacBook-Pro
+192.168.131.11 kote14
+192.168.131.12 pdamesXPS.wired
+192.168.131.13 pdamesXPS.wifi
+192.168.131.27	mwhitzer-t420s
+
+::1     localhost ip6-localhost ip6-loopback
+fe00::0 ip6-localnet
+ff00::0 ip6-mcastprefix
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
