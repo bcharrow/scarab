@@ -148,7 +148,6 @@ def run():
     fcopy('/etc/default/ifplugd')
     fcopy('/etc/wpa_supplicant/wpa_supplicant.conf')
     fcopy('/etc/olsrd.conf')
-    fcopy('/usr/local/bin/arpfilt')
     subprocess.check_call(['./setup_interface.sh'])
     subprocess.check_call(['./setup_misc'])
     os.remove('/etc/udev/rules.d/70-persistent-net.rules')
