@@ -43,8 +43,6 @@ public:
     double freq;
     std::string map_frame;
     std::string base_frame;
-
-    bool z_control;
   };
 
   HumanFriendlyNav(Params p);
@@ -117,9 +115,6 @@ public:
     double min_map_update;   // Wait at least this time before updating map
     std::string map_frame;
     std::string name_space;
-
-    bool z_control;
-    double z_tol;
   };
 
   enum Status {
