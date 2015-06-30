@@ -22,14 +22,16 @@
 192.168.130.45 scarab45.mesh
 
 192.168.131.2 seal
-192.168.131.5	jstephanUbuntu
+192.168.131.5	MastLaptop
 192.168.131.6 philip-Desktop
 192.168.131.8 boga
 192.168.131.10 monroes-MacBook-Pro
 192.168.131.11 kote14
 192.168.131.12 pdamesXPS.wired
 192.168.131.13 pdamesXPS.wifi
-192.168.131.27	mwhitzer-t420s
+192.168.131.14 mikan
+192.168.131.15 grasper-Lenovo-Y50-70
+192.168.131.27 mwhitzer-t420s
 
 ::1     localhost ip6-localhost ip6-loopback
 fe00::0 ip6-localnet

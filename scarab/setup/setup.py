@@ -75,6 +75,7 @@ olsrd-plugins
 nfs-common
 rsync
 subversion
+rdate
 """
 
 def warning(line):
