@@ -6,6 +6,8 @@
 192.168.131.143 scarab43.wired
 192.168.131.144 scarab44.wired
 192.168.131.145 scarab45.wired
+192.168.131.146 scarab46.wired
+192.168.131.147 scarab47.wired
 
 192.168.131.40 scarab40.wifi
 192.168.131.41 scarab41.wifi
@@ -13,6 +15,8 @@
 192.168.131.43 scarab43.wifi
 192.168.131.44 scarab44.wifi
 192.168.131.45 scarab45.wifi
+192.168.131.46 scarab46.wifi
+192.168.131.47 scarab47.wifi
 
 192.168.130.40 scarab40.mesh
 192.168.130.41 scarab41.mesh
@@ -20,9 +24,11 @@
 192.168.130.43 scarab43.mesh
 192.168.130.44 scarab44.mesh
 192.168.130.45 scarab45.mesh
+192.168.130.46 scarab46.mesh
+192.168.130.47 scarab47.mesh
 
 192.168.131.2 seal
-192.168.131.5	MastLaptop
+192.168.131.5 MastLaptop
 192.168.131.6 philip-Desktop
 192.168.131.8 boga
 192.168.131.10 monroes-MacBook-Pro
