@@ -23,7 +23,7 @@ include_directories(include ${catkin_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIRS}
 add_library(playermap src/map.c src/rosmap.cpp)
 add_library(hfnlib src/hfn.cpp)
 target_link_libraries(hfnlib ${catkin_LIBRARIES})
-add_dependencies(hfnlib ${PROJECT_NAME}_gencpp)
+add_dependencies(hfnlib ${PROJECT_NAME}_gencpp ${scarab_msgs_EXPORTED_TARGETS})
 target_link_libraries(hfnlib ${CGAL_LIBRARY} ${GMP_LIBRARIES})
 
 add_executable(hfn src/hfn_node.cpp)
