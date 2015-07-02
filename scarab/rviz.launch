@@ -1,0 +1,4 @@
+<launch>
+  <node name="rviz" pkg="rviz" type="rviz"
+        args="--display-config=$(find scarab)/scarab.rviz" />
+</launch>
