@@ -1,0 +1,35 @@
+<launch>
+  <arg name="odom" default="/odom_laser" />
+  <arg name="base_frame" default="scarab/base_link" />
+  <arg name="map_frame" default="map_hokuyo" />
+
+  <node name="pose" pkg="hfn" type="tf_posestamped_node.py" output="screen">
+    <param name="base_frame_id" value="$(arg base_frame)"/>
+    <param name="map_frame_id" value="$(arg map_frame)"/>
+  </node>
+
+ <node name="hfn" pkg="hfn" type="hfn" output="screen">
+    <param name="base_frame_id" value="$(arg base_frame)" />
+    <param name="map_frame_id" value="$(arg map_frame)" />
+
+    <param name="tau_1" value="1.0" />
+    <param name="tau_2" value="0.2" />
+    <param name="cost_occ_prob" value="0.01" />
+    <param name="cost_occ_dist" value="0.15" />
+    <param name="max_occ_dist" value="0.5" />
+    <param name="lethal_occ_dist" value="0.35" />
+
+    <param name="v_opt" value="0.16" />
+    <param name="w_max" value="1.0" />
+    <!-- 0.0873 rad ~= 5 degrees -->
+    <param name="goal_tolerance_ang" value="0.2" />
+    <param name="min_map_update" value="2.0" />
+    <param name="stuck_start" value="3.0" />
+    
+    <remap from="odom" to="$(arg odom)" />
+    <remap from="map" to="$(arg map_frame)" /> 
+    <param name="stop_on_preempt" value="false" />
+  </node>
+
+  <node name="goal_to_action" pkg="hfn" type="goal_to_action.py" output="screen"/>
+</launch>
