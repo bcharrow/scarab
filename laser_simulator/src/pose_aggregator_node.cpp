@@ -12,17 +12,17 @@ using namespace std;
 
 class PoseSubscriber {
   public:
-    PoseSubscriber(const ros::NodeHandle &parent, unsigned int id, 
-                   string frame) {
+    PoseSubscriber(const string& agent_prefix, const string& pose_topic,
+                   unsigned int id, const string& frame) {
       stringstream ss;
       ss << id;
-      node_ = new ros::NodeHandle(parent, "agent" + ss.str());
-      sub_ = node_->subscribe("pose", 5, &PoseSubscriber::PoseCallback, this);
-      frame_ = frame;
+      node_ = ros::NodeHandle(agent_prefix + ss.str());
+      sub_ = node_.subscribe(pose_topic, 5, &PoseSubscriber::PoseCallback, this);
+      frame_ = agent_prefix + "/" + frame;
     }
 
     ~PoseSubscriber() {
-      delete node_;
+
     }
 
     void PoseCallback(const geometry_msgs::PoseStamped::ConstPtr& msg) {
@@ -36,7 +36,7 @@ class PoseSubscriber {
     }
 
   private:
-    ros::NodeHandle *node_;
+    ros::NodeHandle node_;
     ros::Subscriber sub_;
 
     string frame_;
@@ -46,21 +46,22 @@ class PoseSubscriber {
 
 class PoseAggregator {
   public:
-    PoseAggregator(const ros::NodeHandle &parent, unsigned int count) {
-      node_ = new ros::NodeHandle(parent);
-
+    PoseAggregator(ros::NodeHandle& node, unsigned int count) {
       msg_.poses.resize(count);
-      pub_ = node_->advertise<laser_simulator::PoseStampedNamedArray>(
+      pub_ = node.advertise<laser_simulator::PoseStampedNamedArray>(
                               "pose_array", 1);
 
-      for (unsigned int i = 0; i < count; i++) {
-        stringstream ss;
-        ss << i;
-        string frame;
-        node_->param("agent" + ss.str() + "_frame", frame, 
-                     "agent" + ss.str() + "/base");
+      string agent_prefix;
+      node.param("agent_prefix", agent_prefix, string("agent"));
 
-        subscribers_.push_back(new PoseSubscriber(parent, i, frame));
+      string pose_topic;
+      node.param("pose_topic", pose_topic, string("pose"));
+
+      string frame_id;
+      node.param("frame_id", frame_id, string("base"));
+
+      for (unsigned int i = 0; i < count; i++) {
+        subscribers_.push_back(new PoseSubscriber(agent_prefix, pose_topic, i, frame_id));
       }
     }
 
@@ -68,8 +69,6 @@ class PoseAggregator {
       for (vector<PoseSubscriber*>::iterator i=subscribers_.begin();
            i!=subscribers_.end(); ++i)
         delete *i;
-
-      delete node_;
     }
 
     void Spin() {
@@ -84,7 +83,6 @@ class PoseAggregator {
     }
 
   private:
-    ros::NodeHandle *node_;
     ros::Publisher pub_;
     vector<PoseSubscriber*> subscribers_;
 
